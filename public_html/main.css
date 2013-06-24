@@ -1,0 +1,57 @@
+.alias {
+	display:inline-block;
+}
+
+.aliases {
+	color:#999999;
+	margin-bottom:5px;
+	max-height:100px;
+	overflow:auto;
+}
+
+.langmarker {
+	font-size:8pt;
+	color:#999999;
+}
+
+.manual_description {
+	font-size:14pt;
+	margin-bottom:5px;
+}
+
+a.wikidata {
+	color:#2DC800;
+}
+
+a.wikipedia {
+	color:#9669FE;
+}
+
+a.external {
+	color:#2DC800;
+}
+
+.entity {
+	display:none;
+}
+
+.entity_person {
+}
+
+.autodesc div {
+	display:inline-block;
+	margin-right:5px;
+}
+
+.sitelinks {
+	font-size:9pt;
+}
+
+small.qnumber {
+	color:#999999;
+}
+
+.mythumb {
+	margin:5px;
+	display:inline-block;
+}
