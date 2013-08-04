@@ -354,7 +354,7 @@ var reasonator = {
 		$('#person div.autodesc').html ( h ) ;
 
 		// Render relatives
-		$('#pr_full_tree').html ( "<a href='/~magnus/ts2/geneawiki2/?q="+escattr(q)+"' target='_blank'>See the full family tree</a>" ) ;
+		$('#pr_full_tree').html ( "<a href='//toolserver.org/~magnus/ts2/geneawiki2/?q="+escattr(q)+"' target='_blank'>See the full family tree</a>" ) ;
 		$.each ( relations , function ( section , sd ) {
 			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
 		} ) ;
