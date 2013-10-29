@@ -1,6 +1,8 @@
 var reasonator = {
+	collapse_item_list : 20 ,
 	P_all : {
 		entity_type : 107 ,
+		instance_of : 31 ,
 		audio : 51 ,
 		video : 10 ,
 		maic : 301 , // Main article in category
@@ -22,22 +24,6 @@ var reasonator = {
 		sex : 21 ,
 		occupation : 106 ,
 		signature : 109 ,
-	
-		// StringType
-		GND : 227 ,
-		ISNI : 213 ,
-		LCCN : 244 ,
-		ULAN : 245 ,
-		VIAF : 214 ,
-		BNF : 268 ,
-		SUDOC : 269 ,
-		CALIS : 270 ,
-		CiNii : 271 ,
-		IMDb : 345 ,
-		NDL : 349 ,
-		MusicBrainz : 434 ,
-		ICCU : 396 ,
-		NLA : 409
 	} ,
 	P_taxon : {
 		taxon_name : 225 ,
@@ -60,29 +46,15 @@ var reasonator = {
 		215627 : 'person'
 	} ,
 	Q : {
+		human : 5 ,
 		male : 6581097 ,
 		female : 6581072 ,
 		person : 215627
 	} ,
-	extURLs : {
-		GND : "http://d-nb.info/gnd/!ID!" ,
-		LCCN : "http://lccn.loc.gov/!ID!" ,
-		ISNI : "http://www.isni.org/!ID!" ,
-		ULAN : "http://www.getty.edu/vow/ULANFullDisplay?find=&role=&nation=&prev_page=1&subjectid=!ID!" ,
-		BNF : "http://catalogue.bnf.fr/ark:/12148/cb!ID!/PUBLIC" ,
-		IMDb : "http://www.imdb.com/name/!ID!/" ,
-		VIAF : "http://viaf.org/viaf/!ID!/" ,
-		SUDOC : "http://www.idref.fr/!ID!" ,
-		CALIS : "" , //270 ,
-		CiNii : "http://ci.nii.ac.jp/author/!ID!" ,
-		NDL : "http://id.ndl.go.jp/auth/ndlna/!ID!" ,
-		NLA : "http://nla.gov.au/anbd.aut-an!ID!" ,
-		MusicBrainz : "http://musicbrainz.org/artist/!ID!" ,
-		ICCU : ""
-	} ,
+	extURLs : {} ,
 	imgcnt : 0 ,
 
-	init : function () {
+	init : function ( callback ) {
 		var self = this ;
 		self.q = undefined ;
 		self.wd = new WikiData ;
@@ -91,12 +63,32 @@ var reasonator = {
 			self.personal_relation_list.push ( self.P_person[v] ) ;
 		} ) ;
 		self.taxon_list = [ 171 , 273 , 75 , 76 , 77 , 70 , 71 , 74 , 89 ] ;
+		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
+			action:'parse',
+			page:'Reasonator/stringprops',
+			format:'json',
+			prop:'wikitext'
+		} , function ( d ) {
+			var text = d.parse.wikitext['*'] ;
+			$.each ( text.split("\n") , function ( k , v ) {
+				if ( v[0] != '|' ) return ; // Require table cell
+				if ( v[1] == '}' || v[1] == '-' ) return ; // Table or row end
+				var parts = v.substr(1).split('||') ;
+				if ( parts.length != 3 ) return ; // ID , prop number, URL pattern
+				var id = $.trim(parts[0]) ;
+				var prop = $.trim(parts[1]) ;
+				var urlp = $.trim(parts[2]) ;
+				self.extURLs[id] = urlp ;
+				self.P_person[id] = prop * 1 ;
+			} ) ;
+			callback() ;
+		} ) ;
 	} ,
 	
 	loadQ : function ( q ) {
 		var self = this ;
 		self.P = $.extend(true, {}, self.P_all);
-		self.q = self.wd.convertToStringArray ( q , 'q' ) [0] ;
+		self.q = self.wd.convertToStringArray ( q , 'Q' ) [0] ;
 		self.mm_load = [] ;
 		$('#main_content').load ( 'main.html' , function () {
 			$('#main_content').show() ;
@@ -120,7 +112,10 @@ var reasonator = {
 	
 	isPerson : function ( q ) {
 		var self = this ;
-		return self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.person ) ;
+		if ( self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.person ) ) return true ;
+		if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , self.Q.person ) ) return true ;
+		if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , self.Q.human ) ) return true ;
+		return false ;
 	} ,
 
 	isTaxon : function ( q ) {
@@ -128,7 +123,7 @@ var reasonator = {
 		var ret = false ;
 		var props = self.wd.items[q].getPropertyList() ;
 		$.each ( self.taxon_list , function ( k , v ) {
-			if ( -1 == $.inArray ( 'p'+v , props ) ) return ;
+			if ( -1 == $.inArray ( 'P'+v , props ) ) return ;
 			ret = true ;
 			return false ;
 		} ) ;
@@ -196,13 +191,13 @@ var reasonator = {
 		h += "<table class='table table-condensed table-striped'><thead><tr><th>Rank</th><th>Name</th><th>Taxonomic name</th></tr></thead><tbody>" ;
 		while ( chain.length > 0 ) {
 			var q = chain.pop() ;
-			var rank = self.wd.items[q].getClaimsForProperty('p105') ;
+			var rank = self.wd.items[q].getClaimsForProperty('P105') ;
 			var rankname = '<i>(unranked)</i>' ;
 			if ( rank.length > 0 ) {
 				rank = self.wd.items[q].getClaimTargetItemID(rank[0]) ;
 				if ( undefined !== self.wd.items[rank] ) rankname = self.getItemLink ( { type:'item',q:rank } , {ucfirst:true,desc:true,q_desc:true} ) ;
 			}
-			var taxonames = self.wd.items[q].getClaimsForProperty('p225') ;
+			var taxonames = self.wd.items[q].getClaimsForProperty('P225') ;
 			var taxoname = '&mdash;' ;
 			if ( taxonames.length > 0 ) taxoname = self.wd.items[q].getClaimTargetString(taxonames[0]) || taxoname ;
 			h += "<tr>" ;
@@ -215,7 +210,7 @@ var reasonator = {
 		
 		var sd = {} ;
 		$.each ( [105,405,141,183] , function ( dummy , p ) {
-			p = 'p' + p ;
+			p = 'P' + p ;
 			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
 			if ( items.length === 0 ) return ;
 			if ( sd[p] === undefined ) sd[p] = {} ;
@@ -239,16 +234,23 @@ var reasonator = {
 		self.P = $.extend(true, self.P_all, self.P_person);
 		self.main_type = 'person' ;
 		self.wd.clear() ;
-		self.wd.loadItems ( q , {
-			follow : self.personal_relation_list ,
-			preload : [ self.P.sex ] ,
-			preload_all_for_root : true ,
-			finished : function ( x ) {
-				self.getRelatedEntities ( q , function () {
-					self.showPerson ( q )
-				} ) ;
-			}
-		} , 2 ) ;
+		
+		self.wd.loadItems ( ['P7','P9'] , { // Brother/sister
+			finished : function () {
+		
+			self.wd.loadItems ( q , {
+				follow : self.personal_relation_list ,
+				preload : [ self.P.sex ] ,
+				preload_all_for_root : true ,
+				finished : function ( x ) {
+					self.getRelatedEntities ( q , function () {
+						self.showPerson ( q )
+					} ) ;
+				}
+			} , 2 ) ;
+		
+		} } ) ; // Brother/sister
+		
 	} ,
 	
 	showPerson : function ( q ) {
@@ -325,6 +327,35 @@ var reasonator = {
 				} ) ;
 			} ) ;
 		} ) ;
+
+		// Siblings by same father/mother
+		var parents = [] ;
+		$.each ( relations['parents'] , function ( cp , cd ) {
+			$.each ( cd , function ( cq , dummy ) {
+				parents.push ( cq ) ;
+			} ) ;
+		} ) ;
+		
+		$.each ( parents , function ( dummy , par ) {
+			if ( undefined === rel[par] ) return ;
+			if ( undefined === rel[par][self.P.child] ) return ;
+			$.each ( rel[par][self.P.child] , function ( k , v ) {
+				if ( v.type != 'item' ) return ;
+				if ( v.key == q ) return ; // Refers to main item, had that
+				var section = 'siblings' ;
+				var real_p ;
+				var val = {type:'item',mode:1} ;
+				if ( self.wd.items[v.key].gender == 'M' ) real_p = self.P.brother ;
+				else if ( self.wd.items[v.key].gender == 'F' ) real_p = self.P.sister ;
+				else val = {type:'item',mode:2} ;
+				val.q = v.key ;
+				val.key = val.q ;
+				val.qualifiers = $.extend(true,{},v.qualifiers);
+				if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
+				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
+			} ) ;
+		} ) ;
+
 		
 		// RENDERING
 		var h = '' ;
@@ -433,12 +464,19 @@ var reasonator = {
 			var p = String(op).replace(/\D/g,'') ;
 			var ql = [] ;
 			$.each ( qs , function ( k , v ) { ql.push ( v ) } ) ;
-			h += "<tr><th nowrap align='left' valign='top' rowspan='" + ql.length + "'>" ;
-			h += self.getItemLink ( { type:'item',q:'p'+p } , { desc:true } ) ;
+			
+			self.table_block_counter++ ;
+			var block_id = 'table_block_'+ self.table_block_counter ;
+			var collapse = ql.length >= self.collapse_item_list ;
+			var rows = ql.length + (collapse?1:0) ;
+			h += "<tr><th nowrap align='left' valign='top' rowspan='" + rows + "'>" ;
+			h += self.getItemLink ( { type:'item',q:'P'+p } , { desc:true } ) ;
 			h += "</th>" ;
 			$.each ( ql , function ( row , cq ) {
 				if ( row > 0 ) h += "<tr>" ;
-				h += "<td style='width:100%'>" ;
+				h += "<td name='" + block_id + "' style='width:100%" ;
+				if ( collapse ) h += ";display:none" ;
+				h += "'>" ;
 /*				if ( cq.is_backlink ) {
 					var s = cq.substr ( 1 ) ;
 					if ( p == 373 ) h += "<a target='_blank' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(s)+"'>" + s + "</a>" ; // Commons cat
@@ -449,6 +487,13 @@ var reasonator = {
 //				}
 				h += "</td></tr>" ;
 			} ) ;
+			if ( collapse ) {
+				h += "<tr><td style='width:100%'>" ;
+				h += ql.length + " items. " ;
+				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>Show items</a>" ;
+				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>Hide items</a>" ;
+				h += "</td></tr>" ;
+			}
 		} ) ;
 		if ( h != '' ) {
 			var h2 = "<table" ;
@@ -461,12 +506,17 @@ var reasonator = {
 		$(o.id).html(h) ;
 //		if ( !o.striped ) $(o.id+' table').removeClass('table').removeClass('table-condensed') ;
 	} ,
+	
+	toggleItems : function ( block_id ) {
+		$('a[name="'+block_id+'"]').toggle() ;
+		$('td[name="'+block_id+'"]').toggle() ;
+	} ,
 
 	addOther : function () {
 		var self = this ;
 		var sd = {} ;
 		var ignore = {} ;
-		$.each ( self.P , function ( k , v ) { ignore['p'+v] = 1 } ) ;
+		$.each ( self.P , function ( k , v ) { ignore['P'+v] = 1 } ) ;
 		
 		var q = self.q ;
 		var item = self.wd.items[q] ;
@@ -488,7 +538,7 @@ var reasonator = {
 		var self = this ;
 		var sd = {} ;
 		var ignore = {} ;
-		$.each ( self.P , function ( k , v ) { ignore['p'+v] = 1 } ) ;
+		$.each ( self.P , function ( k , v ) { ignore['P'+v] = 1 } ) ;
 		$.each ( self.wd.items , function ( q , item ) {
 			if ( !item.isItem() ) return ;
 			if ( q == self.q ) return ;
@@ -560,7 +610,7 @@ var reasonator = {
 		var self = this ;
 		var ret = [] ;
 		if ( o === undefined ) return ret ;
-		var q = self.wd.convertToStringArray ( init_q , 'q' ) [0] ;
+		var q = self.wd.convertToStringArray ( init_q , 'Q' ) [0] ;
 		if ( self.wd.items[q] === undefined ) return ret ;
 		var ql = self.wd.items[q].getClaimObjectsForProperty ( o.p ) ;
 		$.each ( ql , function ( dummy , cq ) {
@@ -639,7 +689,7 @@ var reasonator = {
 		if ( o === undefined ) o = {} ;
 		
 		if ( i.type == 'string' ) {
-			if ( i.p == 'p373' ) ret += "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
+			if ( i.p == 'P373' ) ret += "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
 			else ret += i.s ;
 		} else if ( i.type == 'item' ) {
 			ret += self.getQlink ( i.q , o ) ;
@@ -720,7 +770,7 @@ var reasonator = {
 		} , function ( data ) {
 			var ql = [] ;
 			$.each ( data.query.backlinks||[] , function ( k , v ) {
-				var cq = 'q' + v.title.replace(/\D/g,'') ;
+				var cq = 'Q' + v.title.replace(/\D/g,'') ;
 				ql.push ( cq ) ;
 			} ) ;
 
@@ -747,7 +797,8 @@ var reasonator = {
 $(document).ready ( function () {
 	$('#main_content').hide() ;
 	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-		reasonator.init() ;
-		reasonator.initializeFromParameters() ;
+		reasonator.init ( function () {
+			reasonator.initializeFromParameters() ;
+		} ) ;
 	} } ) ;
 } ) ;
