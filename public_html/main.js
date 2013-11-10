@@ -4,9 +4,13 @@ var reasonator = {
 		entity_type : 107 ,
 		instance_of : 31 ,
 		audio : 51 ,
+		voice_recording : 990 ,
 		video : 10 ,
 		maic : 301 , // Main article in category
 		image : 18
+	} ,
+	P_websites : {
+		official_website : 856
 	} ,
 	P_person : {
 		father : 22 ,
@@ -157,6 +161,7 @@ var reasonator = {
 
 		// Render name
 		$('#taxon h1.main_title').html ( self.wd.items[q].getLabel() ) ;
+		self.setDocTitle ( self.wd.items[q].getLabel() ) ;
 		
 		// Render aliases
 		h = [] ;
@@ -231,7 +236,7 @@ var reasonator = {
 
 	loadPerson : function ( q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_person);
+		self.P = $.extend(true, self.P_all, self.P_person,self.P_websites);
 		self.main_type = 'person' ;
 		self.wd.clear() ;
 		
@@ -362,6 +367,7 @@ var reasonator = {
 
 		// Render name
 		$('#person h1.main_title').html ( self.wd.items[q].getLabel() ) ;
+		self.setDocTitle ( self.wd.items[q].getLabel() ) ;
 		
 		// Render aliases
 		h = [] ;
@@ -393,6 +399,9 @@ var reasonator = {
 		// Render external ID links
 		self.showExternalIDs() ;
 		
+		// Render websites
+		self.showWebsites() ;
+
 		// Render sitelinks
 		self.addSitelinks() ;
 		
@@ -418,28 +427,39 @@ var reasonator = {
 		
 		$('#person').show() ;
 	} ,
+
+	setDocTitle : function ( s ) {
+		document.title = s + ' - Reasonator' ;
+	} ,
 	
 	addMedia : function () {
 		var self = this ;
-		$.each ( ['image','video','audio'] , function ( dummy1 , medium ) {
-			var has_header = false ;
+		var has_header = false ;
+		$.each ( ['image','video','audio','voice_recording'] , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
 				var im = v.getMultimediaFilesForProperty ( self.P[medium] ) ;
 				$.each ( im , function ( k2 , v2 ) {
 					self.imgcnt++ ;
-					var io = { file:v2 , type:medium , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
-					if ( self.q == v.getID() && k2 == 0 ) {
+					var medium2 = medium ;
+					if ( medium == 'voice_recording' ) medium2 = 'audio' ;
+					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
+					if ( self.q == v.getID() && k2 == 0 ) { // ( k2 == 0 || medium2 == 'audio' )
 						io.tw = 250 ;
 						io.th = 400 ;
-						io.id = '#'+self.main_type+' div.main_'+medium ;
+						io.id = '#'+self.main_type+' div.main_'+medium2 ;
+						io.append = true ;
 					} else {
 						if ( !has_header ) {
 							$('#'+self.main_type+' div.all_images').append ( "<h2>Related media</h2>" ) ;
 							has_header = true ;
 						}
-						$('#'+self.main_type+' div.all_images').append ( "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ) ;
+						var h3 = "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ;
+						if ( medium2 == 'audio' ) {
+							h3 = "<div>" + h3 + " <span style='font-size:9pt'>" + io.file + "</span></div>" ;
+						}
+						$('#'+self.main_type+' div.all_images').append ( h3 ) ;
 					}
 					self.mm_load.push ( io ) ;
 				} ) ;
@@ -565,12 +585,28 @@ var reasonator = {
 		$.each ( self.extURLs , function ( k , v ) {
 			var p = self.P[k] ;
 			if ( p === undefined ) return ;
+
 			var claims = i.getClaimsForProperty ( p ) ;
 			$.each ( claims , function ( dummy , c ) {
-				var s = i.getClaimTargetString ( c ) ;
+				var id_type = k ;
+				var s ;
+				var url = '' ;
+				if ( p == 553 ) { // Social media
+					if ( c.qualifiers === undefined || c.qualifiers['P554'] === undefined ) return ;
+					s = c.qualifiers['P554'][0].datavalue.value ;
+					var smtype = c.mainsnak.datavalue.value['numeric-id'] ;
+					id_type = self.wd.items['Q'+smtype].getLabel();
+					if ( smtype == 918 ) url = '//twitter.com/'+s ; // Twitter
+				} else {
+					s = i.getClaimTargetString ( c ) ;
+					url = v.replace(/!ID!/g,escattr(s)) ;
+				}
 				if ( undefined === s ) return ;
-				var url = v.replace(/!ID!/g,escattr(s)) ;
-				var h2 = "<tr><td>" + k + "&nbsp;</td><td>" ;
+				
+				
+				
+				
+				var h2 = "<tr><td>" + id_type + "&nbsp;</td><td>" ;
 				if ( url == '' ) h2 += s ;
 				else h2 += "<a target='_blank' href='" + url + "' class='external'>" + s + "</a>" ;
 				h2 += "</td></tr>" ;
@@ -581,6 +617,27 @@ var reasonator = {
 		if ( h.length == 0 ) return ;
 		h = "<table border=0 cellpadding=1 cellspacing=0>" + h.join('') + "</table>" ;
 		$('.entity_'+self.main_type+' .external_ids').html ( h ) ;
+	} ,
+
+
+	showWebsites : function () {
+		var self = this ;
+		var h = [] ;
+		var i = self.wd.items[self.q] ;
+		$.each ( self.P_websites , function ( k , v ) {
+			var claims = i.getClaimsForProperty ( v ) ;
+			$.each ( claims , function ( dummy , c ) {
+				var s = i.getClaimTargetString ( c ) ;
+				if ( undefined === s ) return ;
+				var url = s ;
+				var h2 = "<div><a target='_blank' href='" + url + "' class='external'>" + self.wd.items['P'+v].getLabel() + "</a></div>" ;
+				h.push ( h2 ) ;
+			} ) ;
+		} ) ;
+		
+		if ( h.length == 0 ) return ;
+
+		$('.entity_'+self.main_type+' .websites').html ( h.join('') ) ;
 	} ,
 	
 	addSitelinks : function () {
@@ -683,6 +740,14 @@ var reasonator = {
 		return h ;
 	} ,
 	
+	pad : function (number, length) {
+		var str = '' + number;
+		while (str.length < length) {
+			str = '0' + str;
+		}
+		return str;
+	} ,
+	
 	getItemLink : function ( i , o ) {
 		var self = this ;
 		var ret = "<div style='display:inline'>" ;
@@ -696,11 +761,44 @@ var reasonator = {
 		} else if ( i.type == 'time' ) {
 			var pre = i.time.substr(0,1) == '+' ? 1 : -1 ;
 			var dp = i.time.substr(1).split(/[-T:Z]/) ;
-			var d = new Date ( dp[0]*pre , dp[1] , dp[2] , dp[3] , dp[4] , dp[5] ) ;
+			
+/*			console.log ( dp ) ;
+			var d = new Date ( dp[0]*pre , dp[1]==0?0:dp[1] , dp[2] , dp[3] , dp[4] , dp[5] ) ;
 			if ( i.precision <= 9 ) ret += d.getFullYear() ;
-			else if ( i.precision == 10 ) ret += d.getFullYear() + '-' + d.getMonth() ;
-			else if ( i.precision == 11 ) ret += d.toLocaleDateString() ;
+			else if ( i.precision == 10 ) ret += d.getFullYear() + '-' + self.pad(d.getMonth(),2) ;
+			else if ( i.precision == 11 ) ret += d.getFullYear() + '-' + self.pad(d.getMonth(),2) + '-' + self.pad(d.getDay(),2) ;
 			else ret += d.toLocaleString();
+*/
+
+			var year = dp[0]*pre ;
+			var month = self.pad ( dp[1] , 2 ) ;
+			var day = self.pad ( dp[2] , 2 ) ;
+			
+			var show = i.time ; // Fallback
+			var start , end ;
+			if ( i.precision <= 9 ) {
+				show = year ;
+				start = show + '-00-00' ;
+				end = show + '-13-32' ;
+			} else if ( i.precision == 10 ) {
+				show = year + '-' + month ;
+				start = show + '-00' ;
+				end = show + '-32' ;
+			} else if ( i.precision == 11 ) {
+				show = year + '-' + month + '-' + day ;
+				start = show ;
+				end = show ;
+			}
+			
+			if ( undefined !== start && undefined !== end && ( i.p == 'P569' || i.p == 'P570' ) ) {
+				var title = i.p == 'P569' ? 'Born' : 'Died' ;
+				title += " on that date" ;
+				show = "<a target='_blank' title='"+title+"' class='external' href='http://tools.wmflabs.org/wikidata-todo/autolist.html?q=between["+i.p.substr(1)+","+start+","+end+"]'>" + show + "</a>" ;
+			}
+			
+			ret += show ;
+
+
 		} else {
 			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
 			console.log ( i ) ;
