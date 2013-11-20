@@ -56,3 +56,14 @@ small.qnumber {
 	margin:5px;
 	display:inline-block;
 }
+
+div.map {
+	display:inline-block;
+	width:200px;
+	height:200px;
+	margin-right:10px;
+}
+
+.misc_data {
+	font-size:9pt;
+}

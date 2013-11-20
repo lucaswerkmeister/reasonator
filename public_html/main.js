@@ -1,12 +1,52 @@
 var reasonator = {
+	i18n : {
+		'en' : {
+			'name' : 'Name' ,
+			'description' : 'Description' ,
+			'instance_of' : 'Instance of' ,
+			'taxonomy' : "Taxonomy" ,
+			'taxon_props' : 'Taxon properties' ,
+			'related_media' : 'Related media' ,
+			'other_properties' : 'Other properties' ,
+			'from_related_items' : 'From related items' ,
+			'rank' : 'Rank' ,
+			'taxonomic_name' : 'Taxonomic name' ,
+			'show_items' : 'Show items' ,
+			'hide_items' : 'Hide items' ,
+			'location' : "Location" ,
+			'admin_division' : 'Administrative division'
+		} ,
+		'de' : {
+			'name' : 'Name' ,
+			'description' : 'Beschreibung' ,
+			'instance_of' : 'Instanz von' ,
+			'taxonomy' : "Taxonomie" ,
+			'taxon_props' : 'Taxon-Eigenschaften' ,
+			'related_media' : 'Verwandte Medien' ,
+			'other_properties' : 'Andere Eigenschaften' ,
+			'from_related_items' : 'Von verwandten Einträgen' ,
+			'rank' : 'Rang' ,
+			'taxonomic_name' : 'Taxonomischer Name' ,
+			'show_items' : 'Zeige Einträge' ,
+			'hide_items' : 'Verstecke Einträge' ,
+			'location' : "Ort" ,
+			'admin_division' : 'Administrative Gliederung'
+		}
+	} ,
 	collapse_item_list : 20 ,
 	P_all : {
 		entity_type : 107 ,
-		instance_of : 31 ,
 		audio : 51 ,
+		instance_of : 31 ,
 		voice_recording : 990 ,
+		commons_cat : 373 ,
+		commons_gallery : 935 ,
 		video : 10 ,
 		maic : 301 , // Main article in category
+		flag_image : 41 ,
+		wikivoyage_banner : 948 ,
+		coa : 94 ,
+		seal : 158 ,
 		image : 18
 	} ,
 	P_websites : {
@@ -46,6 +86,21 @@ var reasonator = {
 		genus : 74 ,
 		species : 89
 	} ,
+	P_location : {
+		dialing_code : 473 ,
+		country_code : 474 ,
+		postal_code : 281 ,
+		iso_3361_1_a2 : 297 ,
+		iso_3361_1_a3 : 298 ,
+		iso_3361_1_num : 299 ,
+		iso_3361_2 : 300 ,
+		nuts : 605 ,
+		gss_2011 : 836 ,
+		fips_10_4 : 901 ,
+		ioc : 984 ,
+		gnd_id : 227
+	} ,
+	P_url : {} ,
 	E : {
 		215627 : 'person'
 	} ,
@@ -53,20 +108,46 @@ var reasonator = {
 		human : 5 ,
 		male : 6581097 ,
 		female : 6581072 ,
-		person : 215627
+		person : 215627 ,
+		geographical_feature : 618123
 	} ,
 	extURLs : {} ,
+	urlid2prop : {} ,
+	taxon_list : [ 171 , 273 , 75 , 76 , 77 , 70 , 71 , 74 , 89 ] ,
+	location_props : [30,17,131,376,501] ,
+	
+	// http://208.80.153.172/api?q=claim[279:56061]
+	location_list : [ 515,6256,1763527,
+		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
+	
 	imgcnt : 0 ,
+	table_block_counter : 0 ,
+
+	
+	
+	
+	t : function ( k ) {
+		var self = this ;
+		var l = self.params.lang ;
+		if ( l === undefined ) l = 'en' ; // Default
+		if ( undefined === self.i18n[l] || self.i18n[l][k] === undefined) {
+			return self.i18n['en'][k] ; // Fallback
+//			return "<i>" + self.i18n['en'][k] + "</i><small>translate me!</small>" ;
+		} else {
+			return self.i18n[l][k] ;
+		}
+	} ,
+
 
 	init : function ( callback ) {
 		var self = this ;
 		self.q = undefined ;
 		self.wd = new WikiData ;
 		self.personal_relation_list = [] ;
+		self.do_maps = undefined ;
 		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent'] , function ( k , v ) {
 			self.personal_relation_list.push ( self.P_person[v] ) ;
 		} ) ;
-		self.taxon_list = [ 171 , 273 , 75 , 76 , 77 , 70 , 71 , 74 , 89 ] ;
 		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
 			action:'parse',
 			page:'Reasonator/stringprops',
@@ -83,7 +164,11 @@ var reasonator = {
 				var prop = $.trim(parts[1]) ;
 				var urlp = $.trim(parts[2]) ;
 				self.extURLs[id] = urlp ;
-				self.P_person[id] = prop * 1 ;
+				prop *= 1 ;
+				self.urlid2prop[id] = prop ;
+				self.P_url[prop] = id ;
+				self.P_person[id] = prop ;
+				self.P_location[id] = prop ;
 			} ) ;
 			callback() ;
 		} ) ;
@@ -109,10 +194,16 @@ var reasonator = {
 		if ( q === undefined ) return ; // TODO error "item not found"
 		if ( self.isPerson(q) ) self.loadPerson ( q ) ;
 		else if ( self.isTaxon(q) ) self.loadTaxon ( q ) ;
+		else if ( self.isLocation(q) ) self.loadLocation ( q ) ;
 		else {
-			$('#top').html ( "Unknown item type" ) ;
+			self.loadGeneric ( q ) ;
+//			$('#top').html ( "Unknown item type" ) ;
 		}
 	} ,
+
+
+
+//__________________________________________________________________________________________
 	
 	isPerson : function ( q ) {
 		var self = this ;
@@ -133,107 +224,49 @@ var reasonator = {
 		} ) ;
 		return ret ;
 	} ,
-	
-	loadTaxon : function ( the_q ) {
+
+	isLocation : function ( q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_taxon);
-		self.main_type = 'taxon' ;
+		if ( self.wd.items[q] !== undefined && self.wd.items[q].raw !== undefined && self.wd.items[q].raw.claims !== undefined && self.wd.items[q].raw.claims['P625'] !== undefined ) return true ;
+		if ( self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.geographical_feature ) ) return true ;
+		var ret = false ;
+		$.each ( self.location_list , function ( k , v ) {
+			if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , v ) ) {
+				ret = true ;
+				return false ;
+			}
+
+		} ) ;
+		return ret ;
+	} ,
+
+//__________________________________________________________________________________________
+// Load page types
+
+	loadGeneric : function ( q ) {
+		var self = this ;
+		self.P = $.extend(true, self.P_all, self.P_websites);
+		self.main_type = 'generic' ;
 		self.wd.clear() ;
-
-		self.wd.loadItems ( the_q , {
-			follow : self.taxon_list ,
-			preload : [ 105 , 405 , 141 , 183 ] ,
-			preload_all : true ,
-			finished : function ( p ) {
-				self.showTaxon ( the_q ) ;
-			}
-		} ) ;
-
+		
+		self.wd.loadItems ( [] , {
+			finished : function () {
+		
+			self.wd.loadItems ( q , {
+				follow : [] ,
+				preload : [] ,
+				preload_all_for_root : true ,
+				finished : function ( x ) {
+					self.getRelatedEntities ( q , function () {
+						self.showGeneric ( q )
+					} ) ;
+				}
+			} , 2 ) ;
+		
+		} } ) ; // Brother/sister
+		
 	} ,
-
-	showTaxon : function ( q ) {
-		var self = this ;
-		$('#top').html ( "Item " + self.getItemLink ( { type:'item',q:q } , { show_q:true,desc:true,force_external:true } ) ) ;
-		
-		
-		// RENDERING
-		var h = '' ;
-
-		// Render name
-		$('#taxon h1.main_title').html ( self.wd.items[q].getLabel() ) ;
-		self.setDocTitle ( self.wd.items[q].getLabel() ) ;
-		
-		// Render aliases
-		h = [] ;
-		$.each ( self.wd.items[q].getAliases() , function ( k , v ) {
-			h.push ( "<div class='alias'>" + v.replace(/\s/g,'&nbsp;') + "</div>" ) ;
-		} ) ;
-		h = h.join ( ' | ' ) ;
-		$('#taxon div.aliases').html ( h ) ;
-		
-		// Render manual description
-		$('#taxon div.manual_description').html ( self.wd.items[q].getDesc() ) ;
-		
-		// Render external ID links
-		self.showExternalIDs() ;
-		
-		// Render sitelinks
-		self.addSitelinks() ;
-		
-		// Render backlinks
-		self.addBacklinks() ;
-		
-		// Render other properties
-		self.addOther() ;
-
-		// Render images
-		self.addMedia() ;
-
-		
-		// Render taxon chain
-		var chain = self.wd.getItem(q).followChain({props:self.taxon_list}) ;
-		h = "<h2>Taxonomy</h2>" ;
-		h += "<table class='table table-condensed table-striped'><thead><tr><th>Rank</th><th>Name</th><th>Taxonomic name</th></tr></thead><tbody>" ;
-		while ( chain.length > 0 ) {
-			var q = chain.pop() ;
-			var rank = self.wd.items[q].getClaimsForProperty('P105') ;
-			var rankname = '<i>(unranked)</i>' ;
-			if ( rank.length > 0 ) {
-				rank = self.wd.items[q].getClaimTargetItemID(rank[0]) ;
-				if ( undefined !== self.wd.items[rank] ) rankname = self.getItemLink ( { type:'item',q:rank } , {ucfirst:true,desc:true,q_desc:true} ) ;
-			}
-			var taxonames = self.wd.items[q].getClaimsForProperty('P225') ;
-			var taxoname = '&mdash;' ;
-			if ( taxonames.length > 0 ) taxoname = self.wd.items[q].getClaimTargetString(taxonames[0]) || taxoname ;
-			h += "<tr>" ;
-			h += "<th align='left' nowrap>" + rankname + "</th>" ;
-			h += "<td nowrap>" + self.getItemLink ( { type:'item',q:q } , {ucfirst:true,desc:true,q_desc:true,internal:true} )  + "</td>" ; // self.wd.items[q].getLink({target:'_blank',ucfirst:true,desc:true})
-			h += "<td style='width:100%'>" + ucFirst(taxoname) + "</td>" ;
-			h += "</tr>" ;
-		}
-		h += "</tbody></table>" ;
-		
-		var sd = {} ;
-		$.each ( [105,405,141,183] , function ( dummy , p ) {
-			p = 'P' + p ;
-			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
-			if ( items.length === 0 ) return ;
-			if ( sd[p] === undefined ) sd[p] = {} ;
-			$.each ( items , function ( k , v ) {
-//				sd[p][v.key] = {type:'item',mode:1} ;
-				sd[p][v.key] = $.extend(true,{type:'item',mode:1},v) ;
-			} ) ;
-		} ) ;
-		
-		self.renderPropertyTable ( sd , { id:'#taxon div.props',striped:true,title:'Taxon properties',ucfirst:true } ) ;
-
-		$.each ( self.mm_load , function ( k , v ) { self.multimediaLazyLoad ( v ) } ) ;
-		self.mm_load = [] ;
-		
-		$('#taxon .main').html ( h ) ;
-		$('#taxon').show() ;
-	} ,
-
+	
 	loadPerson : function ( q ) {
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_person,self.P_websites);
@@ -258,11 +291,180 @@ var reasonator = {
 		
 	} ,
 	
+	loadTaxon : function ( the_q ) {
+		var self = this ;
+		self.P = $.extend(true, self.P_all, self.P_taxon);
+		self.main_type = 'taxon' ;
+		self.wd.clear() ;
+
+		self.wd.loadItems ( the_q , {
+			follow : self.taxon_list ,
+			preload : [ 105 , 405 , 141 , 183 ] ,
+			preload_all : true ,
+			finished : function ( p ) {
+				self.showTaxon ( the_q ) ;
+			}
+		} ) ;
+
+	} ,
+	
+	loadLocation : function ( the_q ) {
+		var self = this ;
+		self.P = $.extend(true, self.P_all, self.P_location);
+		self.main_type = 'location' ;
+		self.wd.clear() ;
+
+		self.wd.loadItems ( the_q , {
+			follow : self.location_props ,
+			preload : [ 132 ] , // 105 , 405 , 141 , 183
+			preload_all : true ,
+			preload_all_for_root : true ,
+			finished : function ( p ) {
+				self.showLocation ( the_q ) ;
+			}
+		} ) ;
+
+	} ,
+
+
+
+
+//__________________________________________________________________________________________
+// Show types
+
+
+	showGeneric : function ( q ) {
+		var self = this ;
+		self.setTopLink () ;
+		self.renderName () ; // Render name
+		self.showAliases ( q ) ; // Render aliases
+		self.showDescription () ; // Render manual description
+		self.showExternalIDs() ; // Render external ID links
+		self.showWebsites() ; // Render websites
+		self.addSitelinks() ; // Render sitelinks
+		self.addBacklinks() ; // Render backlinks
+//		self.addMiscData(self.P_location) ; // Render misc data
+		self.addOther() ; // Render other properties
+		self.addMedia() ; // Render images
+		self.finishDisplay () ; // Finish
+	} ,
+
+
 	showPerson : function ( q ) {
 		var self = this ;
-		$('#top').html ( "Item " + self.getItemLink ( { type:'item',q:q } , { show_q:true,desc:true,force_external:true } ) ) ;
+		self.showPersonMain ( q ) ;
+		self.setTopLink () ;
+		self.renderName () ; // Render name
+		self.showAliases ( q ) ; // Render aliases
+		self.showDescription () ; // Render manual description
+		self.showAutoDescPerson () ; // Render automatic description
+		self.showExternalIDs() ; // Render external ID links
+		self.showWebsites() ; // Render websites
+		self.addSitelinks() ; // Render sitelinks
+		self.addBacklinks() ; // Render backlinks
+//		self.addMiscData(self.P_location) ; // Render misc data
+		self.addOther() ; // Render other properties
+		self.addMedia() ; // Render images
+		self.addSignature() ; // Render signature
+		self.finishDisplay () ; // Finish
+	} ,
+	
+	showTaxon : function ( q ) {
+		var self = this ;
 
+		// RENDERING
+		var h = '' ;
+		self.setTopLink () ;
+		self.renderName () ; // Render name
+		self.showAliases ( q ) ; // Render aliases
+		self.showDescription () ; // Render manual description
+//		self.showMaps() ; // Render maps
+		self.showExternalIDs() ; // Render external ID links
+//		self.showWebsites() ; // Render websites
+		self.addSitelinks() ; // Render sitelinks
+		self.addBacklinks() ; // Render backlinks
+//		self.addMiscData(self.P_location) ; // Render misc data
+		self.addOther() ; // Render other properties
+		self.addMedia() ; // Render images
+
+		// Render taxon chain
+		var chain = self.wd.getItem(q).followChain({props:self.taxon_list}) ;
+		h = "<h2>" + self.t('taxonomy') + "</h2>" ;
+		h += self.renderChain ( chain , [
+			{ title:self.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
+			{ title:self.t('name') , name:true } ,
+			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+		] ) ;
 		
+		// Render taxon properties
+		var sd = {} ;
+		$.each ( [105,405,141,183] , function ( dummy , p ) {
+			p = 'P' + p ;
+			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
+			if ( items.length === 0 ) return ;
+			if ( sd[p] === undefined ) sd[p] = {} ;
+			$.each ( items , function ( k , v ) {
+//				sd[p][v.key] = {type:'item',mode:1} ;
+				sd[p][v.key] = $.extend(true,{type:'item',mode:1},v) ;
+			} ) ;
+		} ) ;
+		self.renderPropertyTable ( sd , { id:'#taxon div.props',striped:true,title:self.t('taxon_props'),ucfirst:true } ) ;
+
+		self.finishDisplay ( h ) ; // Finish
+	} ,
+
+
+	showLocation : function ( q ) {
+		var self = this ;
+		delete self.P.instance_of ; // So it will show, if set
+		
+		// RENDERING
+		var h = '' ;
+		self.setTopLink () ;
+		self.renderName () ; // Render name
+		self.showAliases ( q ) ; // Render aliases
+		self.showDescription () ; // Render manual description
+		self.showMaps() ; // Render maps
+		self.showExternalIDs() ; // Render external ID links
+		self.showWebsites() ; // Render websites
+		self.addSitelinks() ; // Render sitelinks
+		self.addBacklinks() ; // Render backlinks
+		self.addMiscData(self.P_location) ; // Render misc data
+		
+		var chain = self.wd.getItem(q).followChain({props:self.location_props}) ;
+		h = "<h2>" + self.t('location') + "</h2>" ;
+		h += self.renderChain ( chain , [
+			{ title:self.t('name') , name:true } ,
+			{ title:self.t('description') , desc:true } ,
+			{ title:self.t('admin_division') , prop:132 } ,
+		] ) ;
+
+		self.P['type_of_administrative_division'] = 132 ;
+		$.each ( self.location_props , function ( k , v ) {
+			self.P['P'+v] = v ; // Prevent them showing in "other" list
+		} ) ;
+
+		self.addOther() ; // Render other properties
+		self.addMedia() ; // Render images
+		self.finishDisplay ( h ) ; // Finish
+	} ,
+
+
+//__________________________________________________________________________________________
+// PERSON details
+
+	addSignature : function () {
+		var self = this ;
+		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
+		if ( im.length > 0 ) {
+			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:250 , th:200 } ;
+			self.mm_load.push ( io ) ;
+		}
+	} ,
+
+
+	showPersonMain : function ( q ) {
+		var self = this ;
 		var rel = {} ;
 		rel[q] = {} ;
 		$.each ( self.wd.items , function ( dummy , item ) {
@@ -361,27 +563,18 @@ var reasonator = {
 			} ) ;
 		} ) ;
 
-		
-		// RENDERING
-		var h = '' ;
-
-		// Render name
-		$('#person h1.main_title').html ( self.wd.items[q].getLabel() ) ;
-		self.setDocTitle ( self.wd.items[q].getLabel() ) ;
-		
-		// Render aliases
-		h = [] ;
-		$.each ( self.wd.items[q].getAliases() , function ( k , v ) {
-			h.push ( "<div class='alias'>" + v.replace(/\s/g,'&nbsp;') + "</div>" ) ;
+		// Render relatives
+		$('#pr_full_tree').html ( "<a href='//toolserver.org/~magnus/ts2/geneawiki2/?q="+escattr(q)+"' target='_blank'>See the full family tree</a>" ) ;
+		$.each ( relations , function ( section , sd ) {
+			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
 		} ) ;
-		h = h.join ( ' | ' ) ;
-		$('#person div.aliases').html ( h ) ;
-		
-		// Render manual description
-		$('#person div.manual_description').html ( self.wd.items[q].getDesc() ) ;
-		
-		// Render automatic description
-		h = [] ;
+	} ,
+
+
+	showAutoDescPerson : function () {
+		var self = this ;
+		var q = self.q ;
+		var h = [] ;
 		h.push ( self.getItemLinks ( q , { p:self.P.sex,q_desc:true,desc:true } ) . join ( ' ' ) ) ;
 		h.push ( self.getItemLinks ( q , { p:self.P.occupation,q_desc:true,desc:true } ) . join ( '/' ) ) ;
 		var country = self.getItemLinks ( q , { p:self.P.nationality,q_desc:true,desc:true } ) . join ( ' ' ) ;
@@ -389,44 +582,199 @@ var reasonator = {
 		h.push ( country ) ;
 		h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
 		$('#person div.autodesc').html ( h ) ;
+	} ,
 
-		// Render relatives
-		$('#pr_full_tree').html ( "<a href='//toolserver.org/~magnus/ts2/geneawiki2/?q="+escattr(q)+"' target='_blank'>See the full family tree</a>" ) ;
-		$.each ( relations , function ( section , sd ) {
-			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
+
+
+//__________________________________________________________________________________________
+// Show parts
+
+
+	renderChain : function ( chain , columns ) {
+		var self = this ;
+		var h = '' ;
+		h += "<table class='table table-condensed table-striped'><thead><tr>" ;
+		$.each ( columns , function ( k , v ) {
+			h += "<th nowrap>" + v.title + "</th>" ;
 		} ) ;
-		
-		// Render external ID links
-		self.showExternalIDs() ;
-		
-		// Render websites
-		self.showWebsites() ;
-
-		// Render sitelinks
-		self.addSitelinks() ;
-		
-		// Render backlinks
-		self.addBacklinks() ;
-		
-		// Render other properties
-		self.addOther() ;
-		
-		// Render images
-		self.addMedia() ;
-		
-		// Render signature
-		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
-		if ( im.length > 0 ) {
-			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:250 , th:200 } ;
-			self.mm_load.push ( io ) ;
+		h += "</tr></thead><tbody>" ;
+		while ( chain.length > 0 ) {
+			var q = chain.pop() ;
+			h += "<tr>" ;
+			$.each ( columns , function ( k , v ) {
+				if ( v.name ) {
+					h += "<td nowrap>" + self.getItemLink ( { type:'item',q:q } , {ucfirst:true,desc:true,q_desc:true,internal:true} )  + "</td>" ;
+				} else if ( v.desc ) {
+					h += "<td>" + self.wd.items[q].getDesc() + "</td>" ;
+				} else if ( undefined !== v.prop ) {
+					var h2 = v.default || '' ;
+					var c = self.wd.items[q].getClaimsForProperty('P'+v.prop) ;
+					if ( c.length > 0 ) {
+						if ( v.type == 'string' ) {
+							h2 = [] ;
+							$.each ( c , function ( k2 , v2 ) {
+								var s = self.wd.items[q].getClaimTargetString(v2) ;
+								if ( v.ucfirst ) s = ucFirst ( s ) ;
+								if ( undefined !== s && s != '' ) h2.push ( s ) ;
+							} ) ;
+							h2 = h2.join ( "<br/>" ) ;
+							if ( h2 == '' ) h2 = v.default || '' ;
+//							h2 = self.wd.items[q].getClaimTargetString(c[0]) || h2 ;
+						} else {
+							h2 = [] ;
+							$.each ( c , function ( k2 , v2 ) {
+								var s = self.wd.items[q].getClaimTargetItemID(v2) ;
+								if ( undefined !== self.wd.items[s] ) h2.push ( self.getItemLink ( { type:'item',q:s } , {ucfirst:true,desc:true,q_desc:true} ) ) ;
+								else h2.push ( s ) ;
+							} ) ;
+							h2 = h2.join ( "<br/>" ) ;
+							if ( h2 == '' ) h2 = v.default || '' ;
+//							c = self.wd.items[q].getClaimTargetItemID(c[0]) ;
+//							if ( undefined !== self.wd.items[c] ) h2 = self.getItemLink ( { type:'item',q:c } , {ucfirst:true,desc:true,q_desc:true} ) ;
+						}
+					}
+					h += "<td>" + h2 + "</td>" ;
+				} else {
+					h += "<td>ERROR</td>" ;
+				}
+			} ) ;
+			h += "</tr>" ;
 		}
-		
-		
+		h += "</tbody></table>" ;
+		return h ;
+	} ,
+
+
+	showAliases : function ( q ) {
+		var self = this ;
+		var h = [] ;
+		$.each ( self.wd.items[q].getAliases() , function ( k , v ) {
+			h.push ( "<div class='alias'>" + v.replace(/\s/g,'&nbsp;') + "</div>" ) ;
+		} ) ;
+		h = h.join ( ' | ' ) ;
+		$('#'+self.main_type+' div.aliases').html ( h ) ;
+	} ,
+
+	setTopLink : function () {
+		var self = this ;
+		$('#top').html ( "Item " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ) ;
+	} ,
+	
+	renderName : function () {
+		var self = this ;
+		$('#'+self.main_type+' h1.main_title').html ( self.wd.items[self.q].getLabel() ) ;
+		self.setDocTitle ( self.wd.items[self.q].getLabel() ) ;
+	} ,
+	
+	
+	showDescription : function () {
+		var self = this ;
+		$('#'+self.main_type+' div.manual_description').html ( self.wd.items[self.q].getDesc() ) ;
+	} ,
+
+	
+	finishDisplay : function ( h ) {
+		var self = this ;
 		$.each ( self.mm_load , function ( k , v ) { self.multimediaLazyLoad ( v ) } ) ;
 		self.mm_load = [] ;
-		
-		$('#person').show() ;
+
+		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
+		$('#'+self.main_type).show() ;
+
+		if ( undefined !== self.do_maps ) {
+			setTimeout ( function () {
+				$.each ( self.do_maps , function ( k , v ) {
+					self.setMap ( v[0] , v[1] , v[2] ) ;
+				} ) ;
+			} , 100 ) ;
+		}
 	} ,
+	
+	addMiscData : function ( props ) {
+		var self = this ;
+		var i = self.wd.items[self.q] ;
+		var q = self.q ;
+		
+		var sd = {} ;
+		$.each ( props , function ( dummy , p ) {
+			if ( self.P_url[p] !== undefined ) return ;
+			p = 'P' + p ;
+			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
+			if ( items.length === 0 ) return ;
+			if ( sd[p] === undefined ) sd[p] = {} ;
+			$.each ( items , function ( k , v ) {
+				sd[p][v.key] = $.extend(true,{type:'item',mode:1},v) ;
+			} ) ;
+		} ) ;
+		
+		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .misc_data' , striped:true } ) ;
+	} ,
+	
+	showMaps : function () {
+		var self = this ;
+		var i = self.wd.items[self.q] ;
+		var claims = i.getClaimsForProperty ( 242 ) ; // Locator map
+		var hide_maps = true ;
+		
+		if ( claims.length > 0 ) {
+			hide_maps = false ;
+			var s = i.getClaimTargetString ( claims[0] ) ;
+			delete self.wd.items[self.q].raw.claims['P242'] ; // Prevent showing up later
+
+			$('#'+self.main_type+' div.locator_map').html('<img/>') ;
+			self.imgcnt++ ;
+			var io = { file:s , type:'image' , id:'#imgid'+self.imgcnt , title:self.wd.items['P242'].getLabel() } ;
+			io.tw = 200 ;
+			io.th = 200 ;
+			io.id = '#'+self.main_type+' div.locator_map img' ;
+			io.append = true ;
+			self.mm_load.push ( io ) ;
+		}
+
+
+		claims = i.getClaimsForProperty ( 625 ) ; // Coordinate location
+		
+		if ( claims.length > 0 ) {
+			hide_maps = false ;
+			var v = claims[0].mainsnak.datavalue.value ;
+			self.maps = [] ;
+			self.do_maps = [
+				[ v , 'location_map1' , 3 ] ,
+				[ v , 'location_map2' , 5 ]
+			] ;
+		}
+		
+		if ( hide_maps ) $('.entity .maps').hide() ;
+		else $('.entity .maps').show() ;
+
+	} ,
+
+	setMap : function ( v , id , zoom ) {
+
+		var self = this ;
+		var map = new OpenLayers.Map(id);
+		map.addLayer(new OpenLayers.Layer.OSM());
+
+		var markers = new OpenLayers.Layer.Markers( "Markers" );
+		map.addLayer(markers);
+
+		var lonLat = new OpenLayers.LonLat( v.longitude , v.latitude )
+			  .transform(
+				new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+				map.getProjectionObject() // to Spherical Mercator Projection
+			  );
+			  
+		var marker = new OpenLayers.Marker(lonLat) ;
+		markers.addMarker(marker);
+
+		var lonLat = new OpenLayers.LonLat( v.longitude , v.latitude )
+			  .transform(
+				new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+				map.getProjectionObject() // to Spherical Mercator Projection
+			  );
+		map.setCenter (lonLat, zoom);
+	} ,
+	
 
 	setDocTitle : function ( s ) {
 		document.title = s + ' - Reasonator' ;
@@ -435,7 +783,8 @@ var reasonator = {
 	addMedia : function () {
 		var self = this ;
 		var has_header = false ;
-		$.each ( ['image','video','audio','voice_recording'] , function ( dummy1 , medium ) {
+
+		$.each ( ['image','video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image'] , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
@@ -450,9 +799,11 @@ var reasonator = {
 						io.th = 400 ;
 						io.id = '#'+self.main_type+' div.main_'+medium2 ;
 						io.append = true ;
+						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' ) io.type = 'image' ;
+						if ( medium == 'wikivoyage_banner' ) io.tw = 640 ;
 					} else {
 						if ( !has_header ) {
-							$('#'+self.main_type+' div.all_images').append ( "<h2>Related media</h2>" ) ;
+							$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
 							has_header = true ;
 						}
 						var h3 = "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ;
@@ -465,6 +816,25 @@ var reasonator = {
 				} ) ;
 			} ) ;
 		} ) ;
+
+		$.each ( [ 373 , 935 ] , function ( dummy , prop ) {
+			if ( self.wd.items[self.q].hasClaims ( prop ) ) { // Commons cat
+				var ct = self.wd.items['P'+prop].getLabel()  ;
+				if ( !has_header ) {
+					$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
+					has_header = true ;
+				}
+				var c = self.wd.items[self.q].getClaimsForProperty ( prop ) ;
+				$.each ( c , function ( k , v ) {
+					var s = self.wd.items[self.q].getClaimTargetString ( v ) ;
+					var h = "<div>" + ct + " : <a target='_blank' title='"+ct+"' class='external' href='//commons.wikimedia.org/wiki/" ;
+					if ( prop == 373 ) h += 'Category:' ;
+					h += escattr(s)+"'>" + s + "</a></div>" ;
+					$('#related_media_meta').append ( h ) ;
+				} ) ;
+			}
+		} ) ;
+		
 	} ,
 	
 	/*
@@ -510,15 +880,15 @@ var reasonator = {
 			if ( collapse ) {
 				h += "<tr><td style='width:100%'>" ;
 				h += ql.length + " items. " ;
-				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>Show items</a>" ;
-				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>Hide items</a>" ;
+				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('show_items')+"</a>" ;
+				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('hide_items')+"</a>" ;
 				h += "</td></tr>" ;
 			}
 		} ) ;
 		if ( h != '' ) {
 			var h2 = "<table" ;
-			if ( o.striped ) h2 += " class='table table-striped'" ;
-			else h2 += " class='table-condensed'" ;
+			if ( o.striped ) h2 += " class='table table-striped table-condensed'" ;
+			else h2 += " class='table table-condensed'" ;
 			h2 += ">" + h + "</table>" ;
 			h = h2 ;
 		}
@@ -550,9 +920,10 @@ var reasonator = {
 				sd[p][ti.key] = $.extend(true,{p:p,mode:1},ti) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .other' , title:'Other properties' , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
 
 	} ,
+	
 
 	addBacklinks : function () {
 		var self = this ;
@@ -575,7 +946,7 @@ var reasonator = {
 				} ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .backlinks' , title:'From related items' , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true } ) ;
 	} ,
 
 	showExternalIDs : function () {
@@ -583,10 +954,12 @@ var reasonator = {
 		var h = [] ;
 		var i = self.wd.items[self.q] ;
 		$.each ( self.extURLs , function ( k , v ) {
-			var p = self.P[k] ;
+			var p = self.urlid2prop[k] ;
+//			var p = self.P[k] ;
 			if ( p === undefined ) return ;
 
 			var claims = i.getClaimsForProperty ( p ) ;
+			if ( claims.length > 0 ) self.P[k] = p ;
 			$.each ( claims , function ( dummy , c ) {
 				var id_type = k ;
 				var s ;
@@ -613,7 +986,7 @@ var reasonator = {
 				h.push ( h2 ) ;
 			} ) ;
 		} ) ;
-		
+
 		if ( h.length == 0 ) return ;
 		h = "<table border=0 cellpadding=1 cellspacing=0>" + h.join('') + "</table>" ;
 		$('.entity_'+self.main_type+' .external_ids').html ( h ) ;
@@ -688,7 +1061,8 @@ var reasonator = {
 		
 		var internal = o.internal ;
 		if ( self.wd.items[q].isItem() ) {
-			if ( self.isPerson(q) || self.isTaxon(q) ) internal = true ;
+//			if ( self.isPerson(q) || self.isTaxon(q) || self.isLocation(q) ) 
+			internal = true ;
 		}
 		if ( o.force_external ) internal = false ;
 		
@@ -761,14 +1135,6 @@ var reasonator = {
 		} else if ( i.type == 'time' ) {
 			var pre = i.time.substr(0,1) == '+' ? 1 : -1 ;
 			var dp = i.time.substr(1).split(/[-T:Z]/) ;
-			
-/*			console.log ( dp ) ;
-			var d = new Date ( dp[0]*pre , dp[1]==0?0:dp[1] , dp[2] , dp[3] , dp[4] , dp[5] ) ;
-			if ( i.precision <= 9 ) ret += d.getFullYear() ;
-			else if ( i.precision == 10 ) ret += d.getFullYear() + '-' + self.pad(d.getMonth(),2) ;
-			else if ( i.precision == 11 ) ret += d.getFullYear() + '-' + self.pad(d.getMonth(),2) + '-' + self.pad(d.getDay(),2) ;
-			else ret += d.toLocaleString();
-*/
 
 			var year = dp[0]*pre ;
 			var month = self.pad ( dp[1] , 2 ) ;
@@ -894,9 +1260,12 @@ var reasonator = {
 
 $(document).ready ( function () {
 	$('#main_content').hide() ;
-	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-		reasonator.init ( function () {
-			reasonator.initializeFromParameters() ;
-		} ) ;
-	} } ) ;
+	$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
+		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
+			document.title = 'Reasonator' ;
+			reasonator.init ( function () {
+				reasonator.initializeFromParameters() ;
+			} ) ;
+		} } ) ;
+	} ) ;
 } ) ;

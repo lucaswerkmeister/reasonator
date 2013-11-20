@@ -1,3 +1,5 @@
+<!--<script src="//www.openlayers.org/api/OpenLayers.js"></script>-->
+<link rel="stylesheet" type="text/css" href="resources/js/map/theme/default/style.css" />
 <link rel="stylesheet" type="text/css" href="./main.css" />
 
 <div id='top'>
@@ -5,9 +7,31 @@
 
 <div id='main'>
 
+<div id='generic' class='entity entity_generic'>
+	<div class='span3' style='float:right;margin-left:10px;margin-bottom:10px'>
+		<div class='main_image'></div>
+		<div class='main_coa'></div>
+		<div class='main_seal'></div>
+		<div class='main_video'></div>
+		<div class='main_audio'></div>
+		<div class='websites'></div>
+		<div class='external_ids'></div>
+		<div class='sitelinks' style='max-height:400px;overflow:auto'></div>
+	</div>
+	<h1 class='heading1 main_title'></h1>
+	<div class='aliases span8'></div>
+	<div class='manual_description span8'></div>
+	<div class='other span8'></div>
+	<div class='backlinks span8'></div>
+	<div class='all_images span8'></div>
+</div>
+
+
 <div id='person' class='entity entity_person'>
 	<div class='span3' style='float:right;margin-left:10px;margin-bottom:10px'>
 		<div class='main_image'></div>
+		<div class='main_coa'></div>
+		<div class='main_seal'></div>
 		<div class='main_video'></div>
 		<div class='main_audio'></div>
 		<div class='websites'></div>
@@ -41,6 +65,8 @@
 		<div class='main_image'></div>
 		<div class='main_video'></div>
 		<div class='main_audio'></div>
+		<div class='websites'></div>
+		<div class='external_ids'></div>
 		<div class='sitelinks' style='max-height:400px;overflow:auto'></div>
 	</div>
 	<h1 class='heading1 main_title'></h1>
@@ -52,5 +78,38 @@
 	<div class='backlinks span8'></div>
 	<div class='all_images span8'></div>
 </div>
+
+
+<div id='location' class='entity entity_location'>
+	<div class='span3' style='float:right;margin-left:10px;margin-bottom:10px'>
+		<div class='main_flag_image'></div>
+		<div class='main_coa'></div>
+		<div class='main_image'></div>
+		<div class='main_seal'></div>
+		<div class='main_video'></div>
+		<div class='main_audio'></div>
+		<div class='websites'></div>
+		<div class='external_ids'></div>
+		<div class='misc_data'></div>
+		<div class='sitelinks' style='max-height:400px;overflow:auto'></div>
+	</div>
+	<div class='main_wikivoyage_banner'></div>
+	<h1 class='heading1 main_title'></h1>
+	<div class='aliases span8'></div>
+	<div class='manual_description span8'></div>
+	<div class='maps span8'>
+		<table><tbody><tr>
+		<td><div id='location_map1' class='map map1'></div></td>
+		<td><div id='location_map2' class='map map2'></div></td>
+		<td><div class='map locator_map'></div></td>
+		</tr></tbody></table>
+	</div>
+	<div class='main span8'></div>
+	<div class='props span8'></div>
+	<div class='other span8'></div>
+	<div class='backlinks span8'></div>
+	<div class='all_images span8'></div>
+</div>
+
 
 </div>
