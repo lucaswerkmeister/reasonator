@@ -335,6 +335,7 @@ var reasonator = {
 
 	showGeneric : function ( q ) {
 		var self = this ;
+		delete self.P.instance_of ; // So it will show, if set
 		self.setTopLink () ;
 		self.renderName () ; // Render name
 		self.showAliases ( q ) ; // Render aliases
@@ -1259,6 +1260,8 @@ var reasonator = {
 } ;
 
 $(document).ready ( function () {
+	var img = '//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/32px-Reasonator_logo_proposal.png' ;
+	$('#toolname').before ( "<img border=0 src='"+img+"' />" ) ;
 	$('#main_content').hide() ;
 	$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
 		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
