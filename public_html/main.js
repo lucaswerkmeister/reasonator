@@ -1243,17 +1243,85 @@ var reasonator = {
 			
 		} ) ;
 	} ,
+	
+	
+	find : function ( s ) {
+		var self = this ;
+		var offset = self.params.offset || 0 ;
+		$('#find').val ( s ) ;
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+			action : 'query' ,
+			list : 'search' ,
+			sroffset : offset ,
+			srsearch : s ,
+			srnamespace : 0 ,
+			srlimit : 50 ,
+			format : 'json'
+		} , function ( data ) {
+			var qs = [] ;
+			var cnt = offset ;
+			var h = "<div><table class='table table-condensed table-striped'>" ;
+			h += "<tbody>" ;
+			$.each ( data.query.search||[] , function ( k , v ) {
+				cnt++ ;
+				var q = v.title ;
+				qs.push ( q ) ;
+				h += "<tr><th style='text-align:right'>" + cnt + "</th>" ;
+				h += "<td><a id='sr_q"+q+"' href='?q="+q+"'>" + q + "</a></td>" ;
+				h += "<td><div id='sr_ad"+q+"'></div><div id='sr_d"+q+"'></div></td>" ;
+				h += "</tr>" ;
+			} ) ;
+			h += "</tbody></table></div>" ;
+			
+			if ( offset != 0 || data.query.searchinfo.totalhits > cnt ) {
+				var x = [] ;
+				var l = self.params.lang || 'en' ;
+				for ( var i = 0 ; i < data.query.searchinfo.totalhits ; i += 50 ) {
+					var t = (i+50>data.query.searchinfo.totalhits) ? data.query.searchinfo.totalhits : i+50 ;
+					t = (i+1) + "&ndash;" + t ;
+					if ( i != offset ) t = "<a href='?lang="+l+"&offset="+i+"&find="+escape(s)+"'>" + t + "</a>" ;
+					else t = "<b>" + t + "</b>" ;
+					x.push ( t ) ;
+				}
+				h += "<div>" + x.join(' | ') + "</div>" ;
+			}
+			
+			$('#main').html ( h ) ;
+			$('#main_content').show() ;
+			
+			wd_auto_desc_wd.init() ;
+			
+			self.wd.loadItems ( qs , {
+				finished : function ( x ) {
+					$.each ( qs , function ( dummy , q ) {
+						var i = self.wd.getItem ( q ) ;
+						if ( undefined === i ) return ;
+						$('#sr_q'+q).text ( i.getLabel() ) ;
+						$('#sr_d'+q).text ( i.getDesc(self.wd.main_languages[0]) ) ;
+						//if ( i.getDesc() == '' ) 
+						wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) } ) ;
+					} ) ;
+				}
+			} , 0 ) ;
+		} ) ;
+	} ,
 
 	
 	initializeFromParameters : function () {
 		var self = this ;
 		self.params = getUrlVars() ;
 		if ( undefined !== self.params.lang ) {
+			$('input[name="lang"]').val ( self.params.lang ) ;
 			var l = self.params.lang.split(',').reverse() ;
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		if ( undefined !== self.params.q ) self.loadQ ( self.params.q ) ;
-		else $('#main_content').show() ;
+		else if ( undefined !== self.params.find ) {
+			$.getScript ( '/wikidata-todo/autodesc.js' , function () {
+				wd_auto_desc.lang = self.wd.main_languages[0] ;
+				self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
+			} ) ;
+		} else $('#main_content').show() ;
 	} ,
 
 	fin : false
@@ -1265,6 +1333,7 @@ $(document).ready ( function () {
 	$('#main_content').hide() ;
 	$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
 		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
+			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="Find [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-info">Find</button></form></li>' ) ;
 			document.title = 'Reasonator' ;
 			reasonator.init ( function () {
 				reasonator.initializeFromParameters() ;
