@@ -120,6 +120,9 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	use_autodesc : true ,
+	autodesc_items : [] ,
+	
 	imgcnt : 0 ,
 	table_block_counter : 0 ,
 
@@ -314,14 +317,16 @@ var reasonator = {
 		self.main_type = 'location' ;
 		self.wd.clear() ;
 
-		self.wd.loadItems ( the_q , {
-			follow : self.location_props ,
-			preload : [ 132 ] , // 105 , 405 , 141 , 183
-			preload_all : true ,
-			preload_all_for_root : true ,
-			finished : function ( p ) {
-				self.showLocation ( the_q ) ;
-			}
+		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
+			self.wd.loadItems ( the_q , {
+				follow : self.location_props ,
+				preload : [ 132 ] , // 105 , 405 , 141 , 183
+				preload_all : true ,
+				preload_all_for_root : true ,
+				finished : function ( p ) {
+					self.showLocation ( the_q ) ;
+				}
+			} ) ;
 		} ) ;
 
 	} ,
@@ -348,6 +353,7 @@ var reasonator = {
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
 		self.finishDisplay () ; // Finish
+		$('div.other h2').remove() ;
 	} ,
 
 
@@ -688,6 +694,12 @@ var reasonator = {
 					self.setMap ( v[0] , v[1] , v[2] ) ;
 				} ) ;
 			} , 100 ) ;
+		}
+		
+		if ( self.use_autodesc ) {
+			$.each ( self.autodesc_items , function ( dummy , q ) {
+				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
+			} ) ;
 		}
 	} ,
 	
@@ -1074,7 +1086,7 @@ var reasonator = {
 			else if ( item.gender !== undefined ) h += '?&nbsp;' ;
 		}
 		h += "<a" ;
-		if ( internal ) h += " href='?q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
+		if ( internal ) h += " href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
 		else h += " class='wikidata' target='_blank' href='" + url + "'" ;
 		var title = [] ;
 		if ( o.desc ) { title.unshift ( item.getDesc() ) ; if ( title[0] == '' ) title.shift() }
@@ -1087,7 +1099,13 @@ var reasonator = {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
 		}
 		
-		if ( o.add_desc ) h += " <small>" + item.getDesc() + "</small>" ;
+		if ( o.add_desc ) {
+			var d = item.getDesc()  ;
+			h += " <small class='autodesc_"+q+"'>" + d+ "</small>" ;
+			if ( d == '' && self.use_autodesc ) {
+				self.autodesc_items.push ( q ) ;
+			}
+		}
 		if ( o.show_q ) h += " <small class='qnumber'>(" + q + ")</small>" ;
 
 		var had_video = false ;
@@ -1267,7 +1285,9 @@ var reasonator = {
 				var q = v.title ;
 				qs.push ( q ) ;
 				h += "<tr><th style='text-align:right'>" + cnt + "</th>" ;
-				h += "<td><a id='sr_q"+q+"' href='?q="+q+"'>" + q + "</a></td>" ;
+				h += "<td><a id='sr_q"+q+"' href='?lang="+self.wd.main_languages[0]+"&q="+q+"'>" + q + "</a>" ;
+				h += " <span style='font-size:0.6em'><a href='//wikidata.org/wiki/" + q + "' class='wikidata' target='_blank'>WD</a></span>" ;
+				h += "</td>" ;
 				h += "<td><div id='sr_ad"+q+"'></div><div id='sr_d"+q+"'></div></td>" ;
 				h += "</tr>" ;
 			} ) ;
@@ -1289,8 +1309,6 @@ var reasonator = {
 			$('#main').html ( h ) ;
 			$('#main_content').show() ;
 			
-			wd_auto_desc_wd.init() ;
-			
 			self.wd.loadItems ( qs , {
 				finished : function ( x ) {
 					$.each ( qs , function ( dummy , q ) {
@@ -1309,19 +1327,20 @@ var reasonator = {
 	
 	initializeFromParameters : function () {
 		var self = this ;
-		self.params = getUrlVars() ;
-		if ( undefined !== self.params.lang ) {
-			$('input[name="lang"]').val ( self.params.lang ) ;
-			var l = self.params.lang.split(',').reverse() ;
-			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
-		}
-		if ( undefined !== self.params.q ) self.loadQ ( self.params.q ) ;
-		else if ( undefined !== self.params.find ) {
-			$.getScript ( '/wikidata-todo/autodesc.js' , function () {
-				wd_auto_desc.lang = self.wd.main_languages[0] ;
+		$.getScript ( '/wikidata-todo/autodesc.js' , function () {
+			self.params = getUrlVars() ;
+			if ( undefined !== self.params.lang ) {
+				$('input[name="lang"]').val ( self.params.lang ) ;
+				var l = self.params.lang.split(',').reverse() ;
+				$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
+			}
+			wd_auto_desc_wd.init() ;
+			wd_auto_desc.lang = self.wd.main_languages[0] ;
+			if ( undefined !== self.params.q ) self.loadQ ( self.params.q ) ;
+			else if ( undefined !== self.params.find ) {
 				self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
-			} ) ;
-		} else $('#main_content').show() ;
+			} else $('#main_content').show() ;
+		} ) ;
 	} ,
 
 	fin : false
@@ -1331,13 +1350,11 @@ $(document).ready ( function () {
 	var img = '//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/32px-Reasonator_logo_proposal.png' ;
 	$('#toolname').before ( "<img border=0 src='"+img+"' />" ) ;
 	$('#main_content').hide() ;
-	$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
-		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="Find [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-info">Find</button></form></li>' ) ;
-			document.title = 'Reasonator' ;
-			reasonator.init ( function () {
-				reasonator.initializeFromParameters() ;
-			} ) ;
-		} } ) ;
-	} ) ;
+	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
+		$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="Find [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-info">Find</button></form></li>' ) ;
+		document.title = 'Reasonator' ;
+		reasonator.init ( function () {
+			reasonator.initializeFromParameters() ;
+		} ) ;
+	} } ) ;
 } ) ;
