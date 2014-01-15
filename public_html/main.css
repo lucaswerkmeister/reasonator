@@ -1,17 +1,14 @@
-.alias {
+/* Links */
+/*a { color:#0A4273 } ;*/
+a.wikidata { color:#0A4273; } /* #2DC800 */
+a.wikipedia { color:#3F7EA6; } /* #9669FE */
+a.external { color:#7AD95F; font-size:10pt; } /* #2DC800 */
+.sitelinks { font-size:9pt; }
+
+/* Descriptions */
+.autodesc div {
 	display:inline-block;
-}
-
-.aliases {
-	color:#999999;
-	margin-bottom:5px;
-	max-height:100px;
-	overflow:auto;
-}
-
-.langmarker {
-	font-size:8pt;
-	color:#999999;
+	margin-right:5px;
 }
 
 .manual_description {
@@ -19,38 +16,15 @@
 	margin-bottom:5px;
 }
 
-a.wikidata {
-	color:#2DC800;
-}
 
-a.wikipedia {
-	color:#9669FE;
-}
+/* Misc */
+small.qnumber { color:#999999; }
+.misc_data { font-size:9pt; }
+.alias { display:inline-block; }
 
-a.external {
-	color:#2DC800;
-	font-size:10pt;
-}
 
-.entity {
-	display:none;
-}
 
-.entity_person {
-}
-
-.autodesc div {
-	display:inline-block;
-	margin-right:5px;
-}
-
-.sitelinks {
-	font-size:9pt;
-}
-
-small.qnumber {
-	color:#999999;
-}
+/* Larger things */
 
 .mythumb {
 	margin:5px;
@@ -64,6 +38,51 @@ div.map {
 	margin-right:10px;
 }
 
-.misc_data {
-	font-size:9pt;
+.aliases {
+	color:#999999;
+	margin-bottom:5px;
+	max-height:100px;
+	overflow:auto;
+}
+
+.entity {
+	display:none;
+	margin-left:5px;
+}
+
+#main_content {
+	margin-top:8px;
+	box-shadow:8px 8px 8px #DDD;
+	margin-bottom:20px;
+	border-radius:15px;
+	padding-top:5px;
+	padding-bottom:5px;
+	padding-left:2px;
+	padding-right:2px;
+}
+
+#top {
+	margin-left:5px;
+	
+}
+
+h1.main_title {
+	border-bottom: 1px solid #DDD;
+}
+
+h1,h2,h3,h4,h5,h6 {
+	color:#444;
+	font-family:times new roman;
+}
+
+.sidebar {
+	float:right;
+	margin-left:10px;
+	margin-bottom:10px;
+	border-left: 1px solid #DDD;
+	padding-left:5px
+}
+
+.mainbar {
+	width:695px;
 }

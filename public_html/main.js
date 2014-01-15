@@ -1,38 +1,5 @@
 var reasonator = {
-	i18n : {
-		'en' : {
-			'name' : 'Name' ,
-			'description' : 'Description' ,
-			'instance_of' : 'Instance of' ,
-			'taxonomy' : "Taxonomy" ,
-			'taxon_props' : 'Taxon properties' ,
-			'related_media' : 'Related media' ,
-			'other_properties' : 'Other properties' ,
-			'from_related_items' : 'From related items' ,
-			'rank' : 'Rank' ,
-			'taxonomic_name' : 'Taxonomic name' ,
-			'show_items' : 'Show items' ,
-			'hide_items' : 'Hide items' ,
-			'location' : "Location" ,
-			'admin_division' : 'Administrative division'
-		} ,
-		'de' : {
-			'name' : 'Name' ,
-			'description' : 'Beschreibung' ,
-			'instance_of' : 'Instanz von' ,
-			'taxonomy' : "Taxonomie" ,
-			'taxon_props' : 'Taxon-Eigenschaften' ,
-			'related_media' : 'Verwandte Medien' ,
-			'other_properties' : 'Andere Eigenschaften' ,
-			'from_related_items' : 'Von verwandten Einträgen' ,
-			'rank' : 'Rang' ,
-			'taxonomic_name' : 'Taxonomischer Name' ,
-			'show_items' : 'Zeige Einträge' ,
-			'hide_items' : 'Verstecke Einträge' ,
-			'location' : "Ort" ,
-			'admin_division' : 'Administrative Gliederung'
-		}
-	} ,
+	i18n : {} ,
 	collapse_item_list : 20 ,
 	P_all : {
 		entity_type : 107 ,
@@ -61,6 +28,7 @@ var reasonator = {
 		spouse : 26 ,
 		uncle : 29 ,
 		aunt : 139 ,
+		relative : 1038 ,
 		stepfather : 43 ,
 		stepmother : 44 ,
 		grandparent : 45 ,
@@ -148,7 +116,7 @@ var reasonator = {
 		self.wd = new WikiData ;
 		self.personal_relation_list = [] ;
 		self.do_maps = undefined ;
-		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent'] , function ( k , v ) {
+		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent','relative'] , function ( k , v ) {
 			self.personal_relation_list.push ( self.P_person[v] ) ;
 		} ) ;
 		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
@@ -173,6 +141,31 @@ var reasonator = {
 				self.P_person[id] = prop ;
 				self.P_location[id] = prop ;
 			} ) ;
+			self.loadInterfaceText ( callback ) ;
+		} ) ;
+	} ,
+	
+	loadInterfaceText : function ( callback ) {
+		var self = this ;
+		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
+			action:'parse',
+			format:'json',
+			prop:'wikitext',
+			page:'Reasonator/interface'
+		} , function ( d ) {
+			var lang = 'none' ;
+			$.each ( d.parse.wikitext['*'].split(/\n/) , function ( dummy , row ) {
+				var m = row.match(/^=+\s*(.+?)\s*=+$/) ;
+				if ( m != null ) {
+					lang = m[1].toLowerCase() ;
+					self.i18n[lang] = {} ;
+					return ;
+				}
+				m = row.match(/^;\s*([^:]+)\s*:\s*(.+)\s*$/) ;
+				if ( m != null ) {
+					self.i18n[lang][m[1]] = m[2] ;
+				}
+			} ) ;
 			callback() ;
 		} ) ;
 	} ,
@@ -184,7 +177,7 @@ var reasonator = {
 		self.mm_load = [] ;
 		$('#main_content').load ( 'main.html' , function () {
 			$('#main_content').show() ;
-			$('#top').html ( '<i>Loading...</i>' ) ;
+			$('#top').html ( '<i>'+self.t('loading')+'</i>' ) ;
 			self.wd.loadItems ( q , {
 				loaded : function ( x ) { self.q = x } ,
 				finished : function ( x ) { self.detectAndLoadQ ( self.q ) }
@@ -365,6 +358,11 @@ var reasonator = {
 
 	showPerson : function ( q ) {
 		var self = this ;
+		
+		$.each ( [ 'relatives','parents','siblings','children','other' ] , function ( k , v ) {
+			$('#person_'+v).html ( self.t('person_'+v) ) ;
+		} ) ;
+		
 		self.showPersonMain ( q ) ;
 		self.setTopLink () ;
 		self.renderName () ; // Render name
@@ -470,7 +468,7 @@ var reasonator = {
 		var self = this ;
 		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
 		if ( im.length > 0 ) {
-			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:250 , th:200 } ;
+			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:220 , th:200 } ;
 			self.mm_load.push ( io ) ;
 		}
 	} ,
@@ -577,12 +575,12 @@ var reasonator = {
 		} ) ;
 
 		// Render relatives
-		$('#pr_full_tree').html ( "<a href='//toolserver.org/~magnus/ts2/geneawiki2/?q="+escattr(q)+"' target='_blank'>See the full family tree</a>" ) ;
+		$('#pr_full_tree').html ( "<a class='external' href='geneawiki2/?q="+escattr(q)+"' target='_blank'>"+self.t('family_tree')+"</a>" ) ;
 		$.each ( relations , function ( section , sd ) {
 			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
 		} ) ;
 	} ,
-
+	
 
 	showAutoDescPerson : function () {
 		var self = this ;
@@ -591,7 +589,7 @@ var reasonator = {
 		h.push ( self.getItemLinks ( q , { p:self.P.sex,q_desc:true,desc:true } ) . join ( ' ' ) ) ;
 		h.push ( self.getItemLinks ( q , { p:self.P.occupation,q_desc:true,desc:true } ) . join ( '/' ) ) ;
 		var country = self.getItemLinks ( q , { p:self.P.nationality,q_desc:true,desc:true } ) . join ( ' ' ) ;
-		if ( country != '' ) h.push ( 'from' ) ;
+		if ( country != '' ) h.push ( self.t('from') ) ;
 		h.push ( country ) ;
 		h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
 		$('#person div.autodesc').html ( h ) ;
@@ -602,6 +600,13 @@ var reasonator = {
 //__________________________________________________________________________________________
 // Show parts
 
+
+	adjustSitelinksHeight : function () {
+		var self = this ;
+		var type = self.main_type ;
+		var h = $('#main').height()-$('#'+type+' div.sitelinks').position().top+$('#main').position().top;
+		$('#'+type+' div.sitelinks').css({'max-height':h})
+	} ,
 
 	renderChain : function ( chain , columns ) {
 		var self = this ;
@@ -670,7 +675,9 @@ var reasonator = {
 
 	setTopLink : function () {
 		var self = this ;
-		$('#top').html ( "Item " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ) ;
+		var h = self.t('item')+" " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ;
+		h = "<div style='float:right'><a target='_blank' style='color:#BBB' href='//meta.wikimedia.org/wiki/Reasonator/interface'>" + self.t('translate_interface') + "</a></div>" + h ;
+		$('#top').html ( h ) ;
 	} ,
 	
 	renderName : function () {
@@ -707,6 +714,8 @@ var reasonator = {
 				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
 			} ) ;
 		}
+		
+		self.adjustSitelinksHeight() ;
 	} ,
 	
 	addMiscData : function ( props ) {
@@ -814,7 +823,7 @@ var reasonator = {
 					if ( medium == 'voice_recording' ) medium2 = 'audio' ;
 					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
 					if ( self.q == v.getID() && k2 == 0 ) { // ( k2 == 0 || medium2 == 'audio' )
-						io.tw = 250 ;
+						io.tw = 220 ;
 						io.th = 400 ;
 						io.id = '#'+self.main_type+' div.main_'+medium2 ;
 						io.append = true ;
@@ -891,7 +900,7 @@ var reasonator = {
 					if ( p == 373 ) h += "<a target='_blank' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(s)+"'>" + s + "</a>" ; // Commons cat
 					else h += s ;
 				} else {*/
-					if ( cq.mode == 2 ) h += "of&nbsp;" ;
+					if ( cq.mode == 2 ) h += self.t('of')+"&nbsp;" ;
 					h += self.getItemLink ( cq , no ) ; // { internal:internal,desc:true,gender:true,q_desc:true }
 //				}
 				h += "</td></tr>" ;
@@ -1242,6 +1251,7 @@ var reasonator = {
 						h = '' ;
 					}
 					$(o.id).html ( h ) ;
+					setTimeout ( function(){self.adjustSitelinksHeight()} , 100 ) ;
 				}
 			} ) ;
 		} ) ;
@@ -1340,6 +1350,7 @@ var reasonator = {
 				var l = self.params.lang.split(',').reverse() ;
 				$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 			}
+			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
 			wd_auto_desc_wd.init() ;
 			wd_auto_desc.lang = self.wd.main_languages[0] ;
 			if ( undefined !== self.params.q ) self.loadQ ( self.params.q ) ;
@@ -1358,7 +1369,6 @@ $(document).ready ( function () {
 	$('body').css({'background-color':'#FAFAFA'}) ;
 	$('#main_content').css({'background-color':'#FFF',padding:'1px'}).hide() ;
 	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-		$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="Find [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-info">Find</button></form></li>' ) ;
 		document.title = 'Reasonator' ;
 		reasonator.init ( function () {
 			reasonator.initializeFromParameters() ;
