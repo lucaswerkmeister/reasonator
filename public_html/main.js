@@ -328,7 +328,7 @@ var reasonator = {
 				preload_all : true ,
 				preload_all_for_root : true ,
 				finished : function ( p ) {
-//					self.getRelatedEntities ( the_q , function () {
+//					self.getRelatedEntities ( the_q , function () { // Deactivated for performance reasons
 						self.showLocation ( the_q ) ;
 //					} ) ;
 				}
@@ -1355,7 +1355,8 @@ var reasonator = {
 $(document).ready ( function () {
 	var img = '//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/32px-Reasonator_logo_proposal.png' ;
 	$('#toolname').before ( "<img border=0 src='"+img+"' />" ) ;
-	$('#main_content').hide() ;
+	$('body').css({'background-color':'#FAFAFA'}) ;
+	$('#main_content').css({'background-color':'#FFF',padding:'1px'}).hide() ;
 	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
 		$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="Find [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-info">Find</button></form></li>' ) ;
 		document.title = 'Reasonator' ;
