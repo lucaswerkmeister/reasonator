@@ -266,13 +266,14 @@ var reasonator = {
 	
 	loadPerson : function ( q ) {
 		var self = this ;
+
 		self.P = $.extend(true, self.P_all, self.P_person,self.P_websites);
 		self.main_type = 'person' ;
 		self.wd.clear() ;
-		
+
 		self.wd.loadItems ( ['P7','P9'] , { // Brother/sister
 			finished : function () {
-		
+
 			self.wd.loadItems ( q , {
 				languages : self.wd.main_languages.join("|") ,
 				follow : self.personal_relation_list ,
@@ -284,9 +285,9 @@ var reasonator = {
 					} ) ;
 				}
 			} , 2 ) ;
-		
+
 		} } ) ; // Brother/sister
-		
+
 	} ,
 	
 	loadTaxon : function ( the_q ) {
@@ -575,7 +576,11 @@ var reasonator = {
 		} ) ;
 
 		// Render relatives
-		$('#pr_full_tree').html ( "<a class='external' href='geneawiki2/?q="+escattr(q)+"' target='_blank'>"+self.t('family_tree')+"</a>" ) ;
+		var geneawiki_url = "geneawiki2/?q="+escattr(q) ;
+//		$('#pr_full_tree').html ( "<a class='external' href='geneawiki2/?q="+escattr(q)+"' target='_blank'>"+self.t('family_tree')+"</a>" ) ;
+		$('#pr_full_tree').html ( self.t('family_tree') + ": <a class='internal' href='#'>inline</a>/<a target='_blank' href='"+geneawiki_url+"' class='external'>new&nbsp;page</a>" ) ;
+		$('#pr_full_tree a.internal').click ( function () { self.showGeneawiki(); return false } ) ;
+		
 		$.each ( relations , function ( section , sd ) {
 			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
 		} ) ;
@@ -710,7 +715,12 @@ var reasonator = {
 		}
 		
 		if ( self.use_autodesc ) {
+			var x = {} ;
 			$.each ( self.autodesc_items , function ( dummy , q ) {
+				x[q] = 1 ;
+			} ) ;
+			
+			$.each ( x , function ( q , dummy ) {
 				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
 			} ) ;
 		}
@@ -887,7 +897,7 @@ var reasonator = {
 			var block_id = 'table_block_'+ self.table_block_counter ;
 			var collapse = ql.length >= self.collapse_item_list ;
 			var rows = ql.length + (collapse?1:0) ;
-			h += "<tr><th nowrap align='left' valign='top' rowspan='" + rows + "'>" ;
+			h += "<tr><th style='min-width:20%' align='left' valign='top' rowspan='" + rows + "'>" ;
 			h += self.getItemLink ( { type:'item',q:'P'+p } , { desc:true } ) ;
 			h += "</th>" ;
 			$.each ( ql , function ( row , cq ) {
@@ -1004,7 +1014,7 @@ var reasonator = {
 				}
 				if ( undefined === s ) return ;
 				
-				
+				s = s.replace ( /-/g , '-&#8203;' ) ;
 				
 				
 				var h2 = "<tr><td>" + id_type + "&nbsp;</td><td>" ;
@@ -1046,21 +1056,70 @@ var reasonator = {
 		var i = self.wd.items[self.q] ;
 		var links = i.getWikiLinks() ;
 		var hadthat = {} ;
-		var h = "<table border=0 cellspacing=0 cellpadding=1>" ;
+		
+		var projects = [ 'current' , 'mainwp' , 'commons' , 'wikisource' , 'wikivoyage' , 'wiki' ] ;
+		var groups = {
+			current : { title:'Current language Wikipedias' , server:'wikipedia.org' , sites:[] } ,
+			mainwp : { title:'Big Wikipedias' , server:'wikipedia.org' , sites:[] } ,
+			commons : { title:'Wikimedia Commons' , server:'wikimedia.org' , sites:[] } ,
+			wikisource : { title:'Wikisource' , server:'wikisource.org' , sites:[] } ,
+			wikivoyage : { title:'Wikivoyage' , server:'wikivoyage.org' , sites:[] } ,
+			wiki : { title:'Other Wikipedias' , server:'wikipedia.org' , sites:[] } ,
+		} ;
+		
+		var lp = (self.params.lang||'en').split(',');
+		$.each ( lp , function ( dummy , l ) {
+			var site = l + 'wiki' ;
+			if ( undefined === links[site] || undefined !== hadthat[site] ) return ;
+			hadthat[site] = true ;
+			groups.current.sites.push ( { code:l , page:links[site].title } ) ;
+		} ) ;
+		
+
+		if ( undefined !== links['commonswiki'] ) {
+			$.each ( links , function ( site , dummy ) {
+				if ( site != 'commonswiki' ) return ;
+				hadthat[site] = true ;
+				groups.commons.sites.push ( { code:'commons' , page:links[site].title } ) ;
+			} ) ;
+		}
+		
 		$.each ( self.wd.main_languages , function ( dummy , l ) {
 			var site = l + 'wiki' ;
 			if ( undefined === links[site] || undefined !== hadthat[site] ) return ;
 			hadthat[site] = true ;
-			h += "<tr><td>" + l + "</td><td><a title='Open on " + l + ".wikipedia' href='//" + l + ".wikipedia.org/wiki/" + escattr(links[site].title) + "' class='wikipedia'>" + links[site].title + "</a></td></tr>" ;
+			groups.mainwp.sites.push ( { code:l , page:links[site].title } ) ;
 		} ) ;
-		h += "<tr><td colspan='2'>&nbsp;</td></tr>" ;
-		$.each ( links , function ( site , dummy ) {
-			if ( undefined === links[site] || undefined !== hadthat[site] ) return ;
-			var l = site.replace(/wiki$/,'') ;
-			hadthat[site] = true ;
-			h += "<tr><td>" + l + "</td><td><a title='Open on " + l + ".wikipedia' href='//" + l + ".wikipedia.org/wiki/" + escattr(links[site].title) + "' class='wikipedia'>" + links[site].title + "</a></td></tr>" ;
+		
+		$.each ( projects , function ( dummy , project ) {
+			if ( project == 'mainwp' || project == 'current' ) return ;
+			var re = new RegExp("^(.+)"+project+"$") ;
+			$.each ( links , function ( site , dummy ) {
+				var m = re.exec ( site ) ;
+				if ( m == null ) return ; // Wrong project
+				if ( undefined === links[site] || undefined !== hadthat[site] ) return ;
+				hadthat[site] = true ;
+				groups[project].sites.push ( { code:m[1] , page:links[site].title } ) ;
+			} ) ;
 		} ) ;
-		h += "</table>" ;
+		
+		var h = "<table border=0 cellspacing=0 cellpadding=1 class='table-striped'><tbody>" ;
+		
+		$.each ( projects , function ( dummy , project ) {
+			if ( groups[project].sites.length == 0 ) return ;
+			if ( project != 'current' ) {
+				groups[project].sites = groups[project].sites.sort ( function ( a , b ) {
+					return ((a.code < b.code) ? -1 : ((a.code > b.code) ? 1 : 0));
+				} ) ;
+			} ;
+			h += "<tr><th colspan='2'>" + groups[project].title + "</th></tr>" ;
+			$.each ( groups[project].sites , function ( dummy , site ) {
+				h += "<tr><td>" + site.code + "</td>" ;
+				h += "<td><a href='//" + site.code + "."+groups[project].server+"/wiki/" + escattr(site.page) + "' class='wikipedia'>" + site.page + "</a></td></tr>" ;
+			} ) ;
+		} ) ;
+
+		h += "</tbody></table>" ;
 		$('div.sitelinks').html ( h ) ;
 	} ,
 
@@ -1221,6 +1280,7 @@ var reasonator = {
 	} ,
 
 	multimediaLazyLoad : function ( o ) {
+		var self = this ;
 		$.getJSON ( '//commons.wikimedia.org/w/api.php?callback=?' , {
 			action : 'query' ,
 			titles : 'File:' + o.file ,
@@ -1339,6 +1399,44 @@ var reasonator = {
 			} , 0 ) ;
 		} ) ;
 	} ,
+	
+	showGeneawiki : function () {
+		var self = this ;
+		
+		var lang = self.wd.main_languages[0] ;
+		var id = 'geneawiki' ;
+		if ( $('#'+id).is(':visible') ) {
+			$('#'+id).toggle() ;
+			$('#'+id+'_status').toggle() ;
+		} else {
+			if ( undefined === self.gw ) {
+
+				$.getScript ( 'geneawiki2/jquery-svgpan.js' , function () {
+					$.getScript ( 'geneawiki2/gw.js' , function () {
+						self.gw = new GeneaWiki ( id ) ;
+						self.gw.languages.unshift ( lang ) ;
+						$('#'+id).show() ;
+						$('#'+id+'_status').show() ;
+						self.gw.status_id = id+'_status' ;
+						self.gw.load ( self.q , function () {
+							$('#'+id+' svg').css ( { width : '100%' } ) ;
+							$('#'+id+' a').each ( function ( dummy , o ) {
+								var m = $(o).attr('xlink:href').match ( /\/(Q\d+)$/ ) ;
+								if ( m == null ) return ;
+								$(o).attr('xlink:href','?q='+m[1]+'&lang='+lang) ;
+							} )
+						} ) ;
+					} ) ;
+				} ) ;
+
+			} else {
+				$('#'+id).toggle() ;
+				$('#'+id+'_status').toggle() ;
+			}
+		}
+
+		return false ;
+	} ,
 
 	
 	initializeFromParameters : function () {
@@ -1353,7 +1451,7 @@ var reasonator = {
 			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
 			wd_auto_desc_wd.init() ;
 			wd_auto_desc.lang = self.wd.main_languages[0] ;
-			if ( undefined !== self.params.q ) self.loadQ ( self.params.q ) ;
+			if ( undefined !== self.params.q ) self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
 			else if ( undefined !== self.params.find ) {
 				self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
 			} else $('#main_content').show() ;
