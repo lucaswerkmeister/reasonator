@@ -577,8 +577,7 @@ var reasonator = {
 
 		// Render relatives
 		var geneawiki_url = "geneawiki2/?q="+escattr(q) ;
-//		$('#pr_full_tree').html ( "<a class='external' href='geneawiki2/?q="+escattr(q)+"' target='_blank'>"+self.t('family_tree')+"</a>" ) ;
-		$('#pr_full_tree').html ( self.t('family_tree') + ": <a class='internal' href='#'>inline</a>/<a target='_blank' href='"+geneawiki_url+"' class='external'>new&nbsp;page</a>" ) ;
+		$('#pr_full_tree').html ( self.t('family_tree') + ": <a class='internal' href='#'>"+self.t('inline')+"</a>/<a target='_blank' href='"+geneawiki_url+"' class='external'>"+self.t('new_page')+"</a>" ) ;
 		$('#pr_full_tree a.internal').click ( function () { self.showGeneawiki(); return false } ) ;
 		
 		$.each ( relations , function ( section , sd ) {
@@ -1056,15 +1055,16 @@ var reasonator = {
 		var i = self.wd.items[self.q] ;
 		var links = i.getWikiLinks() ;
 		var hadthat = {} ;
-		
+
 		var projects = [ 'current' , 'mainwp' , 'commons' , 'wikisource' , 'wikivoyage' , 'wiki' ] ;
 		var groups = {
-			current : { title:'Current language Wikipedias' , server:'wikipedia.org' , sites:[] } ,
-			mainwp : { title:'Big Wikipedias' , server:'wikipedia.org' , sites:[] } ,
-			commons : { title:'Wikimedia Commons' , server:'wikimedia.org' , sites:[] } ,
-			wikisource : { title:'Wikisource' , server:'wikisource.org' , sites:[] } ,
-			wikivoyage : { title:'Wikivoyage' , server:'wikivoyage.org' , sites:[] } ,
-			wiki : { title:'Other Wikipedias' , server:'wikipedia.org' , sites:[] } ,
+			current : { title:self.t('sl_current') , server:'wikipedia.org' , sites:[] } ,
+			
+			mainwp : { title:self.t('sl_big_wp') , server:'wikipedia.org' , sites:[] } ,
+			commons : { title:self.t('sl_commons') , server:'wikimedia.org' , sites:[] } ,
+			wikisource : { title:self.t('sl_wikisource') , server:'wikisource.org' , sites:[] } ,
+			wikivoyage : { title:self.t('sl_wikivoyage') , server:'wikivoyage.org' , sites:[] } ,
+			wiki : { title:self.t('sl_other') , server:'wikipedia.org' , sites:[] } ,
 		} ;
 		
 		var lp = (self.params.lang||'en').split(',');
@@ -1287,7 +1287,7 @@ var reasonator = {
 			prop : 'imageinfo' ,
 			iiurlwidth : o.tw||120 ,
 			iiurlheight : o.th||120 ,
-			iiprop : 'url' ,
+			iiprop : 'url|size' ,
 			format : 'json'
 		} , function ( data ) {
 			$.each ( data.query.pages , function ( k , v ) {
@@ -1302,7 +1302,7 @@ var reasonator = {
 							var url = v.imageinfo[0].url ;
 							h = "<audio controls style='max-width:"+maxw+"px'><source src='" + url + "' type='audio/ogg'><small><i>Your browser <s>sucks</s> does not support HTML5 audio.</i></small></audio>" ;
 						} else if ( o.type == 'image' ) {
-							h = "<img border=0 src='" + v.imageinfo[0].thumburl + "' " ;
+							h = "<img border=0 width='"+v.imageinfo[0].thumbwidth+"px' height='"+v.imageinfo[0].thumbheight+"px' src='" + v.imageinfo[0].thumburl + "' " ;
 							if ( o.title !== undefined ) h += "title='" + o.title + "' " ; 
 							h += "/>" ;
 							h = "<a target='_blank' href='" + v.imageinfo[0].descriptionurl + "'>" + h + "</a>" ;
