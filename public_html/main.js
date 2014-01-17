@@ -99,14 +99,14 @@ var reasonator = {
 	
 	t : function ( k ) {
 		var self = this ;
-		var l = self.params.lang ;
-		if ( l === undefined ) l = 'en' ; // Default
-		if ( undefined === self.i18n[l] || self.i18n[l][k] === undefined) {
-			return self.i18n['en'][k] ; // Fallback
-//			return "<i>" + self.i18n['en'][k] + "</i><small>translate me!</small>" ;
-		} else {
-			return self.i18n[l][k] ;
-		}
+		var ret = self.i18n['en'][k] ; // Fallback
+		
+		$.each ( self.wd.main_languages||[] , function ( dummy , l ) {
+			if ( undefined === self.i18n[l] || self.i18n[l][k] === undefined) return ;
+			ret = self.i18n[l][k] ;
+			return false ;
+		} ) ;
+		return ret ;
 	} ,
 
 
