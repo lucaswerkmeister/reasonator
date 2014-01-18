@@ -88,6 +88,7 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	banner_width : 700 ,
 	allow_rtl : true ,
 	use_autodesc : true ,
 	autodesc_items : [] ,
@@ -417,8 +418,8 @@ var reasonator = {
 			if ( items.length === 0 ) return ;
 			if ( sd[p] === undefined ) sd[p] = {} ;
 			$.each ( items , function ( k , v ) {
-//				sd[p][v.key] = {type:'item',mode:1} ;
-				sd[p][v.key] = $.extend(true,{type:'item',mode:1},v) ;
+				if ( sd[p][v.key] === undefined ) sd[p][v.key] = [] ;
+				sd[p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
 			} ) ;
 		} ) ;
 		self.renderPropertyTable ( sd , { id:'#taxon div.props',striped:true,title:self.t('taxon_props'),ucfirst:true } ) ;
@@ -509,7 +510,10 @@ var reasonator = {
 			else if ( p == self.P.child ) section = 'children' ;
 			else section = 'other' ;
 			if ( relations[section][p] === undefined ) relations[section][p] = {} ;
-			$.each ( ql , function (k,v){ relations[section][p][v.key]=$.extend(true,{type:'item',mode:1},v) } ) ;
+			$.each ( ql , function (k,v){
+				if ( relations[section][p][v.key] === undefined ) relations[section][p][v.key] = [] ;
+				relations[section][p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
+			} ) ;
 		} ) ;
 		
 		// Setting relations "in reverse" from all other items
@@ -543,7 +547,10 @@ var reasonator = {
 					val.qualifiers = $.extend(true,{},v.qualifiers);
 //					if ( val.q === undefined ) return ;
 					if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
-					if ( relations[section][real_p][cq] === undefined ) relations[section][real_p][cq] = val ; // Do not overwrite "1" with "2"
+					if ( relations[section][real_p][cq] === undefined ) { // Do not overwrite "1" with "2"
+						relations[section][real_p][cq] = [] ;
+						relations[section][real_p][cq].push ( val ) ;
+					}
 				} ) ;
 			} ) ;
 		} ) ;
@@ -746,11 +753,18 @@ var reasonator = {
 			if ( items.length === 0 ) return ;
 			if ( sd[p] === undefined ) sd[p] = {} ;
 			$.each ( items , function ( k , v ) {
-				sd[p][v.key] = $.extend(true,{type:'item',mode:1},v) ;
+				if ( sd[p][v.key] === undefined ) sd[p][v.key] = [] ;
+				sd[p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
 			} ) ;
 		} ) ;
 		
-		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .misc_data' , striped:true } ) ;
+		var id = '.entity_'+self.main_type+' .misc_data' ;
+		self.renderPropertyTable ( sd , { id:id , striped:true } ) ;
+		id += " table" ;
+		$(id).removeClass('table').removeClass('table-condensed').addClass('sidebar-table') ;
+		$(id).prepend("<thead><th colspan=2>"+self.t('external_ids')+"</th></thead>") ;
+		$(id+' th').css({'min-width':''}) ;
+		$(id+' td').css({'width':''}) ;
 	} ,
 	
 	showMaps : function () {
@@ -767,8 +781,8 @@ var reasonator = {
 			$('#'+self.main_type+' div.locator_map').html('<img/>') ;
 			self.imgcnt++ ;
 			var io = { file:s , type:'image' , id:'#imgid'+self.imgcnt , title:self.wd.items['P242'].getLabel() } ;
-			io.tw = 200 ;
-			io.th = 200 ;
+			io.tw = 220 ;
+			io.th = 220 ;
 			io.id = '#'+self.main_type+' div.locator_map img' ;
 			io.append = true ;
 			self.mm_load.push ( io ) ;
@@ -843,7 +857,7 @@ var reasonator = {
 						io.id = '#'+self.main_type+' div.main_'+medium2 ;
 						io.append = true ;
 						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' ) io.type = 'image' ;
-						if ( medium == 'wikivoyage_banner' ) io.tw = 640 ;
+						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
 					} else {
 						if ( !has_header ) {
 							$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
@@ -897,32 +911,35 @@ var reasonator = {
 			var p = String(op).replace(/\D/g,'') ;
 			var ql = [] ;
 			$.each ( qs , function ( k , v ) { ql.push ( v ) } ) ;
+
+			var num_rows = 0 ;
+			$.each ( ql , function ( row , subrow ) { num_rows += subrow.length } ) ;
 			
 			self.table_block_counter++ ;
 			var block_id = 'table_block_'+ self.table_block_counter ;
-			var collapse = ql.length >= self.collapse_item_list ;
-			var rows = ql.length + (collapse?1:0) ;
+			var collapse = num_rows >= self.collapse_item_list ;
+			var rows = num_rows + (collapse?1:0) ;
 			h += "<tr><th style='min-width:20%' align='left' valign='top' rowspan='" + rows + "'>" ;
 			h += self.getItemLink ( { type:'item',q:'P'+p } , { desc:true } ) ;
 			h += "</th>" ;
-			$.each ( ql , function ( row , cq ) {
-				if ( row > 0 ) h += "<tr>" ;
-				h += "<td name='" + block_id + "' style='width:100%" ;
-				if ( collapse ) h += ";display:none" ;
-				h += "'>" ;
-/*				if ( cq.is_backlink ) {
-					var s = cq.substr ( 1 ) ;
-					if ( p == 373 ) h += "<a target='_blank' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(s)+"'>" + s + "</a>" ; // Commons cat
-					else h += s ;
-				} else {*/
+			var row = 0 ;
+			$.each ( ql , function ( dummy , subrow ) {
+				no.add_desc = true ;
+				$.each ( subrow , function ( dummy , cq ) {
+					if ( row > 0 ) h += "<tr>" ;
+					h += "<td name='" + block_id + "' style='width:100%" ;
+					if ( collapse ) h += ";display:none" ;
+					h += "'>" ;
 					if ( cq.mode == 2 ) h += self.t('of')+"&nbsp;" ;
 					h += self.getItemLink ( cq , no ) ; // { internal:internal,desc:true,gender:true,q_desc:true }
-//				}
-				h += "</td></tr>" ;
+					h += "</td></tr>" ;
+					row++ ;
+					no.add_desc = false ;
+				} ) ;
 			} ) ;
 			if ( collapse ) {
 				h += "<tr><td style='width:100%'>" ;
-				h += ql.length + " items. " ;
+				h += num_rows + " items. " ;
 				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('show_items')+"</a>" ;
 				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('hide_items')+"</a>" ;
 				h += "</td></tr>" ;
@@ -960,7 +977,8 @@ var reasonator = {
 			$.each ( (ci||[]) , function ( dummy2 , ti ) {
 				if ( undefined === sd[p] ) sd[p] = {} ;
 //				console.log ( ti ) ;
-				sd[p][ti.key] = $.extend(true,{p:p,mode:1},ti) ;
+				if ( sd[p][ti.key] === undefined ) sd[p][ti.key] = [] ;
+				sd[p][ti.key].push ( $.extend(true,{p:p,mode:1},ti) ) ;
 			} ) ;
 		} ) ;
 		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
@@ -985,7 +1003,8 @@ var reasonator = {
 					if ( ti.key != self.q ) return ;
 					if ( undefined === sd[p] ) sd[p] = {} ;
 					var o = {type:'item',mode:1,q:item.getID(),key:item.getID()} ;
-					sd[p][q] = o ;
+					if ( sd[p][q] === undefined ) sd[p][q] = [] ;
+					sd[p][q].push ( o ) ;
 				} ) ;
 			} ) ;
 		} ) ;
@@ -1031,7 +1050,7 @@ var reasonator = {
 		} ) ;
 
 		if ( h.length == 0 ) return ;
-		h = "<table border=0 cellpadding=1 cellspacing=0>" + h.join('') + "</table>" ;
+		h = "<table class='sidebar-table table-striped'><thead><th colspan=2>"+self.t('external_sources')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
 		$('.entity_'+self.main_type+' .external_ids').html ( h ) ;
 	} ,
 
@@ -1046,14 +1065,15 @@ var reasonator = {
 				var s = i.getClaimTargetString ( c ) ;
 				if ( undefined === s ) return ;
 				var url = s ;
-				var h2 = "<div><a target='_blank' href='" + url + "' class='external'>" + self.wd.items['P'+v].getLabel() + "</a></div>" ;
+				var h2 = "<tr><td><a target='_blank' href='" + url + "' class='external'>" + self.wd.items['P'+v].getLabel() + "</a></td></tr>" ;
 				h.push ( h2 ) ;
 			} ) ;
 		} ) ;
 		
 		if ( h.length == 0 ) return ;
 
-		$('.entity_'+self.main_type+' .websites').html ( h.join('') ) ;
+		h = "<table class='sidebar-table table-striped'><thead><th>"+self.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
+		$('.entity_'+self.main_type+' .websites').html ( h ) ;
 	} ,
 	
 	addSitelinks : function () {
@@ -1109,7 +1129,8 @@ var reasonator = {
 			} ) ;
 		} ) ;
 		
-		var h = "<table border=0 cellspacing=0 cellpadding=1 class='table-striped'><tbody>" ;
+		var h = "<table class='sidebar-table table-striped'>" ; // style='width:100%' border=0 cellspacing=0 cellpadding=1 
+		h += "<thead><th colspan=2>"+self.t('wikimedia_projects')+"</th></thead><tbody>" ;
 		
 		$.each ( projects , function ( dummy , project ) {
 			if ( groups[project].sites.length == 0 ) return ;
@@ -1306,7 +1327,13 @@ var reasonator = {
 							h = "<video controls style='margin-top:1px;margin-bottom:1px;max-width:"+maxw+"px'><source src='" + url + "' type='video/ogg'><small><i>Your browser <s>sucks</s> does not support HTML5 video.</i></small></video>" ;
 						} else if ( o.type == 'audio' ) {
 							var url = v.imageinfo[0].url ;
-							h = "<audio controls style='max-width:"+maxw+"px'><source src='" + url + "' type='audio/ogg'><small><i>Your browser <s>sucks</s> does not support HTML5 audio.</i></small></audio>" ;
+							var type = 'ogg' ;
+							if ( null != v.title.match(/\.flac$/i) ) type = 'flac' ;
+							if ( type == 'flac' ) { // Hardcoded exception
+								h = "<a href='" + url + "' target='_blank'>"+self.t('download_file')+"</a>" ;
+							} else {
+								h = "<audio controls style='max-width:"+maxw+"px'><source src='" + url + "' type='audio/"+type+"'><small><i>Your browser <s>sucks</s> does not support HTML5 audio.</i></small></audio>" ;
+							}
 						} else if ( o.type == 'image' ) {
 							h = "<img border=0 width='"+v.imageinfo[0].thumbwidth+"px' height='"+v.imageinfo[0].thumbheight+"px' src='" + v.imageinfo[0].thumburl + "' " ;
 							if ( o.title !== undefined ) h += "title='" + o.title + "' " ; 
