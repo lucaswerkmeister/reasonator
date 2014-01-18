@@ -501,6 +501,7 @@ var reasonator = {
 		} ) ;
 		
 		var relations = { parents : {} , siblings : {} , children : {} , other : {} } ;
+		var has_relations = false ;
 		
 		// Setting relations from main item
 		$.each ( rel[q] , function ( p , ql ) {
@@ -513,6 +514,7 @@ var reasonator = {
 			$.each ( ql , function (k,v){
 				if ( relations[section][p][v.key] === undefined ) relations[section][p][v.key] = [] ;
 				relations[section][p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
+				has_relations = true ;
 			} ) ;
 		} ) ;
 		
@@ -582,6 +584,11 @@ var reasonator = {
 				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
 			} ) ;
 		} ) ;
+		
+		if ( !has_relations ) {
+			$('div.personal_relations').hide() ;
+			return ;
+		}
 
 		// Render relatives
 		var geneawiki_url = "geneawiki2/?q="+escattr(q) ;
