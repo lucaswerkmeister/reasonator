@@ -577,8 +577,14 @@ var reasonator = {
 				val.q = v.key ;
 				val.key = val.q ;
 				val.qualifiers = $.extend(true,{},v.qualifiers);
-				if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
-				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
+
+					if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
+					if ( relations[section][real_p][v.key] === undefined ) { // Do not overwrite "1" with "2"
+						relations[section][real_p][v.key] = [] ;
+						relations[section][real_p][v.key].push ( val ) ;
+					}
+//				if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
+//				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
 			} ) ;
 		} ) ;
 		
