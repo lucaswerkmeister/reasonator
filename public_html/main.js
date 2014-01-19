@@ -193,10 +193,7 @@ var reasonator = {
 		if ( self.isPerson(q) ) self.loadPerson ( q ) ;
 		else if ( self.isTaxon(q) ) self.loadTaxon ( q ) ;
 		else if ( self.isLocation(q) ) self.loadLocation ( q ) ;
-		else {
-			self.loadGeneric ( q ) ;
-//			$('#top').html ( "Unknown item type" ) ;
-		}
+		else self.loadGeneric ( q ) ;
 	} ,
 
 
@@ -867,10 +864,9 @@ var reasonator = {
 						io.append = true ;
 						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' || medium == 'range_map' ) io.type = 'image' ;
 						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
-				if ( medium == 'range_map' ) console.log ( io ) ;
 					} else {
 						if ( !has_header ) {
-							$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
+							$('#'+self.main_type+' div.all_images').append ( "<div id='related_media_container'><h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div></div>" ) ;
 							has_header = true ;
 						}
 						var h3 = "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ;
@@ -1480,6 +1476,82 @@ var reasonator = {
 
 		return false ;
 	} ,
+	
+	languageDialog : function () {
+		var self = this ;
+		$('#').remove() ;
+		var h = '' ;
+		h += '<div id="languageDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+		h += '<div class="modal-header">' ;
+		h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
+		h += '<h3 id="languageDialogLabel">' + self.t("choose_language") + '</h3>' ;
+		h += '</div>' ;
+		h += '<div class="modal-body">' ;
+		
+		var use_quick_language_switch = false ;
+		var url = "?" + ( self.q === undefined ? '' : "q="+self.q ) + "&lang=" ;
+		var hadthat = {} ;
+
+		h += "<div><h4>" + self.t("common_languages") + "</h4>" ;
+		h += "<div><ul class='inline'>" ;
+		$.each ( self.wd.main_languages , function ( dummy , l ) {
+			if ( hadthat[l] ) return ;
+			hadthat[l] = true ;
+			h += "<li><div>" ;
+			if ( use_quick_language_switch ) {
+				h += "<a href='#' class='newlang' lang='"+l+"'>" + (self.all_languages[l]||l) + "</a>" ;
+			} else {
+				h += "<a href='" + url + l + "'>" + (self.all_languages[l]||l) + "</a>" ;
+			}
+			h += "</div></li>" ;
+		} ) ;
+		h += "</ul></div></div>" ;
+
+		h += "<div><h4>"+self.t('worldwide')+"</h4>" ;
+		h += "<div><ul class='inline'>" ;
+		$.each ( self.all_languages , function ( l , name ) {
+			if ( hadthat[l] ) return ;
+			hadthat[l] = true ;
+			h += "<li><div>" ;
+			if ( use_quick_language_switch ) {
+				h += "<a href='#' class='newlang' lang='"+l+"'>" + (self.all_languages[l]||l) + "</a>" ;
+			} else {
+				h += "<a href='" + url + l + "'>" + (self.all_languages[l]||l) + "</a>" ;
+			}
+			h += "</div></li>" ;
+		} ) ;
+		h += "</ul></div></div>" ;
+		
+		
+		h += '</div>' ;
+		h += '</div>' ;
+		
+		$('body').append ( h ) ;
+		
+		if ( use_quick_language_switch ) {
+			$('#languageDialog a.newlang').click ( function () {
+				$('#languageDialog').modal('hide') ;
+				var l = $(this).attr('lang') ;
+				self.wd.main_languages.unshift ( l ) ;
+				self.reShow() ;
+			} ) ;
+		}
+		
+		$('#languageDialog li').css({'width':'120px'})
+		$('#languageDialog li div').css({'background-color':'#FFF','margin':'1px','padding':'1px'})
+		
+		$('#languageDialog').modal({show:true}) ;
+	} ,
+	
+	reShow : function () { // THIS NEEDS WORK!
+		$('div.mythumb').remove() ;
+		$('#all_images').html('') ;
+		var q = self.q ;
+		if ( self.isPerson(q) ) self.showPerson ( q ) ;
+		else if ( self.isTaxon(q) ) self.showTaxon ( q ) ;
+		else if ( self.isLocation(q) ) self.showLocation ( q ) ;
+		else self.showGeneric ( q ) ;
+	} ,
 
 	
 	initializeFromParameters : function () {
@@ -1487,12 +1559,32 @@ var reasonator = {
 		$.getScript ( '/wikidata-todo/autodesc.js' , function () {
 			self.params = getUrlVars() ;
 			if ( undefined !== self.params.lang ) {
+				self.params.lang = self.params.lang.replace(/\#$/,'') ;
 				$('input[name="lang"]').val ( self.params.lang ) ;
 				var l = self.params.lang.split(',').reverse() ;
 				$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 			}
 			
 			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
+			$('#toolbar-right').prepend ( "<li><a href='#' id='language_select'></a></li>" ) ;
+			$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
+			
+			if ( self.params.q === undefined ) {
+				$('#language_select').hide() ;
+			} else {
+				$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+					action:'query',
+					meta:'siteinfo',
+					siprop:'languages',
+					format:'json'
+				} , function ( d ) {
+					self.all_languages = {} ;
+					$.each ( d.query.languages , function ( k , v ) { self.all_languages[v.code] = v['*'] } ) ;
+					var curlang = self.all_languages[self.wd.main_languages[0]] || 'Unknown language' ;
+					$('#language_select').text ( curlang ) ;
+				} ) ;
+			}
+
 			wd_auto_desc_wd.init() ;
 			wd_auto_desc.lang = self.wd.main_languages[0] ;
 			if ( undefined !== self.params.q ) self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
