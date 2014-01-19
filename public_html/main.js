@@ -850,7 +850,7 @@ var reasonator = {
 		var self = this ;
 		var has_header = false ;
 
-		$.each ( ['image','video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image'] , function ( dummy1 , medium ) {
+		$.each ( ['image','video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image','range_map'] , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
@@ -865,8 +865,9 @@ var reasonator = {
 						io.th = 400 ;
 						io.id = '#'+self.main_type+' div.main_'+medium2 ;
 						io.append = true ;
-						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' ) io.type = 'image' ;
+						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' || medium == 'range_map' ) io.type = 'image' ;
 						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
+				if ( medium == 'range_map' ) console.log ( io ) ;
 					} else {
 						if ( !has_header ) {
 							$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
