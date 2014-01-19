@@ -719,7 +719,9 @@ var reasonator = {
 
 		if ( self.allow_rtl && -1 < $.inArray ( self.wd.main_languages[0] , [ 'fa'  ] ) ) {
 			$('#main_content').css ( { 'direction':'RTL' } ) ;
-			$('div.sidebar').css({'float':'left'})
+			$('div.sidebar').css({'float':'left'}) ;
+			$('td,th').css({'text-align':'right'}) ;
+			$('div.sidebar th').css({'text-align':'center'}) ;
 		}
 
 		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
@@ -926,7 +928,7 @@ var reasonator = {
 			var block_id = 'table_block_'+ self.table_block_counter ;
 			var collapse = num_rows >= self.collapse_item_list ;
 			var rows = num_rows + (collapse?1:0) ;
-			h += "<tr><th style='min-width:20%' align='left' valign='top' rowspan='" + rows + "'>" ;
+			h += "<tr><th style='min-width:20%' valign='top' rowspan='" + rows + "'>" ;
 			h += self.getItemLink ( { type:'item',q:'P'+p } , { desc:true } ) ;
 			h += "</th>" ;
 			var row = 0 ;
