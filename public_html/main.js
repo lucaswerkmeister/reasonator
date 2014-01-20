@@ -1495,7 +1495,7 @@ var reasonator = {
 		h += '<div class="modal-body">' ;
 		
 		var use_quick_language_switch = false ;
-		var url = "?" + ( self.q === undefined ? '' : "q="+self.q ) + "&lang=" ;
+		var url = "?" + ( self.q === undefined ? '' : "q="+self.q ) + ( self.params.find === undefined ? '' : "find="+escape(self.params.find) ) + "&lang=" ;
 		var hadthat = {} ;
 
 		h += "<div><h4>" + self.t("common_languages") + "</h4>" ;
@@ -1575,7 +1575,7 @@ var reasonator = {
 			$('#toolbar-right').prepend ( "<li><a href='#' id='language_select'></a></li>" ) ;
 			$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
 			
-			if ( self.params.q === undefined ) {
+			if ( self.params.q === undefined && self.params.find == undefined) {
 				$('#language_select').hide() ;
 			} else {
 				$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
