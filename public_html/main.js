@@ -89,6 +89,7 @@ var reasonator = {
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
 	banner_width : 700 ,
+	use_hoverbox : true ,
 	mark_missing_labels : true ,
 	allow_rtl : true ,
 	use_autodesc : true ,
@@ -739,7 +740,97 @@ var reasonator = {
 			} , 100 ) ;
 		}
 		
-		if ( self.use_autodesc ) {
+		if ( self.use_hoverbox ) {
+			var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
+			wd_auto_desc.lang = pl ;
+			var icons = {
+				wiki:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/18px-Wikipedia-logo-v2.svg.png' ,
+				wikivoyage:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Wikivoyage-logo.svg/18px-Wikivoyage-logo.svg.png' ,
+				wikisource:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/18px-Wikisource-logo.svg.png'
+			} ;
+
+			$('a.q_internal').cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
+				splitTitle:'|',
+				multiple : false,
+				sticky : true ,
+				mouseOutClose : 'both' ,
+				cluetipClass : 'myclue' ,
+//				delayedClose : 500 ,
+				onShow : function(ct, ci) { // Outer/inner jQuery node
+					var a = $(this) ;
+					var qnum = a.attr('q') ;
+					var q = 'Q'+qnum ;
+					var i = reasonator.wd.items[q] ;
+					var title = i.getLabel() ;
+					var dl = i.getLabelDefaultLanguage() ;
+
+					var h = "" ;
+					h += "<div><span style='margin-right:10px;font-size:12pt'><a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/Q"+qnum+"'>Q"+qnum+"</a></span>" ;
+					
+					var sl = i.getWikiLinks() ;
+					$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' ] , function ( dummy , site ) {
+						var s2 = site=='wiki'?'wikipedia':site ;
+						if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.all_languages[pl]+" "+s2+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
+					} ) ;
+					var commons = i.getClaimObjectsForProperty ( 373 ) ;
+					if ( commons.length > 0 ) {
+						h += "<span style='margin-left:5px'><a title='Commons category' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
+					}
+					h += "</div>" ;
+					
+					
+					if ( dl != pl ) {
+						h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
+						h += "No label in $1 for this item; add one now!".replace(/\$1/g,self.all_languages[pl]||pl) ;
+						h += "</i></div>" ;
+					}
+
+					h += "<div>" + i.getDesc() + "</div>" ;
+				
+					var adid = 'cluetip_autodesc_'+q ;
+					if ( self.use_autodesc ) {
+						h += "<div id='"+adid+"'>...</div>" ;
+					}
+				
+				
+					ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
+					var title_element = $(ct.find('h3')) ;
+					title_element.html ( title ) ;
+					ci.attr({q:q}) ;
+					ci.html ( h ) ;
+
+					var images = i.getMultimediaFilesForProperty(18);
+					if ( images.length > 0 ) {
+						var img = images[0] ;
+						$.getJSON ( '//commons.wikimedia.org/w/api.php?callback=?' , {
+							action:'query',
+							titles:'File:'+img,
+							prop:'imageinfo',
+							format:'json',
+							iiprop:'url',
+							iiurlwidth:120,
+							iiurlheight:300
+						} , function ( d ) {
+							if ( d.query === undefined || d.query.pages === undefined ) return ;
+							$.each ( d.query.pages , function ( dummy , v ) {
+								if ( v.imageinfo === undefined ) return ;
+								var ii = v.imageinfo[0] ;
+								var h = "<div style='float:right'><img src='"+ii.thumburl+"' /></div>" ;
+								if ( ci.attr('q') != q ) return ;
+								$('#cluetip').css({width:'400px'});
+								ci.prepend ( h ) ;
+							} ) ;
+						} ) ;
+					}
+
+					if ( self.use_autodesc ) {
+						wd_auto_desc.loadItem ( q , { target:$('#'+adid) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
+					}
+				}
+			} ) ;
+		}
+		
+		if ( self.use_autodesc && !self.use_hoverbox ) {
 			var x = {} ;
 			$.each ( self.autodesc_items , function ( dummy , q ) {
 				x[q] = 1 ;
@@ -749,7 +840,7 @@ var reasonator = {
 				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
 			} ) ;
 		}
-		
+
 		self.adjustSitelinksHeight() ;
 	} ,
 	
@@ -1200,7 +1291,7 @@ var reasonator = {
 			else if ( item.gender !== undefined ) h += '?&nbsp;' ;
 		}
 		h += "<a" ;
-		if ( internal ) h += " href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
+		if ( internal ) h += " q='"+qnum+"' class='q_internal' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
 		else h += " class='wikidata' target='_blank' href='" + url + "'" ;
 		var title = [] ;
 		if ( o.desc ) { title.unshift ( item.getDesc() ) ; if ( title[0] == '' ) title.shift() }
@@ -1221,11 +1312,11 @@ var reasonator = {
 		h += ">" ;
 		h += o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
 		h += "</a>" ;
-		if ( internal ) {
+		if ( internal && !self.use_hoverbox ) {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
 		}
 		
-		if ( o.add_desc ) {
+		if ( o.add_desc && !self.use_hoverbox ) {
 			var d = item.getDesc()  ;
 			h += " <small class='autodesc_"+q+"'>" + d+ "</small>" ;
 			if ( d == '' && self.use_autodesc ) {
@@ -1620,11 +1711,13 @@ $(document).ready ( function () {
 	var img = '//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/32px-Reasonator_logo_proposal.png' ;
 	$('#toolname').before ( "<img border=0 src='"+img+"' />" ) ;
 	$('body').css({'background-color':'#FAFAFA'}) ;
-	$('#main_content').css({'background-color':'#FFF',padding:'1px'}).hide() ;
-	loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-		document.title = 'Reasonator' ;
-		reasonator.init ( function () {
-			reasonator.initializeFromParameters() ;
-		} ) ;
-	} } ) ;
+	$.getScript ( 'resources/js/jquery/jquery.cluetip.min.js' , function () {
+		$('#main_content').css({'background-color':'#FFF',padding:'1px'}).hide() ;
+		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
+			document.title = 'Reasonator' ;
+			reasonator.init ( function () {
+				reasonator.initializeFromParameters() ;
+			} ) ;
+		} } ) ;
+	} ) ;
 } ) ;
