@@ -770,18 +770,18 @@ var reasonator = {
 					var sl = i.getWikiLinks() ;
 					$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' ] , function ( dummy , site ) {
 						var s2 = site=='wiki'?'wikipedia':site ;
-						if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.all_languages[pl]+" "+s2+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
+						if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
 					} ) ;
 					var commons = i.getClaimObjectsForProperty ( 373 ) ;
 					if ( commons.length > 0 ) {
-						h += "<span style='margin-left:5px'><a title='Commons category' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
+						h += "<span style='margin-left:5px'><a title='"+self.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
 					}
 					h += "</div>" ;
 					
 					
 					if ( dl != pl ) {
 						h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
-						h += "No label in $1 for this item; add one now!".replace(/\$1/g,self.all_languages[pl]||pl) ;
+						h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
 						h += "</i></div>" ;
 					}
 
