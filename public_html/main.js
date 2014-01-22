@@ -706,7 +706,14 @@ var reasonator = {
 	
 	renderName : function () {
 		var self = this ;
-		$('#'+self.main_type+' h1.main_title').html ( self.wd.items[self.q].getLabel() ) ;
+		var label = self.wd.items[self.q].getLabel() ;
+		if ( label == self.q ) { // No "common" label, pick one
+			var item = reasonator.wd.getItem(self.q).raw ;
+			if ( undefined !== item && undefined !== item.labels ) {
+				$.each ( item.labels , function ( k , v ) { label = v.value ; } ) ;
+			}
+		}
+		$('#'+self.main_type+' h1.main_title').html ( label ) ;
 		self.setDocTitle ( self.wd.items[self.q].getLabel() ) ;
 	} ,
 	
@@ -1310,7 +1317,16 @@ var reasonator = {
 		}
 		
 		h += ">" ;
-		h += o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+
+		var label = o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+		if ( label == q ) { // No "common" label, pick one
+			if ( undefined !== item.raw && undefined !== item.raw.labels ) {
+				$.each ( item.raw.labels , function ( k , v ) { label = v.value ; return false } ) ;
+			}
+		}
+
+		h += label ; //o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+
 		h += "</a>" ;
 		if ( internal && !self.use_hoverbox ) {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
