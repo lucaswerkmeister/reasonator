@@ -762,6 +762,7 @@ var reasonator = {
 				sticky : true ,
 				mouseOutClose : 'both' ,
 				cluetipClass : 'myclue' ,
+				leftOffset : 0 ,
 //				delayedClose : 500 ,
 				onShow : function(ct, ci) { // Outer/inner jQuery node
 					var a = $(this) ;
