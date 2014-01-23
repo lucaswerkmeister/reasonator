@@ -89,6 +89,8 @@ var reasonator = {
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
 	banner_width : 700 ,
+	showQRLink : true ,
+	allowLabelOauthEdit : false ,
 	use_hoverbox : true ,
 	mark_missing_labels : true ,
 	allow_rtl : true ,
@@ -629,6 +631,7 @@ var reasonator = {
 		var self = this ;
 		var type = self.main_type ;
 		var h = $('#main').height()-$('#'+type+' div.sitelinks').position().top+$('#main').position().top;
+		if ( self.showQRLink ) h -= 200 ; // QR code
 		$('#'+type+' div.sitelinks').css({'max-height':h})
 	} ,
 
@@ -790,7 +793,11 @@ var reasonator = {
 					if ( dl != pl ) {
 						h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
 						h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
-						h += "</i></div>" ;
+						h += "</i>" ;
+						if ( self.allowLabelOauthEdit ) {
+							h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>Add a label</b></a> (via <a target='_blank' href='/widar'>WiDaR</a>)" ;
+						}
+						h += "</div>" ;
 					}
 
 					h += "<div>" + i.getDesc() + "</div>" ;
@@ -838,6 +845,8 @@ var reasonator = {
 			} ) ;
 		}
 		
+		
+		
 		if ( self.use_autodesc && !self.use_hoverbox ) {
 			var x = {} ;
 			$.each ( self.autodesc_items , function ( dummy , q ) {
@@ -848,9 +857,70 @@ var reasonator = {
 				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
 			} ) ;
 		}
+		
+		
+		if ( self.showQRLink ) {
+			var sites = self.wd.getItem(self.q).getWikiLinks() || {} ;
+			var site ;
+			$.each ( self.wd.main_languages , function ( dummy , l ) {
+				if ( sites[l+'wiki'] === undefined ) return ;
+				site = sites[l+'wiki'] ;
+				return false ;
+			} ) ;
+			if ( site === undefined ) {
+				$.each ( sites, function ( k , v ) {
+					if ( !k.match(/^.+wiki$/ ) ) return ;
+					site = v ;
+					return false ;
+				} ) ;
+			}
+			if ( site === undefined ) return ;
+			
+			var m = site.site.match ( /^(.+)wiki$/ ) ;
+			var l = m[1] ;
+			var url_title = escape(site.title.replace(/\s/g,'_')) ;
+			var qrp_url = "http://qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=http://"+l+".qrwp.wikimedia.org.uk/" + url_title ;
+			var qr_img = "<a title='"+self.t('qrpedia')+"' href='//"+l+".qrwp.wikimedia.org.uk/"+url_title+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
+			var h = '<div style="text-align:center" class="qrcode"></div>' ;
+			$('#'+self.main_type+' div.sidebar').append ( h ) ;
+			if ( true ) { // Direct QR code show
+				$('div.qrcode').html ( qr_img ) ;
+			} else {
+				$('div.qrcode').html ( '<a href="#">Show QR code</a>' ) ;
+				$('div.qrcode a').click ( function () {
+					$('div.qrcode').html ( qr_img ) ;
+					return false ;
+				} ) ;
+			}
+
+		}
 
 		self.adjustSitelinksHeight() ;
 	} ,
+	
+	
+	addLabelOauth : function ( q , lang ) {
+		var a = $('a.q_internal[q="'+q.replace(/\D/g,'')+'"]') ;
+		var self = reasonator ;
+		var label = prompt ( "New label in " + self.all_languages[lang] , "" ) ;
+		
+		if(label == "" || label == null) return ;
+
+		$.getJSON ( '/widar/index.php?callback=?' , {
+			action:'set_label',
+			q:q,
+			lang:lang,
+			label:label,
+			botmode:1
+		} , function ( d ) {
+			console.log ( d ) ;
+			if ( d.error == 'OK' ) {
+				a.css({border:'none'}).text ( label ) ;
+				reasonator.wd.items[q].raw.labels[lang] = { language:lang , value:label } ;
+			} else alert ( d.error ) ;
+		} ) ;
+	} ,
+	
 	
 	addMiscData : function ( props ) {
 		var self = this ;
@@ -957,6 +1027,7 @@ var reasonator = {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
+				if ( v.getID() != self.q && v.getID() == 'Q5' ) return ; // No "human" images in related media
 				var im = v.getMultimediaFilesForProperty ( self.P[medium] ) ;
 				$.each ( im , function ( k2 , v2 ) {
 					self.imgcnt++ ;
