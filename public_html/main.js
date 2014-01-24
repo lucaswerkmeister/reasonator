@@ -1785,8 +1785,9 @@ var reasonator = {
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		
-		$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
-		$('#toolbar-right').prepend ( "<li><a href='#' id='language_select'></a></li>" ) ;
+		
+		$('#find').attr({title:self.t('find')+' [F]'}) ;
+		$('#btn_search').text(self.t('find')) ;
 		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
 		
 		if ( self.params.q === undefined && self.params.find == undefined) {
