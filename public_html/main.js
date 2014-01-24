@@ -575,7 +575,8 @@ var reasonator = {
 				var section = 'siblings' ;
 				var real_p ;
 				var val = {type:'item',mode:1} ;
-				if ( self.wd.items[v.key].gender == 'M' ) real_p = self.P.brother ;
+				if ( self.wd.items[v.key] === undefined ) val = {type:'item',mode:2} ;
+				else if ( self.wd.items[v.key].gender == 'M' ) real_p = self.P.brother ;
 				else if ( self.wd.items[v.key].gender == 'F' ) real_p = self.P.sister ;
 				else val = {type:'item',mode:2} ;
 				val.q = v.key ;
@@ -879,8 +880,9 @@ var reasonator = {
 			var m = site.site.match ( /^(.+)wiki$/ ) ;
 			var l = m[1] ;
 			var url_title = escape(site.title.replace(/\s/g,'_')) ;
-			var qrp_url = "http://qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=http://"+l+".qrwp.wikimedia.org.uk/" + url_title ;
-			var qr_img = "<a title='"+self.t('qrpedia')+"' href='//"+l+".qrwp.wikimedia.org.uk/"+url_title+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
+			var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
+			var qrp_url = "//qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
+			var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
 			var h = '<div style="text-align:center" class="qrcode"></div>' ;
 			$('#'+self.main_type+' div.sidebar').append ( h ) ;
 			if ( true ) { // Direct QR code show
