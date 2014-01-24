@@ -126,7 +126,9 @@ var reasonator = {
 		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent','relative'] , function ( k , v ) {
 			self.personal_relation_list.push ( self.P_person[v] ) ;
 		} ) ;
-		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
+		
+		var loadcnt = 3 ;
+		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , { // 1
 			action:'parse',
 			page:'Reasonator/stringprops',
 			format:'json',
@@ -148,7 +150,20 @@ var reasonator = {
 				self.P_person[id] = prop ;
 				self.P_location[id] = prop ;
 			} ) ;
-			self.loadInterfaceText ( callback ) ;
+			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+		} ) ;
+		self.loadInterfaceText ( function () { // 2
+			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+		} ) ;
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , { // 3
+			action:'query',
+			meta:'siteinfo',
+			siprop:'languages',
+			format:'json'
+		} , function ( d ) {
+			self.all_languages = {} ;
+			$.each ( d.query.languages , function ( k , v ) { self.all_languages[v.code] = v['*'] } ) ;
+			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 		} ) ;
 	} ,
 	
@@ -182,14 +197,13 @@ var reasonator = {
 		self.P = $.extend(true, {}, self.P_all);
 		self.q = self.wd.convertToStringArray ( q , 'Q' ) [0] ;
 		self.mm_load = [] ;
-		$('#main_content').load ( 'main.html' , function () {
-			$('#main_content').show() ;
-			$('#top').html ( '<i>'+self.t('loading')+'</i>' ) ;
-			self.wd.loadItems ( q , {
-				loaded : function ( x ) { self.q = x } ,
-				finished : function ( x ) { self.detectAndLoadQ ( self.q ) }
-			} , 0 ) ;
-		} ) ;
+		$('#main_content').show() ;
+		$('#main_content_sub').show() ;
+		$('#top').html ( '<i>'+self.t('loading')+'</i>' ) ;
+		self.wd.loadItems ( q , {
+			loaded : function ( x ) { self.q = x } ,
+			finished : function ( x ) { self.detectAndLoadQ ( self.q ) }
+		} , 0 ) ;
 	} ,
 	
 	detectAndLoadQ : function ( q ) {
@@ -1629,6 +1643,7 @@ var reasonator = {
 			
 			$('#main').html ( h ) ;
 			$('#main_content').show() ;
+			$('#main_content_sub').show() ;
 			
 			self.wd.loadItems ( qs , {
 				finished : function ( x ) {
@@ -1762,58 +1777,49 @@ var reasonator = {
 	
 	initializeFromParameters : function () {
 		var self = this ;
-		$.getScript ( '/wikidata-todo/autodesc.js' , function () {
-			self.params = getUrlVars() ;
-			if ( undefined !== self.params.lang ) {
-				self.params.lang = self.params.lang.replace(/\#$/,'') ;
-				$('input[name="lang"]').val ( self.params.lang ) ;
-				var l = self.params.lang.split(',').reverse() ;
-				$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
-			}
-			
-			$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
-			$('#toolbar-right').prepend ( "<li><a href='#' id='language_select'></a></li>" ) ;
-			$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
-			
-			if ( self.params.q === undefined && self.params.find == undefined) {
-				$('#language_select').hide() ;
-			} else {
-				$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
-					action:'query',
-					meta:'siteinfo',
-					siprop:'languages',
-					format:'json'
-				} , function ( d ) {
-					self.all_languages = {} ;
-					$.each ( d.query.languages , function ( k , v ) { self.all_languages[v.code] = v['*'] } ) ;
-					var curlang = self.all_languages[self.wd.main_languages[0]] || 'Unknown language' ;
-					$('#language_select').text ( curlang ) ;
-				} ) ;
-			}
+		self.params = getUrlVars() ;
+		if ( undefined !== self.params.lang ) {
+			self.params.lang = self.params.lang.replace(/\#$/,'') ;
+			$('input[name="lang"]').val ( self.params.lang ) ;
+			var l = self.params.lang.split(',').reverse() ;
+			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
+		}
+		
+		$('#toolbar-right').prepend ( '<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" title="'+self.t('find')+' [F]" value="" class="input-large search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">'+self.t('find')+'</button></form></li>' ) ;
+		$('#toolbar-right').prepend ( "<li><a href='#' id='language_select'></a></li>" ) ;
+		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
+		
+		if ( self.params.q === undefined && self.params.find == undefined) {
+			$('#language_select').hide() ;
+		} else {
+			var curlang = self.all_languages[self.wd.main_languages[0]] || 'Unknown language' ;
+			$('#language_select').text ( curlang ) ;
+		}
 
-			wd_auto_desc_wd.init() ;
-			wd_auto_desc.lang = self.wd.main_languages[0] ;
-			if ( undefined !== self.params.q ) self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
-			else if ( undefined !== self.params.find ) {
-				self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
-			} else $('#main_content').show() ;
-		} ) ;
+		wd_auto_desc_wd.init() ;
+		wd_auto_desc.lang = self.wd.main_languages[0] ;
+		if ( undefined !== self.params.q ) self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
+		else if ( undefined !== self.params.find ) {
+			self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
+		} else {
+			$('#main_content').show() ;
+			$('#intro').show() ;
+		}
 	} ,
 
 	fin : false
 } ;
 
+
+
+
 $(document).ready ( function () {
-	var img = '//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/32px-Reasonator_logo_proposal.png' ;
-	$('#toolname').before ( "<img border=0 src='"+img+"' />" ) ;
-	$('body').css({'background-color':'#FAFAFA'}) ;
-	$.getScript ( 'resources/js/jquery/jquery.cluetip.min.js' , function () {
-		$('#main_content').css({'background-color':'#FFF',padding:'1px'}).hide() ;
-		loadMenuBarAndContent ( { toolname : 'Reasonator' , meta : 'Reasonator' , content : 'intro.html' , run : function () {
-			document.title = 'Reasonator' ;
-			reasonator.init ( function () {
-				reasonator.initializeFromParameters() ;
-			} ) ;
-		} } ) ;
+	$('#emergency').remove() ;
+
+	$('#main_content').hide() ;
+	document.title = 'Reasonator' ;
+	reasonator.init ( function () {
+		reasonator.initializeFromParameters() ;
 	} ) ;
+	
 } ) ;

@@ -5,6 +5,10 @@ a.wikipedia { color:#3F7EA6; } /* #9669FE */
 a.external { color:#7AD95F; font-size:10pt; } /* #2DC800 */
 .sitelinks tbody { font-size:9pt; }
 
+body {
+	background-color:#FAFAFA;
+}
+
 table.sidebar-table {
 	width:100%;
 	border:0;
@@ -72,10 +76,12 @@ div.map {
 	box-shadow:8px 8px 8px #DDD;
 	margin-bottom:20px;
 	border-radius:15px;
-	padding-top:5px;
+/*	padding-top:5px;
 	padding-bottom:5px;
 	padding-left:2px;
-	padding-right:2px;
+	padding-right:2px;*/
+	background-color:#FFF;
+	padding:1px;
 }
 
 #top {
