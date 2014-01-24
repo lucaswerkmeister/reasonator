@@ -253,7 +253,7 @@ var reasonator = {
 			finished : function () {
 		
 			self.wd.loadItems ( q , {
-				languages : self.wd.main_languages.join("|") ,
+//				languages : self.wd.main_languages.join("|") ,
 				follow : [] ,
 				preload : [] ,
 				preload_all_for_root : true ,
@@ -279,7 +279,7 @@ var reasonator = {
 			finished : function () {
 
 			self.wd.loadItems ( q , {
-				languages : self.wd.main_languages.join("|") ,
+//				languages : self.wd.main_languages.join("|") ,
 				follow : self.personal_relation_list ,
 				preload : [ self.P.sex ] ,
 				preload_all_for_root : true ,
@@ -301,7 +301,7 @@ var reasonator = {
 		self.wd.clear() ;
 
 		self.wd.loadItems ( the_q , {
-			languages : self.wd.main_languages.join("|") ,
+//			languages : self.wd.main_languages.join("|") ,
 			follow : self.taxon_list ,
 			preload : [ 105 , 405 , 141 , 183 ] ,
 			preload_all : true ,
@@ -320,7 +320,7 @@ var reasonator = {
 
 		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
 			self.wd.loadItems ( the_q , {
-				languages : self.wd.main_languages.join("|") ,
+//				languages : self.wd.main_languages.join("|") ,
 				follow : self.location_props ,
 				preload : [ 132 ] , // 105 , 405 , 141 , 183
 				preload_all : true ,
