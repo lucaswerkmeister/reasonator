@@ -861,7 +861,7 @@ var reasonator = {
 		}
 		
 		if ( self.showConceptCloudLink ) {
-			var h = "<div><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"'>"+self.t('concept_cloud')+"</a></div>" ;
+			var h = "<div><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
 			$('#'+self.main_type+' div.sidebar').append ( h ) ;
 		}
 		
