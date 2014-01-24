@@ -1333,7 +1333,7 @@ var reasonator = {
 			h += "<tr><th colspan='2'>" + groups[project].title + "</th></tr>" ;
 			$.each ( groups[project].sites , function ( dummy , site ) {
 				h += "<tr><td>" + site.code + "</td>" ;
-				h += "<td><a href='//" + site.code + "."+groups[project].server+"/wiki/" + escattr(site.page) + "' class='wikipedia'>" + site.page + "</a></td></tr>" ;
+				h += "<td><a href='//" + site.code + "."+groups[project].server+"/wiki/" + escattr(site.page) + "' class='wikipedia' target='_blank'>" + site.page + "</a></td></tr>" ;
 			} ) ;
 		} ) ;
 
