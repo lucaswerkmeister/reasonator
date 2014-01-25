@@ -645,10 +645,13 @@ var reasonator = {
 
 	adjustSitelinksHeight : function () {
 		var self = this ;
+		var qr_code_height = 200 ;
 		var type = self.main_type ;
-		var h = $('#main').height()-$('#'+type+' div.sitelinks').position().top+$('#main').position().top;
-		if ( self.showQRLink ) h -= 200 ; // QR code
-		$('#'+type+' div.sitelinks').css({'max-height':h})
+		var min_height = parseInt($('#'+type+' div.sitelinks').css('min-height')) ;
+		var h = parseInt($('#main').height())-parseInt($('#'+type+' div.sitelinks').position().top)+parseInt($('#main').position().top);
+		if ( self.showQRLink ) h -= qr_code_height ; // QR code
+		if ( h < min_height ) h = min_height ;
+		$('#'+type+' div.sitelinks').css({'max-height':h+'px'})
 	} ,
 
 	renderChain : function ( chain , columns ) {
@@ -907,6 +910,7 @@ var reasonator = {
 			$('#'+self.main_type+' div.sidebar').append ( h ) ;
 			if ( true ) { // Direct QR code show
 				$('div.qrcode').html ( qr_img ) ;
+				self.adjustSitelinksHeight();
 			} else {
 				$('div.qrcode').html ( '<a href="#">Show QR code</a>' ) ;
 				$('div.qrcode a').click ( function () {
