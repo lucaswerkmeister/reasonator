@@ -317,7 +317,7 @@ var reasonator = {
 		self.wd.loadItems ( the_q , {
 //			languages : self.wd.main_languages.join("|") ,
 			follow : self.taxon_list ,
-			preload : [ 105 , 405 , 141 , 183 ] ,
+			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
 			preload_all : true ,
 			finished : function ( p ) {
 				self.showTaxon ( the_q ) ;
@@ -428,7 +428,7 @@ var reasonator = {
 		
 		// Render taxon properties
 		var sd = {} ;
-		$.each ( [105,405,141,183] , function ( dummy , p ) {
+		$.each ( [225,105,405,141,183] , function ( dummy , p ) {
 			p = 'P' + p ;
 			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
 			if ( items.length === 0 ) return ;
