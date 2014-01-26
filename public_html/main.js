@@ -137,6 +137,7 @@ var reasonator = {
 		var loadcnt = 3 ;
 
 		self.params = getUrlVars() ;
+		if ( self.params.live !== undefined ) self.use_wdq = false ;
 		if ( self.params.q !== undefined ) {
 			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
 			loadcnt += 2 ;
@@ -378,6 +379,7 @@ var reasonator = {
 	// Used as final stage by all types
 	loadRest : function ( callback ) {
 		var self = this ;
+		self.P = $.extend(true, self.P_all, self.P_websites);
 		self.wd.getItemBatch ( self.to_load , function ( loaded_items ) {
 			self.to_load = [] ;
 			self.addMissingPropsLinkingToMainItem () ;
@@ -422,9 +424,9 @@ var reasonator = {
 		} ) ;
 	} ,
 	
-	loadLocation : function ( the_q ) { // TODO
+	loadLocation : function ( the_q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_location);
+		self.P = $.extend(true, self.P_all, self.P_location, self.P_websites);
 		self.main_type = 'location' ;
 		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { self.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
 		
@@ -514,6 +516,14 @@ var reasonator = {
 			{ title:self.t('name') , name:true } ,
 			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 		] ) ;
+
+		if ( self.use_wdq ) {
+			var url = self.getCurrentUrl ( { live:true } ) ;
+			var line = self.t('wdq_notice') ;
+			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
+			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+		}
 		
 		// Render taxon properties
 		var sd = {} ;
@@ -562,6 +572,14 @@ var reasonator = {
 			{ title:self.t('admin_division') , prop:132 } ,
 		] ) ;
 
+		if ( self.use_wdq ) {
+			var url = self.getCurrentUrl ( { live:true } ) ;
+			var line = self.t('wdq_notice') ;
+			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
+			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+		}
+
 		self.P['type_of_administrative_division'] = 132 ;
 		$.each ( self.location_props , function ( k , v ) {
 			self.P['P'+v] = v ; // Prevent them showing in "other" list
@@ -570,6 +588,17 @@ var reasonator = {
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
 		self.finishDisplay ( h ) ; // Finish
+	} ,
+	
+	getCurrentUrl : function ( o ) {
+		var self = this ;
+		var url = "?q=" + self.q ;
+		var lang = '' ;
+		if ( self.params.lang != 'en' && self.params.lang != '' ) lang = "&lang=" + self.params.lang ;
+		if ( undefined !== o.lang ) lang = o.lang ;
+		if ( undefined === o.live ) o.live = self.params.live !== undefined ;
+		if ( o.live ) url += "&live" ;
+		return url ;
 	} ,
 
 
