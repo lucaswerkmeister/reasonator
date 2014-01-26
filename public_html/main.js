@@ -41,10 +41,12 @@ var reasonator = {
 		taxon_name : 225 ,
 		taxon_rank : 105 ,
 		taxon_author : 405 ,
+		taxon_type : 427 ,
 		IUCN : 141 ,
 		range_map : 181 ,
 		endemic_to : 183 ,
 		parent_taxon : 171 ,
+		basionym : 566 ,
 		domain : 273 ,
 		kingdom : 75 ,
 		phylum : 76 ,
@@ -88,9 +90,11 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	force_wdq : true ,
 	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
 	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
 	banner_width : 700 ,
+	max_related_media : 50 ,
 	showConceptCloudLink : true ,
 	showQRLink : true ,
 	allowLabelOauthEdit : false ,
@@ -125,12 +129,27 @@ var reasonator = {
 		self.wd = new WikiData ;
 		self.personal_relation_list = [] ;
 		self.do_maps = undefined ;
+		self.to_load = [] ;
 		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent','relative'] , function ( k , v ) {
 			self.personal_relation_list.push ( self.P_person[v] ) ;
 		} ) ;
 		
 		var loadcnt = 3 ;
-		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , { // 1
+
+		self.params = getUrlVars() ;
+		if ( self.params.q !== undefined ) {
+			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
+			loadcnt += 2 ;
+			self.wd.getItemBatch ( [self.q] , function ( d1 ) {
+				self.addToLoadLater ( self.q ) ;
+				loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+			} ) ;
+			self.getRelatedEntities ( self.q , function () {
+				loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+			} ) ;
+		}
+		
+		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , { // Get string props
 			action:'parse',
 			page:'Reasonator/stringprops',
 			format:'json',
@@ -154,10 +173,10 @@ var reasonator = {
 			} ) ;
 			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 		} ) ;
-		self.loadInterfaceText ( function () { // 2
+		self.loadInterfaceText ( function () { // Get interface translations
 			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 		} ) ;
-		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , { // 3
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , { // Get site info (languages)
 			action:'query',
 			meta:'siteinfo',
 			siprop:'languages',
@@ -166,6 +185,30 @@ var reasonator = {
 			self.all_languages = {} ;
 			$.each ( d.query.languages , function ( k , v ) { self.all_languages[v.code] = v['*'] } ) ;
 			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+		} ) ;
+	} ,
+
+	addToLoadLater : function ( the_q ) {
+		var self = this ;
+		var i = self.wd.items[the_q] ;
+		$.each ( i.getPropertyList() , function ( k1 , p ) {
+			self.to_load.push ( 'P'+(p+'').replace(/\D/g,'') ) ;
+			var qs = i.getClaimItemsForProperty(p,true) ;
+			$.each ( qs , function ( k2 , q2 ) {
+				self.to_load.push ( q2 ) ;
+			} ) ;
+			$.each ( self.wd.items[the_q].raw.claims[p] , function ( dummy , c ) {
+				if ( c.qualifiers === undefined ) return ;
+				$.each ( c.qualifiers , function ( p2 , cv ) {
+					self.to_load.push ( p2 ) ;
+					$.each ( cv , function ( dummy2 , c ) {
+						if ( c.datavalue === undefined ) return ;
+						if ( c.datavalue.value === undefined ) return ;
+						if ( c.datavalue.value['entity-type'] != 'item' ) return ;
+						self.to_load.push ( 'Q'+c.datavalue.value['numeric-id'] ) ;
+					} ) ;
+				} ) ;
+			} ) ;
 		} ) ;
 	} ,
 	
@@ -202,10 +245,7 @@ var reasonator = {
 		$('#main_content').show() ;
 		$('#main_content_sub').show() ;
 		$('#top').html ( '<i>'+self.t('loading')+'</i>' ) ;
-		self.wd.loadItems ( q , {
-			loaded : function ( x ) { self.q = x } ,
-			finished : function ( x ) { self.detectAndLoadQ ( self.q ) }
-		} , 0 ) ;
+		self.detectAndLoadQ ( self.q ) ;
 	} ,
 	
 	detectAndLoadQ : function ( q ) {
@@ -216,6 +256,81 @@ var reasonator = {
 		else if ( self.isLocation(q) ) self.loadLocation ( q ) ;
 		else self.loadGeneric ( q ) ;
 	} ,
+
+	addMissingPropsLinkingToMainItem : function () {
+		var self = this ;
+		$.each ( self.wd.items , function ( qp , i ) {
+			$.each ( (i.raw.claims||[]) , function ( prop , v0 ) {
+				$.each ( i.getClaimItemsForProperty(prop) , function ( dummy , q ) {
+					if ( q != self.q ) return ;
+					if ( undefined !== self.wd.items[prop] ) return ;
+					if ( -1 != $.inArray ( prop , self.to_load ) ) return ;
+					self.to_load.push ( prop ) ;
+				} ) ;
+			} ) ;
+		} ) ;
+//		console.log ( self.to_load ) ;
+	} ,
+	
+	addPropTargetsToLoad : function ( items , props ) {
+		var self = this ;
+		$.each ( items , function ( dummy0 , q ) {
+			q = 'Q'+(q+'').replace(/\D/g,'') ;
+			if ( undefined === self.wd.items[q] ) return ; // Paranoia
+			$.each ( props , function ( dummy1 , p ) {
+				p = 'P'+(p+'').replace(/\D/g,'') ;
+				var subitems = self.wd.items[q].getClaimItemsForProperty ( p , true ) ;
+				$.each ( subitems , function ( dummy2 , sq ) {
+					if ( undefined !== self.wd.items[sq] ) return ; // Had that
+					if ( -1 != $.inArray ( sq , self.to_load ) ) return ; // Going to do that
+					self.to_load.push ( sq ) ;
+				} ) ;
+			} ) ;
+		} ) ;
+	} ,
+	
+
+	loadBacktrack : function ( o ) {
+		var self = this ;
+		if ( self.use_wdq ) {
+			$.getJSON ( self.wdq_url , {
+				q:o.wdq
+			} , function ( d ) {
+				var items = [] ;
+				$.each ( d.items , function ( k , v ) {
+					self.to_load.push ( 'Q'+v ) ;
+					items.push ( 'Q'+v ) ;
+				} ) ;
+				self.wd.getItemBatch ( self.to_load , function () {
+					self.to_load = [] ;
+					self.addPropTargetsToLoad ( items , o.preload ) ;
+					self.loadRest ( o.callback ) ;
+				} ) ;
+			} ) ;
+		} else {
+			var wd2 = new WikiData() ;
+			wd2.loadItems ( self.q , {
+				follow : o.follow ,
+				preload : o.preload ,
+				preload_all : true ,
+				finished : function ( p ) {
+					$.each ( wd2.items , function ( k0 , v0 ) {
+						if ( undefined !== self.wd.items[k0] ) return ;
+						v0.wd = self.wd ;
+						self.wd.items[k0] = v0 ;
+					} ) ;
+					self.loadRest ( o.callback ) ;
+				}
+			} ) ;
+		}
+	} ,
+
+	keys2array : function ( o ) {
+		var ret = [] ;
+		$.each ( o , function ( k , v ) { ret.push ( k ) } ) ;
+		return ret ;
+	} ,
+	
 
 
 
@@ -253,116 +368,74 @@ var reasonator = {
 			}
 
 		} ) ;
+		
 		return ret ;
 	} ,
 
 //__________________________________________________________________________________________
 // Load page types
 
+	// Used as final stage by all types
+	loadRest : function ( callback ) {
+		var self = this ;
+		self.wd.getItemBatch ( self.to_load , function ( loaded_items ) {
+			self.to_load = [] ;
+			self.addMissingPropsLinkingToMainItem () ;
+			self.wd.getItemBatch ( self.to_load , function ( loaded_items ) {
+				callback() ;
+			} ) ;
+		} ) ;
+	} ,
+
 	loadGeneric : function ( q ) {
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_websites);
 		self.main_type = 'generic' ;
-		self.wd.clear() ;
-		
-		self.wd.loadItems ( [] , {
-			finished : function () {
-		
-			self.wd.loadItems ( q , {
-//				languages : self.wd.main_languages.join("|") ,
-				follow : [] ,
-				preload : [] ,
-				preload_all_for_root : true ,
-				finished : function ( x ) {
-					self.getRelatedEntities ( q , function () {
-						self.showGeneric ( q )
-					} ) ;
-				}
-			} , 2 ) ;
-		
-		} } ) ; // Brother/sister
-		
+		self.loadRest ( function () { self.showPerson ( q ) } ) ;
 	} ,
 	
 	loadPerson : function ( q ) {
 		var self = this ;
-
 		self.P = $.extend(true, self.P_all, self.P_person,self.P_websites);
 		self.main_type = 'person' ;
-		self.wd.clear() ;
-
-		self.wd.loadItems ( ['P7','P9'] , { // Brother/sister
-			finished : function () {
-
-			self.wd.loadItems ( q , {
-//				languages : self.wd.main_languages.join("|") ,
-				follow : self.personal_relation_list ,
-				preload : [ self.P.sex ] ,
-				preload_all_for_root : true ,
-				finished : function ( x ) {
-					self.getRelatedEntities ( q , function () {
-						self.showPerson ( q )
-					} ) ;
-				}
-			} , 2 ) ;
-
-		} } ) ; // Brother/sister
-
+		$.each ( self.P_person , function ( k , v ) { self.to_load.push("P"+v) } ) ;
+		self.loadRest ( function () {
+			self.to_load = [] ;
+			self.addPropTargetsToLoad ( self.keys2array ( self.wd.items ) , self.P_person ) ;
+			self.loadRest ( function () {
+				self.showPerson ( q ) ;
+			} ) ;
+		} ) ;
 	} ,
+
 	
 	loadTaxon : function ( the_q ) {
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_taxon);
 		self.main_type = 'taxon' ;
-		self.wd.clear() ;
 		
-		if ( self.use_wdq ) {
-			$.getJSON ( self.wdq_url , {
-				q:'tree['+(the_q+'').replace(/\D/g,'')+']['+self.taxon_list.join(',')+']'
-			} , function ( d ) {
-				console.log ( d ) ;
-				self.wd.loadItems ( d.items , {
-					preload : [ 105 , 405 , 141 , 183 , 910 ] ,
-					finished : function ( p ) {
-						self.showTaxon ( the_q ) ;
-					}
-				} ) ;
-			} ) ;
-		} else {
-			self.wd.loadItems ( the_q , {
-	//			languages : self.wd.main_languages.join("|") ,
-				follow : self.taxon_list ,
-				preload : [ 105 , 405 , 141 , 183 , 910 ] ,
-				preload_all : true ,
-				finished : function ( p ) {
-					self.showTaxon ( the_q ) ;
-				}
-			} ) ;
-		}
-
+		self.loadBacktrack ( {
+			follow : self.taxon_list ,
+			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
+			wdq : 'tree['+(the_q+'').replace(/\D/g,'')+']['+self.taxon_list.join(',')+']' ,
+			callback : function () { self.showTaxon ( the_q ) }
+		} ) ;
 	} ,
 	
-	loadLocation : function ( the_q ) {
+	loadLocation : function ( the_q ) { // TODO
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_location);
 		self.main_type = 'location' ;
-		self.wd.clear() ;
-
-		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { // 'http://www.openlayers.org/api/OpenLayers.js'
-			self.wd.loadItems ( the_q , {
-//				languages : self.wd.main_languages.join("|") ,
-				follow : self.location_props ,
-				preload : [ 132 ] , // 105 , 405 , 141 , 183
-				preload_all : true ,
-				preload_all_for_root : true ,
-				finished : function ( p ) {
-//					self.getRelatedEntities ( the_q , function () { // Deactivated for performance reasons
-						self.showLocation ( the_q ) ;
-//					} ) ;
-				}
-			} ) ;
+		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { self.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
+		
+		self.loadBacktrack ( {
+			follow : self.location_props ,
+			preload : [ 131,132 ] ,
+			wdq : 'tree['+(the_q+'').replace(/\D/g,'')+']['+self.location_props.join(',')+']' ,
+			callback : function () {
+				self.showLocation ( the_q )
+			}
 		} ) ;
-
 	} ,
 
 
@@ -444,7 +517,7 @@ var reasonator = {
 		
 		// Render taxon properties
 		var sd = {} ;
-		$.each ( [225,105,405,141,183] , function ( dummy , p ) {
+		$.each ( [225,105,405,141,183,427,566] , function ( dummy , p ) {
 			p = 'P' + p ;
 			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
 			if ( items.length === 0 ) return ;
@@ -462,6 +535,10 @@ var reasonator = {
 
 	showLocation : function ( q ) {
 		var self = this ;
+		if ( !self.openlayers_loaded ) { // Race condition
+			setTimeout ( function(){self.showLocation(q)} , 50 ) ;
+			return ;
+		}
 		delete self.P.instance_of ; // So it will show, if set
 		
 		// RENDERING
@@ -673,7 +750,7 @@ var reasonator = {
 	renderChain : function ( chain , columns ) {
 		var self = this ;
 		var h = '' ;
-		h += "<table class='table table-condensed table-striped'><thead><tr>" ;
+		h += "<table class='table table-condensed table-striped chaintable'><thead><tr>" ;
 		$.each ( columns , function ( k , v ) {
 			h += "<th nowrap>" + v.title + "</th>" ;
 		} ) ;
@@ -764,14 +841,21 @@ var reasonator = {
 	
 	finishDisplay : function ( h ) {
 		var self = this ;
-		$.each ( self.mm_load , function ( k , v ) { self.multimediaLazyLoad ( v ) } ) ;
+		$.each ( self.mm_load , function ( k , v ) {
+			if ( k >= self.max_related_media ) {
+				$(v.id).remove() ;
+			} else {
+				self.multimediaLazyLoad ( v ) ;
+			}
+		} ) ;
 		self.mm_load = [] ;
 
-		if ( self.allow_rtl && -1 < $.inArray ( self.wd.main_languages[0] , [ 'fa'  ] ) ) {
+		if ( self.allow_rtl && -1 < $.inArray ( self.wd.main_languages[0] , [ 'fa','ar','ur','dv','he' ] ) ) {
 			$('#main_content').css ( { 'direction':'RTL' } ) ;
 			$('div.sidebar').css({'float':'left'}) ;
 			$('td,th').css({'text-align':'right'}) ;
 			$('div.sidebar th').css({'text-align':'center'}) ;
+			setTimeout ( function(){$('table.chaintable td,table.chaintable th').css({'text-align':'right'})} , 100 ) ;
 		}
 
 		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
@@ -1065,11 +1149,11 @@ var reasonator = {
 		var self = this ;
 		var has_header = false ;
 
-		$.each ( ['image','video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image','range_map'] , function ( dummy1 , medium ) {
+		$.each ( ['video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image','range_map','image'] , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
-				if ( v.getID() != self.q && v.getID() == 'Q5' ) return ; // No "human" images in related media
+				if ( v.getID() != self.q && -1 != $.inArray ( v.getID() , ['Q5','Q2']) ) return ; // No often-used images in related media
 				var im = v.getMultimediaFilesForProperty ( self.P[medium] ) ;
 				$.each ( im , function ( k2 , v2 ) {
 					self.imgcnt++ ;
@@ -1606,13 +1690,13 @@ var reasonator = {
 			bllimit : 500 ,
 			format : 'json'
 		} , function ( data ) {
-			var ql = [] ;
+//			var ql = [] ;
 			$.each ( data.query.backlinks||[] , function ( k , v ) {
 				var cq = 'Q' + v.title.replace(/\D/g,'') ;
-				ql.push ( cq ) ;
+				self.to_load.push ( cq ) ;
 			} ) ;
-
-			self.wd.loadItems ( ql , { finished : function ( x ) { callback() } } , 0 ) ;
+			callback() ;
+//			self.wd.loadItems ( ql , { finished : function ( x ) { callback() } } , 0 ) ;
 			
 		} ) ;
 	} ,
@@ -1793,11 +1877,26 @@ var reasonator = {
 		else if ( self.isLocation(q) ) self.showLocation ( q ) ;
 		else self.showGeneric ( q ) ;
 	} ,
+	
+	
+	loadRandomItem : function () {
+		var self = this ;
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , { // Get site info (languages)
+			action:'query',
+			list:'random',
+			rnnamespace:'0',
+			format:'json'
+		} , function ( d ) {
+			var l = self.wd.main_languages[0] ;
+			var url = "?q=" + d.query.random[0].title ;
+			if ( l != 'en' ) url += l ;
+			window.location = url ;
+		} ) ;
+	} ,
 
 	
 	initializeFromParameters : function () {
 		var self = this ;
-		self.params = getUrlVars() ;
 		if ( undefined !== self.params.lang ) {
 			self.params.lang = self.params.lang.replace(/\#$/,'') ;
 			$('input[name="lang"]').val ( self.params.lang ) ;
@@ -1809,6 +1908,7 @@ var reasonator = {
 		$('#find').attr({title:self.t('find')+' [F]'}) ;
 		$('#btn_search').text(self.t('find')) ;
 		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
+		$('#random_item').html(self.t('random_item')).attr({title:self.t('random_item')+' [X]'}).click ( function () { reasonator.loadRandomItem() ; return false } ) ;
 		
 		if ( self.params.q === undefined && self.params.find == undefined) {
 			$('#language_select').hide() ;
@@ -1836,6 +1936,11 @@ var reasonator = {
 
 $(document).ready ( function () {
 	$('#emergency').remove() ;
+	
+	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
+		window.location = window.location.href.replace(/^https:/,'http:/') ;
+		return ;
+	}
 
 	$('#main_content').hide() ;
 	document.title = 'Reasonator' ;

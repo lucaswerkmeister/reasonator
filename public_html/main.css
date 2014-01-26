@@ -4,7 +4,7 @@ a.wikidata { color:#0A4273; } /* #2DC800 */
 a.wikipedia { color:#3F7EA6; } /* #9669FE */
 a.external { color:#7AD95F; font-size:10pt; } /* #2DC800 */
 .sitelinks tbody { font-size:9pt; }
-div.sitelinks { min-height:200px; overflow:auto; }
+div.sitelinks { overflow:auto; } /* min-height:200px;  */
 
 body {
 	background-color:#FAFAFA;
