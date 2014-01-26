@@ -360,6 +360,7 @@ var reasonator = {
 	isLocation : function ( q ) {
 		var self = this ;
 		if ( self.wd.items[q] !== undefined && self.wd.items[q].raw !== undefined && self.wd.items[q].raw.claims !== undefined && self.wd.items[q].raw.claims['P625'] !== undefined ) return true ;
+		if ( self.wd.items[q].raw.claims['P131'] !== undefined ) return true ;
 		if ( self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.geographical_feature ) ) return true ;
 		var ret = false ;
 		$.each ( self.location_list , function ( k , v ) {
@@ -425,6 +426,7 @@ var reasonator = {
 	} ,
 	
 	loadLocation : function ( the_q ) {
+	console.log("LOC");
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_location, self.P_websites);
 		self.main_type = 'location' ;
