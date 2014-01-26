@@ -391,7 +391,7 @@ var reasonator = {
 		var self = this ;
 		self.P = $.extend(true, self.P_all, self.P_websites);
 		self.main_type = 'generic' ;
-		self.loadRest ( function () { self.showPerson ( q ) } ) ;
+		self.loadRest ( function () { self.showGeneric ( q ) } ) ;
 	} ,
 	
 	loadPerson : function ( q ) {
