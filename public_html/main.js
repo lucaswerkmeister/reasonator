@@ -1895,55 +1895,63 @@ var reasonator = {
 			srlimit : 50 ,
 			format : 'json'
 		} , function ( data ) {
-			var qs = [] ;
-			var cnt = offset ;
-			var h = "<div><table id='search_results' class='table-condensed table-striped' style='width:100%'>" ;
-			h += "<tbody>" ;
+		
+			var items = [] ;
 			$.each ( data.query.search||[] , function ( k , v ) {
-				cnt++ ;
-				var q = v.title ;
-				qs.push ( q ) ;
-				h += "<tr><th style='"+(self.isRTL?'':'text-align:right')+"'>" + cnt + "</th>" ;
-				h += "<td><a class='q_internal' q='"+q+"' id='sr_q"+q+"' href='?lang="+self.wd.main_languages[0]+"&q="+q+"'>" + q + "</a>" ;
-				h += " <span style='font-size:0.6em'><a href='//wikidata.org/wiki/" + q + "' class='wikidata' target='_blank'>WD</a></span>" ;
-				h += "</td>" ;
-				h += "<td><div id='sr_ad"+q+"'></div><div id='sr_d"+q+"'></div></td>" ;
-				h += "</tr>" ;
+				items.push ( v.title ) ;
 			} ) ;
-			h += "</tbody></table></div>" ;
+
+			self.wd.getItemBatch ( items , function () {
+				var qs = [] ;
+				var cnt = offset ;
+				var h = "<div><table id='search_results' class='table-condensed table-striped' style='width:100%'>" ;
+				h += "<tbody>" ;
+				$.each ( data.query.search||[] , function ( k , v ) {
+					cnt++ ;
+					var q = v.title ;
+					qs.push ( q ) ;
+					h += "<tr><th style='"+(self.isRTL?'':'text-align:right')+"'>" + cnt + "</th>" ;
+					h += "<td>" ;
+					h += self.getQlink ( q , {} ) ;
+					h += "</td>" ;
+					h += "<td><div id='sr_ad"+q+"'></div><div id='sr_d"+q+"'></div></td>" ;
+					h += "</tr>" ;
+				} ) ;
+				h += "</tbody></table></div>" ;
 			
-			if ( offset != 0 || data.query.searchinfo.totalhits > cnt ) {
-				var x = [] ;
-				var l = self.params.lang || 'en' ;
-				for ( var i = 0 ; i < data.query.searchinfo.totalhits ; i += 50 ) {
-					var t = (i+50>data.query.searchinfo.totalhits) ? data.query.searchinfo.totalhits : i+50 ;
-					t = (i+1) + "&ndash;" + t ;
-					if ( i != offset ) t = "<a href='?lang="+l+"&offset="+i+"&find="+escape(s)+"'>" + t + "</a>" ;
-					else t = "<b>" + t + "</b>" ;
-					x.push ( t ) ;
+				if ( offset != 0 || data.query.searchinfo.totalhits > cnt ) {
+					var x = [] ;
+					var l = self.params.lang || 'en' ;
+					for ( var i = 0 ; i < data.query.searchinfo.totalhits ; i += 50 ) {
+						var t = (i+50>data.query.searchinfo.totalhits) ? data.query.searchinfo.totalhits : i+50 ;
+						t = (i+1) + "&ndash;" + t ;
+						if ( i != offset ) t = "<a href='?lang="+l+"&offset="+i+"&find="+escape(s)+"'>" + t + "</a>" ;
+						else t = "<b>" + t + "</b>" ;
+						x.push ( t ) ;
+					}
+					h += "<div>" + x.join(' | ') + "</div>" ;
 				}
-				h += "<div>" + x.join(' | ') + "</div>" ;
-			}
 			
-			$('#main').html ( h ) ;
-			$('#main_content').show() ;
-			$('#main_content_sub').show() ;
-			$('#search_results td,#search_results th').css({'text-align':''}) ;
+				$('#main').html ( h ) ;
+				$('#main_content').show() ;
+				$('#main_content_sub').show() ;
+				$('#search_results td,#search_results th').css({'text-align':''}) ;
 			
-			self.wd.loadItems ( qs , {
-				finished : function ( x ) {
-					$.each ( qs , function ( dummy , q ) {
-						var i = self.wd.getItem ( q ) ;
-						if ( undefined === i ) return ;
-						$('#sr_q'+q).text ( i.getLabel() ) ;
-						$('#sr_d'+q).text ( i.getDesc(self.wd.main_languages[0]) ) ;
-						//if ( i.getDesc() == '' ) 
-						wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
-					} ) ;
-				}
-			} , 0 ) ;
+				self.wd.loadItems ( qs , {
+					finished : function ( x ) {
+						$.each ( qs , function ( dummy , q ) {
+							var i = self.wd.getItem ( q ) ;
+							if ( undefined === i ) return ;
+							$('#sr_q'+q).text ( i.getLabel() ) ;
+							$('#sr_d'+q).text ( i.getDesc(self.wd.main_languages[0]) ) ;
+							//if ( i.getDesc() == '' ) 
+							wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
+						} ) ;
+					}
+				} , 0 ) ;
 			
-			self.addHoverboxes () ;
+				self.addHoverboxes () ;
+			} ) ;
 		} ) ;
 	} ,
 	
