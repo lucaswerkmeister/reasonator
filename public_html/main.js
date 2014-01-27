@@ -90,7 +90,7 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
-	use_js_refresh : true ,
+	use_js_refresh : false , // FIXME
 	force_wdq : true ,
 	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
 	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
@@ -991,6 +991,17 @@ var reasonator = {
 		$('#'+self.main_type+' div.manual_description').html ( self.wd.items[self.q].getDesc() ) ;
 	} ,
 
+	setRTL : function () {
+		var self = this ;
+		self.isRTL = ( self.allow_rtl && -1 < $.inArray ( self.wd.main_languages[0] , [ 'fa','ar','ur','dv','he' ] ) ) ;
+		if ( self.isRTL ) {
+			$('#main_content').css ( { 'direction':'RTL' } ) ;
+			$('div.sidebar').css({'float':'left'}) ;
+			$('td,th').css({'text-align':'right'}) ;
+			$('div.sidebar th').css({'text-align':'center'}) ;
+			setTimeout ( function(){$('table.chaintable td,table.chaintable th').css({'text-align':'right'})} , 100 ) ;
+		}
+	} ,
 	
 	finishDisplay : function ( h ) {
 		var self = this ;
@@ -1003,13 +1014,7 @@ var reasonator = {
 		} ) ;
 		self.mm_load = [] ;
 
-		if ( self.allow_rtl && -1 < $.inArray ( self.wd.main_languages[0] , [ 'fa','ar','ur','dv','he' ] ) ) {
-			$('#main_content').css ( { 'direction':'RTL' } ) ;
-			$('div.sidebar').css({'float':'left'}) ;
-			$('td,th').css({'text-align':'right'}) ;
-			$('div.sidebar th').css({'text-align':'center'}) ;
-			setTimeout ( function(){$('table.chaintable td,table.chaintable th').css({'text-align':'right'})} , 100 ) ;
-		}
+		self.setRTL() ;
 
 		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
 		$('#'+self.main_type).show() ;
@@ -1037,103 +1042,8 @@ var reasonator = {
 			} , 100 ) ;
 		}
 		
-		if ( self.use_hoverbox ) {
-			var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
-			wd_auto_desc.lang = pl ;
-			var icons = {
-				wiki:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/18px-Wikipedia-logo-v2.svg.png' ,
-				wikivoyage:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Wikivoyage-logo.svg/18px-Wikivoyage-logo.svg.png' ,
-				wikisource:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/18px-Wikisource-logo.svg.png'
-			} ;
-
-			$('a.q_internal').cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
-				splitTitle:'|',
-				multiple : false,
-				sticky : true ,
-				mouseOutClose : 'both' ,
-				cluetipClass : 'myclue' ,
-				leftOffset : 0 ,
-//				delayedClose : 500 ,
-				onShow : function(ct, ci) { // Outer/inner jQuery node
-					var a = $(this) ;
-					var qnum = a.attr('q') ;
-					var q = 'Q'+qnum ;
-					var i = reasonator.wd.items[q] ;
-					var title = i.getLabel() ;
-					var dl = i.getLabelDefaultLanguage() ;
-
-					var h = "" ;
-					h += "<div><span style='margin-right:10px;font-size:12pt'><a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/Q"+qnum+"'>Q"+qnum+"</a></span>" ;
-					
-					var sl = i.getWikiLinks() ;
-					$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' ] , function ( dummy , site ) {
-						var s2 = site=='wiki'?'wikipedia':site ;
-						if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
-					} ) ;
-					var commons = i.getClaimObjectsForProperty ( 373 ) ;
-					if ( commons.length > 0 ) {
-						h += "<span style='margin-left:5px'><a title='"+self.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
-					}
-					h += "</div>" ;
-					
-					
-					if ( dl != pl ) {
-						h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
-						h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
-						h += "</i>" ;
-						if ( self.allowLabelOauthEdit ) {
-							h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>Add a label</b></a> (via <a target='_blank' href='/widar'>WiDaR</a>)" ;
-						}
-						h += "</div>" ;
-					}
-
-					h += "<div>" + i.getDesc() + "</div>" ;
+		self.addHoverboxes () ;
 				
-					var adid = 'cluetip_autodesc_'+q ;
-					if ( self.use_autodesc ) {
-						h += "<div id='"+adid+"'>...</div>" ;
-					}
-				
-				
-					ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
-					var title_element = $(ct.find('h3')) ;
-					title_element.html ( title ) ;
-					ci.attr({q:q}) ;
-					ci.html ( h ) ;
-
-					var images = i.getMultimediaFilesForProperty(18);
-					if ( images.length > 0 ) {
-						var img = images[0] ;
-						$.getJSON ( '//commons.wikimedia.org/w/api.php?callback=?' , {
-							action:'query',
-							titles:'File:'+img,
-							prop:'imageinfo',
-							format:'json',
-							iiprop:'url',
-							iiurlwidth:120,
-							iiurlheight:300
-						} , function ( d ) {
-							if ( d.query === undefined || d.query.pages === undefined ) return ;
-							$.each ( d.query.pages , function ( dummy , v ) {
-								if ( v.imageinfo === undefined ) return ;
-								var ii = v.imageinfo[0] ;
-								var h = "<div style='float:right'><img src='"+ii.thumburl+"' /></div>" ;
-								if ( ci.attr('q') != q ) return ;
-								$('#cluetip').css({width:'400px'});
-								ci.prepend ( h ) ;
-							} ) ;
-						} ) ;
-					}
-
-					if ( self.use_autodesc ) {
-						wd_auto_desc.loadItem ( q , { target:$('#'+adid) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
-					}
-				}
-			} ) ;
-		}
-		
-		
-		
 		if ( self.use_autodesc && !self.use_hoverbox ) {
 			var x = {} ;
 			$.each ( self.autodesc_items , function ( dummy , q ) {
@@ -1141,7 +1051,7 @@ var reasonator = {
 			} ) ;
 			
 			$.each ( x , function ( q , dummy ) {
-				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) } ) ;
+				wd_auto_desc.loadItem ( q , { target:$('small.autodesc_'+q) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
 			} ) ;
 		}
 		
@@ -1150,48 +1060,148 @@ var reasonator = {
 			$('#'+self.main_type+' div.sidebar').append ( h ) ;
 		}
 		
-		
-		if ( self.showQRLink ) {
-			var sites = self.wd.getItem(self.q).getWikiLinks() || {} ;
-			var site ;
-			$.each ( self.wd.main_languages , function ( dummy , l ) {
-				if ( sites[l+'wiki'] === undefined ) return ;
-				site = sites[l+'wiki'] ;
-				return false ;
-			} ) ;
-			if ( site === undefined ) {
-				$.each ( sites, function ( k , v ) {
-					if ( !k.match(/^.+wiki$/ ) ) return ;
-					site = v ;
-					return false ;
-				} ) ;
-			}
-			if ( site === undefined ) return ;
-			
-			var m = site.site.match ( /^(.+)wiki$/ ) ;
-			var l = m[1] ;
-			var url_title = escape(site.title.replace(/\s/g,'_')) ;
-			var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
-			var qrp_url = "//qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
-			var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
-			var h = '<div style="text-align:center" class="qrcode"></div>' ;
-			$('#'+self.main_type+' div.sidebar').append ( h ) ;
-			if ( true ) { // Direct QR code show
-				$('div.qrcode').html ( qr_img ) ;
-				self.adjustSitelinksHeight();
-			} else {
-				$('div.qrcode').html ( '<a href="#">Show QR code</a>' ) ;
-				$('div.qrcode a').click ( function () {
-					$('div.qrcode').html ( qr_img ) ;
-					return false ;
-				} ) ;
-			}
-
-		}
-
+		self.showQRcode() ;
 		self.adjustSitelinksHeight() ;
 	} ,
 	
+	showQRcode : function () {
+		var self = this ;
+		if ( !self.showQRLink ) return ;
+		var sites = self.wd.getItem(self.q).getWikiLinks() || {} ;
+		var site ;
+		$.each ( self.wd.main_languages , function ( dummy , l ) {
+			if ( sites[l+'wiki'] === undefined ) return ;
+			site = sites[l+'wiki'] ;
+			return false ;
+		} ) ;
+		if ( site === undefined ) {
+			$.each ( sites, function ( k , v ) {
+				if ( !k.match(/^.+wiki$/ ) ) return ;
+				site = v ;
+				return false ;
+			} ) ;
+		}
+		if ( site === undefined ) return ;
+		
+		var m = site.site.match ( /^(.+)wiki$/ ) ;
+		var l = m[1] ;
+		var url_title = escape(site.title.replace(/\s/g,'_')) ;
+		var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
+		var qrp_url = "//qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
+		var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
+		var h = '<div style="text-align:center" class="qrcode"></div>' ;
+		$('#'+self.main_type+' div.sidebar').append ( h ) ;
+		if ( true ) { // Direct QR code show
+			$('div.qrcode').html ( qr_img ) ;
+			self.adjustSitelinksHeight();
+		} else {
+			$('div.qrcode').html ( '<a href="#">Show QR code</a>' ) ;
+			$('div.qrcode a').click ( function () {
+				$('div.qrcode').html ( qr_img ) ;
+				return false ;
+			} ) ;
+		}
+
+	} ,
+	
+	addHoverboxes : function  () {
+		var self = this ;
+		if ( !self.use_hoverbox ) return ;
+		var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
+		wd_auto_desc.lang = pl ;
+		var icons = {
+			wiki:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/18px-Wikipedia-logo-v2.svg.png' ,
+			wikivoyage:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Wikivoyage-logo.svg/18px-Wikivoyage-logo.svg.png' ,
+			wikisource:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/18px-Wikisource-logo.svg.png'
+		} ;
+
+		$('a.q_internal').cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
+			splitTitle:'|',
+			multiple : false,
+			sticky : true ,
+			mouseOutClose : 'both' ,
+			cluetipClass : 'myclue' ,
+			leftOffset : 0 ,
+//				delayedClose : 500 ,
+			onShow : function(ct, ci) { // Outer/inner jQuery node
+				var a = $(this) ;
+				var qnum = a.attr('q').replace(/\D/g,'') ;
+				var q = 'Q'+qnum ;
+				var i = reasonator.wd.items[q] ;
+				var title = i.getLabel() ;
+				var dl = i.getLabelDefaultLanguage() ;
+
+				var h = "" ;
+				h += "<div><span style='margin-right:10px;font-size:12pt'><a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/Q"+qnum+"'>Q"+qnum+"</a></span>" ;
+				
+				var sl = i.getWikiLinks() ;
+				$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' ] , function ( dummy , site ) {
+					var s2 = site=='wiki'?'wikipedia':site ;
+					if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
+				} ) ;
+				var commons = i.getClaimObjectsForProperty ( 373 ) ;
+				if ( commons.length > 0 ) {
+					h += "<span style='margin-left:5px'><a title='"+self.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
+				}
+				h += "</div>" ;
+				
+				
+				if ( dl != pl ) {
+					h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
+					h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
+					h += "</i>" ;
+					if ( self.allowLabelOauthEdit ) {
+						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>Add a label</b></a> (via <a target='_blank' href='/widar'>WiDaR</a>)" ;
+					}
+					h += "</div>" ;
+				}
+
+				h += "<div>" + i.getDesc() + "</div>" ;
+			
+				var adid = 'cluetip_autodesc_'+q ;
+				if ( self.use_autodesc ) {
+					h += "<div id='"+adid+"'>...</div>" ;
+				}
+			
+			
+				ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
+				var title_element = $(ct.find('h3')) ;
+				title_element.html ( title ) ;
+				ci.attr({q:q}) ;
+				ci.html ( h ) ;
+				if ( self.isRTL ) ci.css ( { 'direction':'RTL' } ) ;
+
+				var images = i.getMultimediaFilesForProperty(18);
+				if ( images.length > 0 ) {
+					var img = images[0] ;
+					$.getJSON ( '//commons.wikimedia.org/w/api.php?callback=?' , {
+						action:'query',
+						titles:'File:'+img,
+						prop:'imageinfo',
+						format:'json',
+						iiprop:'url',
+						iiurlwidth:120,
+						iiurlheight:300
+					} , function ( d ) {
+						if ( d.query === undefined || d.query.pages === undefined ) return ;
+						$.each ( d.query.pages , function ( dummy , v ) {
+							if ( v.imageinfo === undefined ) return ;
+							var ii = v.imageinfo[0] ;
+							var h = "<div style='float:right'><img src='"+ii.thumburl+"' /></div>" ;
+							if ( ci.attr('q') != q ) return ;
+							$('#cluetip').css({width:'400px'});
+							ci.prepend ( h ) ;
+						} ) ;
+					} ) ;
+				}
+
+				if ( self.use_autodesc ) {
+					wd_auto_desc.loadItem ( q , { target:$('#'+adid) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
+				}
+			}
+		} ) ;
+	} ,
+		
 	
 	addLabelOauth : function ( q , lang ) {
 		var a = $('a.q_internal[q="'+q.replace(/\D/g,'')+'"]') ;
@@ -1875,6 +1885,7 @@ var reasonator = {
 		var self = this ;
 		var offset = self.params.offset || 0 ;
 		$('#find').val ( s ) ;
+		self.setRTL() ;
 		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
 			action : 'query' ,
 			list : 'search' ,
@@ -1886,14 +1897,14 @@ var reasonator = {
 		} , function ( data ) {
 			var qs = [] ;
 			var cnt = offset ;
-			var h = "<div><table class='table table-condensed table-striped'>" ;
+			var h = "<div><table id='search_results' class='table-condensed table-striped' style='width:100%'>" ;
 			h += "<tbody>" ;
 			$.each ( data.query.search||[] , function ( k , v ) {
 				cnt++ ;
 				var q = v.title ;
 				qs.push ( q ) ;
-				h += "<tr><th style='text-align:right'>" + cnt + "</th>" ;
-				h += "<td><a id='sr_q"+q+"' href='?lang="+self.wd.main_languages[0]+"&q="+q+"'>" + q + "</a>" ;
+				h += "<tr><th style='"+(self.isRTL?'':'text-align:right')+"'>" + cnt + "</th>" ;
+				h += "<td><a class='q_internal' q='"+q+"' id='sr_q"+q+"' href='?lang="+self.wd.main_languages[0]+"&q="+q+"'>" + q + "</a>" ;
 				h += " <span style='font-size:0.6em'><a href='//wikidata.org/wiki/" + q + "' class='wikidata' target='_blank'>WD</a></span>" ;
 				h += "</td>" ;
 				h += "<td><div id='sr_ad"+q+"'></div><div id='sr_d"+q+"'></div></td>" ;
@@ -1917,6 +1928,7 @@ var reasonator = {
 			$('#main').html ( h ) ;
 			$('#main_content').show() ;
 			$('#main_content_sub').show() ;
+			$('#search_results td,#search_results th').css({'text-align':''}) ;
 			
 			self.wd.loadItems ( qs , {
 				finished : function ( x ) {
@@ -1926,10 +1938,12 @@ var reasonator = {
 						$('#sr_q'+q).text ( i.getLabel() ) ;
 						$('#sr_d'+q).text ( i.getDesc(self.wd.main_languages[0]) ) ;
 						//if ( i.getDesc() == '' ) 
-						wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) } ) ;
+						wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
 					} ) ;
 				}
 			} , 0 ) ;
+			
+			self.addHoverboxes () ;
 		} ) ;
 	} ,
 	
