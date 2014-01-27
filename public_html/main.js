@@ -90,6 +90,7 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	use_js_refresh : true ,
 	force_wdq : true ,
 	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
 	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
@@ -122,21 +123,65 @@ var reasonator = {
 		return ret ;
 	} ,
 
+	clear : function () {
+		var self = this ;
+		var tmp = {} ;
+		$.each ( self.wd.items , function ( q , v ) {
+			if ( /^P/.test(q) ) tmp[q] = v ;
+		} ) ;
+		self.P = $.extend(true, {}, self.P_all);
+		self.wd.clear() ;
+		self.wd.items = tmp ;
+		self.main_type = '' ;
+		self.autodesc_items = [] ;
+		self.personal_relation_list = [] ;
+		self.to_load = [] ;
+		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent','relative'] , function ( k , v ) {
+			self.personal_relation_list.push ( self.P_person[v] ) ;
+		} ) ;
+	} ,
+
+	getUrlVars : function () {
+		var vars = {} ;
+		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1) ;
+		var hash = window.location.href.slice(window.location.href.indexOf('#') + 1) ;
+		if ( hash == window.location.href ) hash = '' ;
+		if ( hash.length > 0 ) hashes = hash ;
+		else hashes = hashes.replace ( /#$/ , '' ) ;
+		hashes = hashes.split('&');
+		$.each ( hashes , function ( i , j ) {
+			var hash = j.split('=');
+			hash[1] += '' ;
+			vars[hash[0]] = decodeURI(hash[1]).replace(/_/g,' ');
+		} ) ;
+		return vars;
+	} ,
 
 	init : function ( callback ) {
 		var self = this ;
 		self.q = undefined ;
 		self.wd = new WikiData ;
-		self.personal_relation_list = [] ;
 		self.do_maps = undefined ;
-		self.to_load = [] ;
-		$.each ( ['father','mother','child','brother','sister','spouse','uncle','aunt','stepfather','stepmother','grandparent','relative'] , function ( k , v ) {
-			self.personal_relation_list.push ( self.P_person[v] ) ;
-		} ) ;
+		self.clear() ;
 		
-		var loadcnt = 3 ;
+		self.params = self.getUrlVars() ;
+		
+		if ( self.use_js_refresh ) { 		// History change, update page accordingly
+			$(window).hashchange( function(){ // http://benalman.com/projects/jquery-hashchange-plugin/
+				self.params = self.getUrlVars() ;
+				if ( self.params.q !== undefined ) {
+					var new_q = 'Q'+self.params.q.replace(/\D/g,'') ;
+					if ( new_q != self.q ) {
+						self.q = new_q ;
+						self.reShow() ;
+					}
+				}
+				return false ;
+			} ) ;
+		}
 
-		self.params = getUrlVars() ;
+
+		var loadcnt = 3 ;
 		if ( self.params.live !== undefined ) self.use_wdq = false ;
 		if ( self.params.q !== undefined ) {
 			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
@@ -261,7 +306,7 @@ var reasonator = {
 	addMissingPropsLinkingToMainItem : function () {
 		var self = this ;
 		$.each ( self.wd.items , function ( qp , i ) {
-			$.each ( (i.raw.claims||[]) , function ( prop , v0 ) {
+			$.each ( ((i.raw||{}).claims||[]) , function ( prop , v0 ) {
 				$.each ( i.getClaimItemsForProperty(prop) , function ( dummy , q ) {
 					if ( q != self.q ) return ;
 					if ( undefined !== self.wd.items[prop] ) return ;
@@ -270,7 +315,6 @@ var reasonator = {
 				} ) ;
 			} ) ;
 		} ) ;
-//		console.log ( self.to_load ) ;
 	} ,
 	
 	addPropTargetsToLoad : function ( items , props ) {
@@ -380,7 +424,7 @@ var reasonator = {
 	// Used as final stage by all types
 	loadRest : function ( callback ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_websites);
+		self.P = $.extend(true, self.P, self.P_all, self.P_websites);
 		self.wd.getItemBatch ( self.to_load , function ( loaded_items ) {
 			self.to_load = [] ;
 			self.addMissingPropsLinkingToMainItem () ;
@@ -392,14 +436,14 @@ var reasonator = {
 
 	loadGeneric : function ( q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_websites);
+		self.P = $.extend(true, self.P, self.P_all, self.P_websites);
 		self.main_type = 'generic' ;
 		self.loadRest ( function () { self.showGeneric ( q ) } ) ;
 	} ,
 	
 	loadPerson : function ( q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_person,self.P_websites);
+		self.P = $.extend(true, self.P, self.P_all, self.P_person,self.P_websites);
 		self.main_type = 'person' ;
 		$.each ( self.P_person , function ( k , v ) { self.to_load.push("P"+v) } ) ;
 		self.loadRest ( function () {
@@ -414,9 +458,9 @@ var reasonator = {
 	
 	loadTaxon : function ( the_q ) {
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_taxon);
+		self.P = $.extend(true, self.P, self.P_all, self.P_taxon);
 		self.main_type = 'taxon' ;
-		
+
 		self.loadBacktrack ( {
 			follow : self.taxon_list ,
 			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
@@ -426,9 +470,8 @@ var reasonator = {
 	} ,
 	
 	loadLocation : function ( the_q ) {
-	console.log("LOC");
 		var self = this ;
-		self.P = $.extend(true, self.P_all, self.P_location, self.P_websites);
+		self.P = $.extend(true, self.P, self.P_all, self.P_location, self.P_websites);
 		self.main_type = 'location' ;
 		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { self.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
 		
@@ -510,8 +553,25 @@ var reasonator = {
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
 
+    function microtime(get_as_float) {  
+        // Returns either a string or a float containing the current time in seconds and microseconds    
+        //   
+        // version: 812.316  
+        // discuss at: http://phpjs.org/functions/microtime  
+        // +   original by: Paulo Ricardo F. Santos  
+        // *     example 1: timeStamp = microtime(true);  
+        // *     results 1: timeStamp > 1000000000 && timeStamp < 2000000000  
+        var now = new Date().getTime() / 1000;  
+        var s = parseInt(now);  
+      
+        return (get_as_float) ? now : (Math.round((now - s) * 1000) / 1000) + ' ' + s;  
+    }  
+    
 		// Render taxon chain
-		var chain = self.wd.getItem(q).followChain({props:self.taxon_list}) ;
+//		var chain = self.wd.getItem(q).followChain({props:self.taxon_list}) ;
+		var chain = self.findLongestPath ( { start:q , props:self.taxon_list } ) ;
+		
+		
 		h = "<h2>" + self.t('taxonomy') + "</h2>" ;
 		h += self.renderChain ( chain , [
 			{ title:self.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
@@ -543,6 +603,66 @@ var reasonator = {
 
 		self.finishDisplay ( h ) ; // Finish
 	} ,
+	
+	findLongestPath : function ( o ) {
+		var self = this ;
+		var props = [] ;
+		$.each ( o.props , function ( dummy , p ) { props.push ( 'P'+(p+'').replace(/\D/g,'') ) } ) ;
+		
+		var tree = {} ;
+		
+		function preset ( qs ) {
+			var new_q = [] ;
+			$.each ( qs , function ( dummy , q ) {
+				if ( undefined !== tree[q] ) return ;
+				tree[q] = [] ;
+				$.each ( props , function ( dummy , p ) {
+					var q2 = self.wd.items[q].getClaimItemsForProperty(p) ;
+					$.each ( q2 , function ( k , v ) {
+						if ( -1 != $.inArray ( v , new_q ) ) return ;
+						new_q.push ( v ) ;
+						tree[q].push ( v ) ;
+					} ) ;
+				} ) ;
+				preset ( new_q ) ;
+			} ) ;
+		}
+		
+		preset ( [ o.start ] ) ;
+		
+	
+		function iterate ( qs ) {
+			var nqs = [] ;
+			$.each ( qs , function ( dummy , i ) {
+				var sub_q = [] ;
+				$.each ( tree[i.q] , function ( dummy2 , v ) {
+					if ( -1 != $.inArray ( v , i.hist ) ) return ;
+					sub_q.push ( v ) ;
+				} ) ;
+				
+				$.each ( sub_q , function ( k , v ) {
+					var nh = i.hist.slice() ;
+					nh.push ( v ) ;
+					nqs.push ( { q:v , hist: nh } ) ;
+				} ) ;
+				
+			} ) ;
+			
+			if ( nqs.length > 0 ) {
+				qs = [] ;
+				return iterate ( nqs ) ;
+			} else {
+				var longest = [] ;
+				$.each ( qs , function ( dummy , i ) {
+					if ( i.hist.length > longest.length ) longest = i.hist ;
+				} ) ;
+				return longest ;
+			}
+			
+		}
+		
+		return iterate ( [ { q:o.start , hist:[o.start] } ] ) ;
+	} ,
 
 
 	showLocation : function ( q ) {
@@ -566,7 +686,8 @@ var reasonator = {
 		self.addBacklinks() ; // Render backlinks
 		self.addMiscData(self.P_location) ; // Render misc data
 		
-		var chain = self.wd.getItem(q).followChain({props:self.location_props}) ;
+//		var chain = self.wd.getItem(q).followChain({props:self.location_props}) ;
+		var chain = self.findLongestPath ( { start:q , props:self.location_props } ) ;
 		h = "<h2>" + self.t('location') + "</h2>" ;
 		h += self.renderChain ( chain , [
 			{ title:self.t('name') , name:true } ,
@@ -594,7 +715,8 @@ var reasonator = {
 	
 	getCurrentUrl : function ( o ) {
 		var self = this ;
-		var url = "?q=" + self.q ;
+		var url = ( o.hash ) ? '#' : '?' ;
+		url += "q=" + self.q ;
 		var lang = '' ;
 		if ( self.params.lang != 'en' && self.params.lang != '' ) lang = "&lang=" + self.params.lang ;
 		if ( undefined !== o.lang ) lang = o.lang ;
@@ -891,6 +1013,21 @@ var reasonator = {
 
 		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
 		$('#'+self.main_type).show() ;
+		
+		if ( self.use_js_refresh ) {
+			$('#'+self.main_type+' a').each ( function ( k , v ) {
+				if ( !$(v).hasClass('q_internal') ) return ;
+				$(v).click ( function () {
+					var a = $(this) ;
+					var m = a.attr('href').match ( /\bq=q{0,1}(\d+)/ ) ;
+					if ( m == null ) return true ; // Load URL
+					var q = 'Q' + m[1] ;
+					self.q = q ;
+					self.reShow() ;
+					return false ;
+				} ) ;
+			} ) ;
+		}
 
 		if ( undefined !== self.do_maps ) {
 			setTimeout ( function () {
@@ -1009,7 +1146,7 @@ var reasonator = {
 		}
 		
 		if ( self.showConceptCloudLink ) {
-			var h = "<div><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
+			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
 			$('#'+self.main_type+' div.sidebar').append ( h ) ;
 		}
 		
@@ -1216,6 +1353,7 @@ var reasonator = {
 
 		$.each ( [ 373 , 935 ] , function ( dummy , prop ) {
 			if ( self.wd.items[self.q].hasClaims ( prop ) ) { // Commons cat
+				if ( self.wd.items['P'+prop] === undefined ) return ;
 				var ct = self.wd.items['P'+prop].getLabel()  ;
 				if ( !has_header ) {
 					$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
@@ -1900,13 +2038,31 @@ var reasonator = {
 	} ,
 	
 	reShow : function () { // THIS NEEDS WORK!
+		var self = this ;
 		$('div.mythumb').remove() ;
 		$('#all_images').html('') ;
+		$('#main div.entity').hide() ;
+		$('div.sidebar div').html('') ;
+		$('div.map').html('') ;
+		$('div.qrcode').remove() ;
+		$('div.concept_cloud').remove() ;
+		$('#related_media_container').remove() ;
+		self.clear() ;
 		var q = self.q ;
-		if ( self.isPerson(q) ) self.showPerson ( q ) ;
-		else if ( self.isTaxon(q) ) self.showTaxon ( q ) ;
-		else if ( self.isLocation(q) ) self.showLocation ( q ) ;
-		else self.showGeneric ( q ) ;
+		window.location.hash = self.getCurrentUrl ( { hash:true } ) ;
+
+		function reShowSub () {
+			self.loadQ ( q ) ;
+		}
+
+		var loadcnt  = 2 ;
+		self.wd.getItemBatch ( [q] , function ( d1 ) {
+			self.addToLoadLater ( q ) ;
+			loadcnt-- ; if ( loadcnt == 0 ) reShowSub() ;
+		} ) ;
+		self.getRelatedEntities ( q , function () {
+			loadcnt-- ; if ( loadcnt == 0 ) reShowSub() ;
+		} ) ;
 	} ,
 	
 	
@@ -1918,10 +2074,15 @@ var reasonator = {
 			rnnamespace:'0',
 			format:'json'
 		} , function ( d ) {
-			var l = self.wd.main_languages[0] ;
-			var url = "?q=" + d.query.random[0].title ;
-			if ( l != 'en' ) url += l ;
-			window.location = url ;
+			if ( self.use_js_refresh ) {
+				self.q = d.query.random[0].title ;
+				self.reShow() ;
+			} else {
+				var l = self.wd.main_languages[0] ;
+				var url = "?q=" + d.query.random[0].title ;
+				if ( l != 'en' ) url += l ;
+				window.location = url ;
+			}
 		} ) ;
 	} ,
 
