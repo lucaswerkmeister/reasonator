@@ -79,7 +79,10 @@ var reasonator = {
 		male : 6581097 ,
 		female : 6581072 ,
 		person : 215627 ,
-		geographical_feature : 618123
+		geographical_feature : 618123 ,
+		category_page : 4167836 ,
+		template_page : 11266439 ,
+		list_page : 13406463
 	} ,
 	extURLs : {} ,
 	urlid2prop : {} ,
@@ -380,6 +383,29 @@ var reasonator = {
 
 
 //__________________________________________________________________________________________
+
+	isCategoryPage : function ( q ) {
+		var self = this ;
+		if ( self.wd.items[q].hasClaimItemLink ( 31 , self.Q.category_page ) ) return true ;
+		return false ;
+	} ,
+	
+	isTemplatePage : function ( q ) {
+		var self = this ;
+		if ( self.wd.items[q].hasClaimItemLink ( 31 , self.Q.template_page ) ) return true ;
+		return false ;
+	} ,
+	
+	isListPage : function ( q ) {
+		var self = this ;
+		if ( self.wd.items[q].hasClaimItemLink ( 31 , self.Q.list_page ) ) return true ;
+		return false ;
+	} ,
+	
+	isNonContentPage : function ( q ) {
+		var self = this ;
+		return self.isCategoryPage(q) || self.isTemplatePage(q) || self.isListPage(q) ;
+	} ,
 	
 	isPerson : function ( q ) {
 		var self = this ;
@@ -2096,15 +2122,22 @@ var reasonator = {
 			rnnamespace:'0',
 			format:'json'
 		} , function ( d ) {
-			if ( self.use_js_refresh ) {
-				self.q = d.query.random[0].title ;
-				self.reShow() ;
-			} else {
-				var l = self.wd.main_languages[0] ;
-				var url = "?q=" + d.query.random[0].title ;
-				if ( l != 'en' ) url += l ;
-				window.location = url ;
-			}
+			var q = d.query.random[0].title ;
+			self.wd.getItemBatch ( [q] , function () {
+				if ( self.isNonContentPage ( q ) ) {
+					self.loadRandomItem() ;
+					return ;
+				}
+				if ( self.use_js_refresh ) {
+					self.q = q ;
+					self.reShow() ;
+				} else {
+					var l = self.wd.main_languages[0] ;
+					var url = "?q=" + q ;
+					if ( l != 'en' ) url += l ;
+					window.location = url ;
+				}
+			} ) ;
 		} ) ;
 	} ,
 
