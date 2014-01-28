@@ -82,7 +82,8 @@ var reasonator = {
 		geographical_feature : 618123 ,
 		category_page : 4167836 ,
 		template_page : 11266439 ,
-		list_page : 13406463
+		list_page : 13406463 ,
+		disambiguation_page : 4167410
 	} ,
 	extURLs : {} ,
 	urlid2prop : {} ,
@@ -97,7 +98,7 @@ var reasonator = {
 	force_wdq : true ,
 	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
 	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
-	banner_width : 700 ,
+	banner_width : 850 ,
 	max_related_media : 50 ,
 	showConceptCloudLink : true ,
 	showQRLink : true ,
@@ -402,9 +403,15 @@ var reasonator = {
 		return false ;
 	} ,
 	
+	isDisambiguationPage : function ( q ) {
+		var self = this ;
+		if ( self.wd.items[q].hasClaimItemLink ( 31 , self.Q.disambiguation_page ) ) return true ;
+		return false ;
+	} ,
+	
 	isNonContentPage : function ( q ) {
 		var self = this ;
-		return self.isCategoryPage(q) || self.isTemplatePage(q) || self.isListPage(q) ;
+		return self.isCategoryPage(q) || self.isTemplatePage(q) || self.isListPage(q) || self.isDisambiguationPage(q) ;
 	} ,
 	
 	isPerson : function ( q ) {
@@ -419,7 +426,8 @@ var reasonator = {
 		var self = this ;
 		var ret = false ;
 		var props = self.wd.items[q].getPropertyList() ;
-		$.each ( self.taxon_list , function ( k , v ) {
+		var list = $.extend ( [] , self.taxon_list , [225,105] ) ;
+		$.each ( list , function ( k , v ) {
 			if ( -1 == $.inArray ( 'P'+v , props ) ) return ;
 			ret = true ;
 			return false ;
@@ -579,25 +587,9 @@ var reasonator = {
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
 
-    function microtime(get_as_float) {  
-        // Returns either a string or a float containing the current time in seconds and microseconds    
-        //   
-        // version: 812.316  
-        // discuss at: http://phpjs.org/functions/microtime  
-        // +   original by: Paulo Ricardo F. Santos  
-        // *     example 1: timeStamp = microtime(true);  
-        // *     results 1: timeStamp > 1000000000 && timeStamp < 2000000000  
-        var now = new Date().getTime() / 1000;  
-        var s = parseInt(now);  
-      
-        return (get_as_float) ? now : (Math.round((now - s) * 1000) / 1000) + ' ' + s;  
-    }  
     
 		// Render taxon chain
-//		var chain = self.wd.getItem(q).followChain({props:self.taxon_list}) ;
 		var chain = self.findLongestPath ( { start:q , props:self.taxon_list } ) ;
-		
-		
 		h = "<h2>" + self.t('taxonomy') + "</h2>" ;
 		h += self.renderChain ( chain , [
 			{ title:self.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
@@ -614,8 +606,19 @@ var reasonator = {
 		}
 		
 		// Render taxon properties
+		self.renderMainPropsTable ( [225,105,405,141,183,427,566] ) ;
+		
+		// Label in italics
+		$('#main_title_label').css({'font-style':'italic'}) ;
+
+		self.finishDisplay ( h ) ; // Finish
+	} ,
+	
+	renderMainPropsTable : function ( props ) {
+		var self = this ;
+		var q = self.q ;
 		var sd = {} ;
-		$.each ( [225,105,405,141,183,427,566] , function ( dummy , p ) {
+		$.each ( props , function ( dummy , p ) {
 			p = 'P' + p ;
 			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
 			if ( items.length === 0 ) return ;
@@ -625,9 +628,7 @@ var reasonator = {
 				sd[p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'#taxon div.props',striped:true,title:self.t('taxon_props'),ucfirst:true } ) ;
-
-		self.finishDisplay ( h ) ; // Finish
+		self.renderPropertyTable ( sd , { id:'#'+self.main_type+' div.props',striped:true,title:self.t(self.main_type+'_props'),ucfirst:true } ) ;
 	} ,
 	
 	findLongestPath : function ( o ) {
@@ -697,7 +698,6 @@ var reasonator = {
 			setTimeout ( function(){self.showLocation(q)} , 50 ) ;
 			return ;
 		}
-		delete self.P.instance_of ; // So it will show, if set
 		
 		// RENDERING
 		var h = '' ;
@@ -734,8 +734,10 @@ var reasonator = {
 			self.P['P'+v] = v ; // Prevent them showing in "other" list
 		} ) ;
 
+
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
+		self.renderMainPropsTable ( [31] ) ;
 		self.finishDisplay ( h ) ; // Finish
 	} ,
 	
@@ -759,7 +761,7 @@ var reasonator = {
 		var self = this ;
 		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
 		if ( im.length > 0 ) {
-			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:220 , th:200 } ;
+			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:260 , th:220 } ;
 			self.mm_load.push ( io ) ;
 		}
 	} ,
@@ -920,7 +922,8 @@ var reasonator = {
 		var qr_code_height = 200 ;
 		var type = self.main_type ;
 		var min_height = parseInt($('#'+type+' div.sitelinks').css('min-height')) ;
-		var h = parseInt($('#main').height())-parseInt($('#'+type+' div.sitelinks').position().top)+parseInt($('#main').position().top);
+		var mainbar = $('#'+self.main_type+' .mainbar') ;
+		var h = parseInt(mainbar.height())-parseInt($('#'+type+' div.sitelinks').position().top);//+parseInt(mainbar.position().top);
 		if ( self.showQRLink ) h -= qr_code_height ; // QR code
 		if ( h < min_height ) h = min_height ;
 		$('#'+type+' div.sitelinks').css({'max-height':h+'px'})
@@ -969,7 +972,9 @@ var reasonator = {
 //							if ( undefined !== self.wd.items[c] ) h2 = self.getItemLink ( { type:'item',q:c } , {ucfirst:true,desc:true,q_desc:true} ) ;
 						}
 					}
-					h += "<td>" + h2 + "</td>" ;
+					h += "<td" ;
+					if ( v.prop == 225 ) h += " style='font-style:italic'" ;
+					h += ">" + h2 + "</td>" ;
 				} else {
 					h += "<td>ERROR</td>" ;
 				}
@@ -992,10 +997,11 @@ var reasonator = {
 	} ,
 
 	setTopLink : function () {
-		var self = this ;
+/*		var self = this ;
 		var h = self.t('item')+" " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ;
 		h = "<div style='float:right'><a target='_blank' style='color:#BBB' href='//meta.wikimedia.org/wiki/Reasonator/interface'>" + self.t('translate_interface') + "</a></div>" + h ;
-		$('#top').html ( h ) ;
+		$('#top').html ( h ) ;*/
+		$('#top').hide() ;
 	} ,
 	
 	renderName : function () {
@@ -1007,6 +1013,10 @@ var reasonator = {
 				$.each ( item.labels , function ( k , v ) { label = v.value ; } ) ;
 			}
 		}
+		label = "<span id='main_title_label'>" + label + "</span>" ;
+		
+		label += " <small>(<a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/"+self.q+"'>"+self.q+"</a>)</small>" ;
+		
 		$('#'+self.main_type+' h1.main_title').html ( label ) ;
 		self.setDocTitle ( self.wd.items[self.q].getLabel() ) ;
 	} ,
@@ -1365,7 +1375,7 @@ var reasonator = {
 					if ( medium == 'voice_recording' ) medium2 = 'audio' ;
 					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
 					if ( self.q == v.getID() && k2 == 0 ) { // ( k2 == 0 || medium2 == 'audio' )
-						io.tw = 220 ;
+						io.tw = 260 ;
 						io.th = 400 ;
 						io.id = '#'+self.main_type+' div.main_'+medium2 ;
 						io.append = true ;
@@ -1443,6 +1453,7 @@ var reasonator = {
 					if ( row > 0 ) h += "<tr>" ;
 					h += "<td name='" + block_id + "' style='width:100%" ;
 					if ( collapse ) h += ";display:none" ;
+					if ( p == 225 ) h += ";font-style:italic" ;
 					h += "'>" ;
 					if ( cq.mode == 2 ) h += self.t('of')+"&nbsp;" ;
 					h += self.getItemLink ( cq , no ) ; // { internal:internal,desc:true,gender:true,q_desc:true }
@@ -2021,9 +2032,10 @@ var reasonator = {
 	
 	languageDialog : function () {
 		var self = this ;
-		$('#').remove() ;
+		$('#languageDialog').remove() ;
 		var h = '' ;
-		h += '<div id="languageDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+		h += '<div id="languageDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+		h += '<div class="modal-dialog"><div class="modal-content">' ;
 		h += '<div class="modal-header">' ;
 		h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
 		h += '<h3 id="languageDialogLabel">' + self.t("choose_language") + '</h3>' ;
@@ -2035,7 +2047,7 @@ var reasonator = {
 		var hadthat = {} ;
 
 		h += "<div><h4>" + self.t("common_languages") + "</h4>" ;
-		h += "<div><ul class='inline'>" ;
+		h += "<div><ul class='list-inline'>" ;
 		$.each ( self.wd.main_languages , function ( dummy , l ) {
 			if ( hadthat[l] ) return ;
 			hadthat[l] = true ;
@@ -2050,7 +2062,7 @@ var reasonator = {
 		h += "</ul></div></div>" ;
 
 		h += "<div><h4>"+self.t('worldwide')+"</h4>" ;
-		h += "<div><ul class='inline'>" ;
+		h += "<div><ul class='list-inline'>" ;
 		$.each ( self.all_languages , function ( l , name ) {
 			if ( hadthat[l] ) return ;
 			hadthat[l] = true ;
@@ -2066,6 +2078,7 @@ var reasonator = {
 		
 		
 		h += '</div>' ;
+		h += '</div></div>' ;
 		h += '</div>' ;
 		
 		$('body').append ( h ) ;
@@ -2151,9 +2164,25 @@ var reasonator = {
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		
+		$('#btn_search').text(self.t('find')) ;
+		$('#edit_interface_link').text ( self.t('translate_interface') ) ;
+		$('#aux_dropdown_button_label').text ( 'Other' ) ;
+		
+		$.each ( [
+			['btn_search','find'] ,
+			['edit_interface_link','translate_interface'] ,
+			['aux_dropdown_button_label','aux_dropdown_label'] ,
+			['about_link','about_link'] ,
+			['discuss_link','discuss_link'] ,
+			['stringprops_link','stringprops_link'] ,
+		] , function ( k , v ) {
+			$('#'+v[0]).text ( self.t(v[1]) ) ;
+		} ) ;
+		
+		$('#btn_search').prepend('<span class="glyphicon glyphicon-search"></span> ');
+//		$('#div.header h3').click ( function () { window.location = "?" } ) ;
 		
 		$('#find').attr({title:self.t('find')+' [F]'}) ;
-		$('#btn_search').text(self.t('find')) ;
 		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
 		$('#random_item').html(self.t('random_item')).attr({title:self.t('random_item')+' [X]'}).click ( function () { reasonator.loadRandomItem() ; return false } ) ;
 		

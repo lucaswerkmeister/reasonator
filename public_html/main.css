@@ -73,7 +73,7 @@ div.map {
 }
 
 #main_content {
-	margin-top:8px;
+	margin-top:20px;
 	box-shadow:8px 8px 8px #DDD;
 	margin-bottom:20px;
 	border-radius:15px;
@@ -87,11 +87,16 @@ div.map {
 
 #top {
 	margin-left:5px;
-	
+	display:none;
+}
+
+div.header {
+	margin-top:-12px;
 }
 
 h1.main_title {
 	border-bottom: 1px solid #DDD;
+	margin-top:0px;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -101,14 +106,12 @@ h1,h2,h3,h4,h5,h6 {
 
 .sidebar {
 	float:right;
-	margin-left:10px;
 	margin-bottom:10px;
 	border-left: 1px solid #DDD;
 	padding-left:5px
 }
 
 .mainbar {
-	width:695px;
 }
 
 #language_select {
@@ -134,4 +137,9 @@ h3.ui-cluetip-header {
 
 .cluetip-inner div {
 	margin-bottom:3px;
+}
+
+
+.main_image,.main_coa,.main_seal,.main_video,.main_audio,.signature,.main_range_map,.main_flag_image {
+	text-align:center;
 }

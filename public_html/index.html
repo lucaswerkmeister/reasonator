@@ -1,9 +1,15 @@
 <!DOCTYPE HTML>
-<html><head>
+<html>
+
+<head>
+<title>Reasonator</title>
 <meta name="robots" content="nofollow" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link href="/magnustools/resources/css/bootstrap.min.css" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/16px-Reasonator_logo_proposal.png">
+<link href="/magnustools/resources/dist3/css/bootstrap.min.css" rel="stylesheet">
+<link href="/magnustools/resources/dist3/css/bootstrap-theme.min.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/magnustools/resources/css/common.css">
 <link rel="stylesheet" type="text/css" href="resources/js/map/theme/default/style.css" />
 <link rel="stylesheet" type="text/css" href="resources/js/jquery/jquery.cluetip.css" />
@@ -13,211 +19,215 @@
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cookie.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cluetip.min.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.ba-hashchange.min.js"></script>
-<script type="text/javascript" src="/magnustools/resources/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/magnustools/resources/dist3/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/common.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/wikidata.js"></script>
 <script type="text/javascript" src="/wikidata-todo/autodesc.js"></script>
 <script type="text/javascript" src="./main.js"></script>
-
-
-<!--header_misc-->
 </head>
 
 <body>
-<div id="menubar" class="navbar navbar-static-top">
-	<div class="navbar-inner">
-		<div class="container">
-	
-			<a class="btn btn-navbar navbar-btn" data-toggle="collapse" data-target=".nav-collapse">
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-			</a>
-		
-			
-			<a id='toolname' class="brand" href="?"><img src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' /> Reasonator</a>
-		
-		
-			<ul id="toolbar-right" class="nav pull-right">
+
+<div class="container">
+      <div class="header">
+
+			<ul id="toolbar-right" class="nav nav-pills pull-right">
 				<li><a href='#' id='random_item' accesskey="x"></a></li>
 				<li><a href='#' id='language_select'></a></li>
-				<li><form class="form-search" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" value="" class="input-medium search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">&nbsp;</button></form></li>
-				<li><a href='/magnustools'>Tools</a></li>
-				<li><a href='//toolserver.org/~magnus'>Olde tools</a></li>
-				<li><a href="//bitbucket.org/magnusmanske/reasonator">Git</a></li>
-				<li><a id='discuss_link' href='//meta.wikimedia.org/wiki/Reasonator'>Discuss</a></li>
+				<li><form class="form-search form-inline inline-form" style="margin-bottom:0px"><input name="lang" value="en" type="hidden"/><input id="find" name="find" type="text" accesskey="f" value="" class="input-medium search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">&nbsp;</button></form></li>
+
+				<li>
+				<div class="btn-group">
+				  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span id='aux_dropdown_button_label'></span> <span class="caret"></span></button>
+				  <ul class="dropdown-menu" role="menu">
+					<li><a target='_blank' id='about_link' href='//meta.wikimedia.org/wiki/Reasonator'></a></li>
+					<li><a target='_blank' id='discuss_link' href='//meta.wikimedia.org/wiki/Talk:Reasonator'></a></li>
+					<li><a target='_blank' id='edit_interface_link' href='//meta.wikimedia.org/wiki/Reasonator/interface'></a></li>
+					<li><a target='_blank' id='stringprops_link' href='//meta.wikimedia.org/wiki/Reasonator/stringprops'></a></li>
+					<li><a target='_blank' href="//bitbucket.org/magnusmanske/reasonator">Git</a></li>
+					<li class="divider"></li>
+					<li><a href='/magnustools'>Other tools</a></li>
+				  </ul>
+				</div>
+				</li>
+
 				<li><a style='margin:0px;padding:0px;margin-top:4px' href="/"><img src='//upload.wikimedia.org/wikipedia/commons/thumb/6/60/Wikimedia_labs_logo.svg/32px-Wikimedia_labs_logo.svg.png' title='Powered by Wikimedia Labs' border=0 width='32px' /></a></li>
 			</ul>
-		
+
+				<a id='toolname' href="?">
+			 <h3 class="text-muted">
+				<img src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' /> Reasonator
+			</h3>
+				</a>
+
+      </div>
+
+
+
+	<div id="main_content" class="row col-md-16">
+
+			<div class="" style="margin-bottom:20px;margin-top:10px;">
+
+				<div id='emergency' style='display:none'>
+					<big>IF YOU SEE THIS, THINGS HAVE GONE VERY WRONG!</big><br/>
+					Wait half an hour, then complain to <a href='mailto:magnusmanske@gmail.com'>management</a>.
+					<script>
+						setTimeout ( function(){$('#emergency').show();} , 2000 ) ; // Show after 2 sec
+					</script>
+				</div>
+
+
+				<div id='intro' style='display:none'>
+					<h1>Wikidata - in pretty!</h1>
+					<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change during the year, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
+					<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
+					<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
+					<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
+					<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>
+					<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), so it can easily be ported to other locations. As always, code under GPL.</p>
+					<div>
+						<h3>Other examples</h3>
+						<ul>
+						<li><a href='?q=Q350'>Cambridge</a></li>
+						<li><a href='?q=Q4504'>Komodo dragon</a></li>
+						<li><a href='?q=Q7066'>Atheism</a></li>
+						</ul>
+					</div>
+				</div>
+			
+			
+				<div id='main_content_sub' style='display:none'>
+					<div id='top'></div>
+					<div id='main'>
+
+						<div id='generic' class='entity entity_generic'>
+							<div class='col-md-3 sidebar'>
+								<div class='main_image'></div>
+								<div class='main_coa'></div>
+								<div class='main_seal'></div>
+								<div class='main_video'></div>
+								<div class='main_audio'></div>
+								<div class='websites'></div>
+								<div class='external_ids'></div>
+								<div class='sitelinks'></div>
+							</div>
+							<div class='mainbar col-md-9'>
+								<h1 class='heading1 main_title'></h1>
+								<div class='aliases'></div>
+								<div class='manual_description lead'></div>
+								<div class='other'></div>
+								<div class='backlinks'></div>
+								<div class='all_images'></div>
+							</div>
+						</div>
+
+
+						<div id='person' class='entity entity_person'>
+							<div class='col-md-3 sidebar'>
+								<div class='main_image'></div>
+								<div class='main_coa'></div>
+								<div class='main_seal'></div>
+								<div class='main_video'></div>
+								<div class='main_audio'></div>
+								<div class='websites'></div>
+								<div class='signature'></div>
+								<div class='external_ids'></div>
+								<div class='sitelinks'></div>
+							</div>
+							<div class='mainbar col-md-9'>
+								<h1 class='heading1 main_title'></h1>
+								<div class='aliases'></div>
+								<div class='manual_description lead'></div>
+								<div class='autodesc'></div>
+								<div class='personal_relations'>
+									<div style='float:right' id='pr_full_tree'></div>
+									<h3 id='person_relatives'></h3>
+									<div id='geneawiki' style='overflow:auto;border:1px solid #DDDDDD;height:200px;width:690px;display:none'></div>
+									<div id='geneawiki_status' style='display:none'></div>
+									<table class='table table-condensed'>
+									<tbody>
+									<tr>
+										<td><h4 id='person_parents'></h4><div id='pr_parents'></div></td>
+										<td><h4 id='person_siblings'></h4><div id='pr_siblings'></div></td>
+									</tr>
+									<tr>
+										<td><h4 id='person_children'></h4><div id='pr_children'></div></td>
+										<td><h4 id='person_other'></h4><div id='pr_other'></div></td>
+									</tr>
+									</tbody>
+									</table>
+								</div>
+								<div class='other'></div>
+								<div class='backlinks'></div>
+								<div class='all_images'></div>
+							</div>
+						</div>
+
+
+
+						<div id='taxon' class='entity entity_taxon'>
+							<div class='col-md-3 sidebar'>
+								<div class='main_image'></div>
+								<div class='main_video'></div>
+								<div class='main_audio'></div>
+								<div class='main_range_map'></div>
+								<div class='websites'></div>
+								<div class='external_ids'></div>
+								<div class='sitelinks'></div>
+							</div>
+							<div class='mainbar col-md-9'>
+								<h1 class='heading1 main_title'></h1>
+								<div class='aliases'></div>
+								<div class='manual_description lead'></div>
+								<div class='props'></div>
+								<div class='main'></div>
+								<div class='other'></div>
+								<div class='backlinks'></div>
+								<div class='all_images'></div>
+							</div>
+						</div>
+
+
+						<div id='location' class='entity entity_location'>
+							<div class='col-md-3 sidebar'>
+								<div class='main_flag_image'></div>
+								<div class='main_coa'></div>
+								<div class='main_image'></div>
+								<div class='main_seal'></div>
+								<div class='main_video'></div>
+								<div class='main_audio'></div>
+								<div class='websites'></div>
+								<div class='external_ids'></div>
+								<div class='misc_data'></div>
+								<div class='sitelinks'></div>
+							</div>
+							<div class='mainbar col-md-9'>
+								<div class='main_wikivoyage_banner'></div>
+								<h1 class='heading1 main_title'></h1>
+								<div class='aliases'></div>
+								<div class='manual_description lead'></div>
+								<div class='props'></div>
+								<div class='maps'>
+									<table><tbody><tr>
+									<td><div id='location_map1' class='map map1'></div></td>
+									<td><div id='location_map2' class='map map2'></div></td>
+									<td><div class='map locator_map'></div></td>
+									</tr></tbody></table>
+								</div>
+								<div class='main'></div>
+								<div class='other'></div>
+								<div class='backlinks'></div>
+								<div class='all_images'></div>
+							</div>
+						</div>
+
+
+					</div>
+				</div>
+
+
+
 		</div>
-	</div>
-</div>
-
-<div id="main_content" class="container">
-	<div class="row">
-
-		<div class="span12" style="margin-bottom:20px;margin-top:10px;">
-
-			<div id='emergency' style='display:none'>
-				<big>IF YOU SEE THIS, THINGS HAVE GONE VERY WRONG!</big><br/>
-				Wait half an hour, then complain to <a href='mailto:magnusmanske@gmail.com'>management</a>.
-				<script>
-					setTimeout ( function(){$('#emergency').show();} , 2000 ) ; // Show after 2 sec
-				</script>
-			</div>
-
-
-			<div id='intro' style='display:none'>
-				<h1>Wikidata - in pretty!</h1>
-				<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change during the year, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
-				<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
-				<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
-				<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
-				<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>
-				<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), so it can easily be ported to other locations. As always, code under GPL.</p>
-				<div>
-					<h3>Other examples</h3>
-					<ul>
-					<li><a href='?q=Q350'>Cambridge</a></li>
-					<li><a href='?q=Q4504'>Komodo dragon</a></li>
-					<li><a href='?q=Q7066'>Atheism</a></li>
-					</ul>
-				</div>
-			</div>
-			
-			
-			<div id='main_content_sub' style='display:none'>
-				<div id='top'></div>
-				<div id='main'>
-
-					<div id='generic' class='entity entity_generic'>
-						<div class='span3 sidebar'>
-							<div class='main_image'></div>
-							<div class='main_coa'></div>
-							<div class='main_seal'></div>
-							<div class='main_video'></div>
-							<div class='main_audio'></div>
-							<div class='websites'></div>
-							<div class='external_ids'></div>
-							<div class='sitelinks'></div>
-						</div>
-						<div class='mainbar'>
-							<h1 class='heading1 main_title'></h1>
-							<div class='aliases'></div>
-							<div class='manual_description'></div>
-							<div class='other'></div>
-							<div class='backlinks'></div>
-							<div class='all_images'></div>
-						</div>
-					</div>
-
-
-					<div id='person' class='entity entity_person'>
-						<div class='span3 sidebar'>
-							<div class='main_image'></div>
-							<div class='main_coa'></div>
-							<div class='main_seal'></div>
-							<div class='main_video'></div>
-							<div class='main_audio'></div>
-							<div class='websites'></div>
-							<div class='signature'></div>
-							<div class='external_ids'></div>
-							<div class='sitelinks'></div>
-						</div>
-						<div class='mainbar'>
-							<h1 class='heading1 main_title'></h1>
-							<div class='aliases'></div>
-							<div class='manual_description'></div>
-							<div class='autodesc'></div>
-							<div class='personal_relations'>
-								<div style='float:right' id='pr_full_tree'></div>
-								<h3 id='person_relatives'></h3>
-								<div id='geneawiki' style='overflow:auto;border:1px solid #DDDDDD;height:200px;width:690px;display:none'></div>
-								<div id='geneawiki_status' style='display:none'></div>
-								<table class='table table-condensed'>
-								<tbody>
-								<tr>
-									<td><h4 id='person_parents'></h4><div id='pr_parents'></div></td>
-									<td><h4 id='person_siblings'></h4><div id='pr_siblings'></div></td>
-								</tr>
-								<tr>
-									<td><h4 id='person_children'></h4><div id='pr_children'></div></td>
-									<td><h4 id='person_other'></h4><div id='pr_other'></div></td>
-								</tr>
-								</tbody>
-								</table>
-							</div>
-							<div class='other'></div>
-							<div class='backlinks'></div>
-							<div class='all_images'></div>
-						</div>
-					</div>
-
-
-
-					<div id='taxon' class='entity entity_taxon'>
-						<div class='span3 sidebar'>
-							<div class='main_image'></div>
-							<div class='main_video'></div>
-							<div class='main_audio'></div>
-							<div class='main_range_map'></div>
-							<div class='websites'></div>
-							<div class='external_ids'></div>
-							<div class='sitelinks'></div>
-						</div>
-						<div class='mainbar'>
-							<h1 class='heading1 main_title'></h1>
-							<div class='aliases'></div>
-							<div class='manual_description'></div>
-							<div class='props'></div>
-							<div class='main'></div>
-							<div class='other'></div>
-							<div class='backlinks'></div>
-							<div class='all_images'></div>
-						</div>
-					</div>
-
-
-					<div id='location' class='entity entity_location'>
-						<div class='span3 sidebar'>
-							<div class='main_flag_image'></div>
-							<div class='main_coa'></div>
-							<div class='main_image'></div>
-							<div class='main_seal'></div>
-							<div class='main_video'></div>
-							<div class='main_audio'></div>
-							<div class='websites'></div>
-							<div class='external_ids'></div>
-							<div class='misc_data'></div>
-							<div class='sitelinks'></div>
-						</div>
-						<div class='mainbar'>
-							<div class='main_wikivoyage_banner'></div>
-							<h1 class='heading1 main_title'></h1>
-							<div class='aliases'></div>
-							<div class='manual_description'></div>
-							<div class='maps'>
-								<table><tbody><tr>
-								<td><div id='location_map1' class='map map1'></div></td>
-								<td><div id='location_map2' class='map map2'></div></td>
-								<td><div class='map locator_map'></div></td>
-								</tr></tbody></table>
-							</div>
-							<div class='main'></div>
-							<div class='props'></div>
-							<div class='other'></div>
-							<div class='backlinks'></div>
-							<div class='all_images'></div>
-						</div>
-					</div>
-
-
-				</div>
-			</div>
-
-
-
-		</div><!--->
 	</div>
 </div>
 
