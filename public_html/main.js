@@ -608,8 +608,13 @@ var reasonator = {
 		// Render taxon properties
 		self.renderMainPropsTable ( [225,105,405,141,183,427,566] ) ;
 		
-		// Label in italics
-		$('#main_title_label').css({'font-style':'italic'}) ;
+		// Label in italics, if same as taxon name
+		var label = self.wd.items[self.q].getLabel() ;
+		$.each ( self.wd.items[self.q].getStringsForProperty('P225') , function ( k , v ) {
+			if ( v != label ) return ;
+			$('#main_title_label').css({'font-style':'italic'}) ;
+			return false ;
+		} ) ;
 
 		self.finishDisplay ( h ) ; // Finish
 	} ,
@@ -1711,27 +1716,7 @@ var reasonator = {
 			else if ( item.gender == 'F' ) h += '♀&nbsp;' ;
 			else if ( item.gender !== undefined ) h += '?&nbsp;' ;
 		}
-		h += "<a" ;
-		if ( internal ) h += " q='"+qnum+"' class='q_internal' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
-		else h += " class='wikidata' target='_blank' href='" + url + "'" ;
-		var title = [] ;
-		if ( o.desc ) { title.unshift ( item.getDesc() ) ; if ( title[0] == '' ) title.shift() }
-		if ( o.q_desc ) { title.push ( q ) }
-		if ( title.length > 0 ) h += " title='" + title.join('; ') + "'" ;
 		
-		if ( self.mark_missing_labels ) {
-			var dl = item.getLabelDefaultLanguage() ;
-//			h += " dl='" + dl + "'" ;
-//			var param_lang = (self.params.lang||'en').split(',') ;
-//			if ( -1 == $.inArray ( dl , param_lang ) ) {
-			var param_lang = (self.params.lang||'en').split(',')[0] ;
-			if ( dl != param_lang ) {
-				h += " style='border-bottom:1px dotted red'" ;
-			}
-		}
-		
-		h += ">" ;
-
 		var label = o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
 		if ( label == q ) { // No "common" label, pick one
 			if ( undefined !== item.raw && undefined !== item.raw.labels ) {
@@ -1739,9 +1724,33 @@ var reasonator = {
 			}
 		}
 
-		h += label ; //o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
-
-		h += "</a>" ;
+		if ( q == self.q ) {
+			h += "<b>" + label + "</b>" ;
+		} else {
+			h += "<a" ;
+			if ( internal ) h += " q='"+qnum+"' class='q_internal' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
+			else h += " class='wikidata' target='_blank' href='" + url + "'" ;
+			var title = [] ;
+			if ( o.desc ) { title.unshift ( item.getDesc() ) ; if ( title[0] == '' ) title.shift() }
+			if ( o.q_desc ) { title.push ( q ) }
+			if ( title.length > 0 ) h += " title='" + title.join('; ') + "'" ;
+		
+			if ( self.mark_missing_labels ) {
+				var dl = item.getLabelDefaultLanguage() ;
+	//			h += " dl='" + dl + "'" ;
+	//			var param_lang = (self.params.lang||'en').split(',') ;
+	//			if ( -1 == $.inArray ( dl , param_lang ) ) {
+				var param_lang = (self.params.lang||'en').split(',')[0] ;
+				if ( dl != param_lang ) {
+					h += " style='border-bottom:1px dotted red'" ;
+				}
+			}
+			h += ">" ;
+			h += label ; //o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+			h += "</a>" ;
+		}
+		
+		
 		if ( internal && !self.use_hoverbox ) {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
 		}
