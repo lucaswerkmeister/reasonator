@@ -1941,11 +1941,18 @@ var reasonator = {
 			srlimit : 50 ,
 			format : 'json'
 		} , function ( data ) {
+			$('#main_content').show() ;
+			$('#main_content_sub').show() ;
 		
 			var items = [] ;
 			$.each ( data.query.search||[] , function ( k , v ) {
 				items.push ( v.title ) ;
 			} ) ;
+			
+			if ( items.length == 0 ) {
+				$('#main').html ( self.t("no_search_results")+" <i>"+s+"</i>" ) ;
+				return ;
+			}
 
 			self.wd.getItemBatch ( items , function () {
 				var qs = [] ;
@@ -1979,8 +1986,6 @@ var reasonator = {
 				}
 			
 				$('#main').html ( h ) ;
-				$('#main_content').show() ;
-				$('#main_content_sub').show() ;
 				$('#search_results td,#search_results th').css({'text-align':''}) ;
 			
 				self.wd.loadItems ( qs , {
