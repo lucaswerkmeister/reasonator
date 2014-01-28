@@ -2194,7 +2194,7 @@ var reasonator = {
 				} else {
 					var l = self.wd.main_languages[0] ;
 					var url = "?q=" + q ;
-					if ( l != 'en' ) url += l ;
+					if ( l != 'en' ) url += "&lang=" + l ;
 					window.location = url ;
 				}
 			} ) ;
