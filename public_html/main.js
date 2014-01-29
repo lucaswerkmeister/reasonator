@@ -2004,7 +2004,7 @@ var reasonator = {
 				end = show ;
 			}
 			
-			if ( undefined !== start && undefined !== end && ( i.p == 'P569' || i.p == 'P570' ) ) {
+			if ( undefined !== start && undefined !== end ) {
 				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) } ) ;
 			}
 			
@@ -2411,8 +2411,9 @@ var reasonator = {
 
 		var to_load = [] ;
 		var sections = [
-			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+self.date+','+self.date+']' , cols:[{title:'Died',prop:570,type:'date'}] } ,
-			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+self.date+','+self.date+']' , cols:[{title:'Born',prop:569,type:'date'}] } ,
+			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+self.date+','+self.date+']' , cols:[{title:self.t('died_on'),prop:570,type:'date'}] } ,
+			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+self.date+','+self.date+']' , cols:[{title:self.t('born_on'),prop:569,type:'date'}] } ,
+			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+self.date+','+self.date+'] OR BETWEEN[575,'+self.date+','+self.date+']' , cols:[] } ,
 			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+self.date+','+self.date+']' , cols:[] } ,
 			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+self.date+'] AND BETWEEN[582,'+self.date+','+ongoing.to+']' , wdq_props:'580,582' , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
 		] ;
@@ -2446,7 +2447,7 @@ var reasonator = {
 			$('#main_content').show() ;
 		}
 		
-		var running = 4 ;
+		var running = sections.length ;
 		$.each ( sections , function ( dummy , o ) {
 //			console.log ( o.wdq ) ;
 			$.getJSON ( self.wdq_url , { q:o.wdq,props:(o.wdq_props||'') } , function ( d ) {
