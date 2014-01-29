@@ -696,8 +696,7 @@ var reasonator = {
 
 			self.wd.getItemBatch ( candidates , function () {
 				var h = "<hr/><div id='taxonguess'>" ;
-//				h += "<h3>"+self.t('non_content_widar_header')+"</h3>" ;
-				h += "<h3>This item has no parent taxon. Reasonator picked some likely candidates for you</h3>" ;
+				h += "<h3>"+self.t('taxon_suggestion_header')+"</h3>" ;
 				h += "<div style='margin-bottom:10px'>"+self.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
 				
 				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
