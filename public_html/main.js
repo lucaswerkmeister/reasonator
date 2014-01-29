@@ -14,6 +14,8 @@ var reasonator = {
 		wikivoyage_banner : 948 ,
 		coa : 94 ,
 		seal : 158 ,
+		chemical_structure : 117 ,
+		astronomic_symbol : 367 ,
 		image : 18
 	} ,
 	P_websites : {
@@ -1502,7 +1504,12 @@ var reasonator = {
 		var self = this ;
 		var has_header = false ;
 
-		$.each ( ['video','audio','voice_recording','wikivoyage_banner','coa','seal','flag_image','range_map','image'] , function ( dummy1 , medium ) {
+		var main_media = ['image','video'] ;
+		var audio_files = ['audio','voice_recording'] ;
+		var other_images = ['chemical_structure','astronomic_symbol'] ;
+		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map'] ;
+		var media =  main_media.concat(other_images).concat(special_images).concat(audio_files) ;
+		$.each ( media , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
@@ -1511,14 +1518,22 @@ var reasonator = {
 				$.each ( im , function ( k2 , v2 ) {
 					self.imgcnt++ ;
 					var medium2 = medium ;
-					if ( medium == 'voice_recording' ) medium2 = 'audio' ;
+					if ( -1 != $.inArray ( medium , audio_files ) ) medium2 = 'audio' ;
 					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
-					if ( self.q == v.getID() && k2 == 0 ) { // ( k2 == 0 || medium2 == 'audio' )
+					var medium_sidebar_div = 'main_'+medium2 ;
+					
+					if ( -1 != $.inArray ( medium , other_images ) ) {
+						medium2 = 'image' ;
+						io.type = 'image' ;
+						medium_sidebar_div = 'other_sidebar_images' ;
+					}
+					
+					if ( self.q == v.getID() && k2 == 0 ) { // Main item, first file for this property
 						io.tw = 260 ;
 						io.th = 400 ;
-						io.id = '#'+self.main_type+' div.main_'+medium2 ;
+						io.id = '#'+self.main_type+' div.'+medium_sidebar_div ;
 						io.append = true ;
-						if ( medium == 'coa' || medium == 'seal' || medium == 'wikivoyage_banner' || medium == 'flag_image' || medium == 'range_map' ) io.type = 'image' ;
+						if ( -1 != $.inArray ( medium , special_images ) ) io.type = 'image' ;
 						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
 					} else {
 						if ( !has_header ) {
