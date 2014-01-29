@@ -565,8 +565,9 @@ var reasonator = {
 		
 	} ,
 
-	addClaimItemOauth : function ( q , prop , target ) {
+	addClaimItemOauth : function ( q , prop , target , o ) {
 		var self = reasonator ;
+		if ( o === undefined ) o = {} ;
 
 		$.getJSON ( '/widar/index.php?callback=?' , {
 			action:'set_claims',
@@ -576,7 +577,11 @@ var reasonator = {
 			botmode:1
 		} , function ( d ) {
 			if ( d.error == 'OK' ) {
-				location.reload();
+				if ( o.live && !/\blive\b/.test(window.location.href) ) {
+					window.location = window.location.href + "&live" ;
+				} else {
+					location.reload();
+				}
 			} else alert ( d.error ) ;
 		} ) ;
 	} ,
@@ -643,7 +648,8 @@ var reasonator = {
 		}
 		
 		// Render taxon properties
-		self.renderMainPropsTable ( [225,105,405,141,183,427,566] ) ;
+		var taxon_props = [225,105,405,141,183,427,566] ;
+		self.renderMainPropsTable ( taxon_props ) ;
 		
 		// Label in italics, if same as taxon name
 		var label = self.wd.items[self.q].getLabel() ;
@@ -654,6 +660,73 @@ var reasonator = {
 		} ) ;
 
 		self.finishDisplay ( h ) ; // Finish
+		
+		
+		
+		
+		// Genus addition
+		var parent_taxon_props = [405,141,183,427,566,171] ; // TODO incomplete?
+		var i = self.wd.items[q] ;
+		var parent_taxa = 0 ;
+		$.each ( parent_taxon_props , function ( k , v ) {
+			parent_taxa += i.getClaimItemsForProperty('P'+v).length ;
+		} ) ;
+		if ( parent_taxa > 0 ) return ; // Already has taxonomy
+		
+		var m = $('#main_title_label').text().match ( /^(\S+)\s(\S+)$/ ) ;
+		if ( m == null ) return ; // Not "Genus species" title
+		var putative_genus = m[1] ;
+
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+			action:'query',
+			list:'search',
+			format:'json',
+			srsearch:putative_genus,
+			srnamespace:0,
+			srprop:'',
+			srlimit:10
+		} , function ( d ) {
+			if ( undefined === d.query || undefined === d.query.search ) return ;
+			var candidates = [] ;
+			$.each ( d.query.search , function ( k , v ) {
+				if ( v.title == self.q ) return ; // Not add self
+				candidates.push ( v.title ) ;
+			} ) ;
+			if ( candidates.length == 0 ) return ; // No candidates
+
+			self.wd.getItemBatch ( candidates , function () {
+				var h = "<hr/><div id='taxonguess'>" ;
+//				h += "<h3>"+self.t('non_content_widar_header')+"</h3>" ;
+				h += "<h3>This item has no parent taxon. Reasonator picked some likely candidates for you</h3>" ;
+				h += "<div style='margin-bottom:10px'>"+self.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
+				
+				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
+
+				
+				h += "<table class='table-condensed table-striped'><tbody>" ;
+				var taxonguess = {} ;
+				$.each ( candidates , function ( dummy , q ) {
+					var item = self.wd.items[q] ;
+					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; no parent taxon
+					if ( item === undefined ) return ; // Paranoia
+					var id = 'taxonguess_'+q ;
+					taxonguess[q] = id ;
+					h += "<tr>" ;
+					h += "<th>" + self.getQlink(q) + "</th>" ;
+					h += "<td><div id='"+id+"'>...</div></td>" ;
+//					h += "<td>" + item.getDesc() + "</td>" ;
+					h += "<td><a href='#' onclick='reasonator.addClaimItemOauth(\""+self.q+"\",\"P171\",\""+q+"\",{live:true});return false'>Set this as parent taxon</a></td>" ;
+					h += "</tr>" ;
+				} ) ;
+				h += "</tbody></table></div></div>" ;
+				$('#taxon div.main').append ( h ) ;
+				self.addHoverboxes ( '#taxonguess' ) ;
+				$.each ( taxonguess , function ( q , id ) {
+					wd_auto_desc.loadItem ( q , { target:$('#'+id) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
+				} ) ;
+			} ) ;
+			
+		} ) ;
 	} ,
 	
 	renderMainPropsTable : function ( props ) {
@@ -1182,7 +1255,8 @@ var reasonator = {
 
 	} ,
 	
-	addHoverboxes : function  () {
+	addHoverboxes : function  ( selector ) {
+		if ( selector === undefined ) selector = '' ;
 		var self = this ;
 		if ( !self.use_hoverbox ) return ;
 		var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
@@ -1193,7 +1267,7 @@ var reasonator = {
 			wikisource:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/18px-Wikisource-logo.svg.png'
 		} ;
 
-		$('a.q_internal').cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
+		$(selector+' a.q_internal').cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
 			splitTitle:'|',
 			multiple : false,
 			sticky : true ,
@@ -1732,6 +1806,7 @@ var reasonator = {
 	
 	getQlink : function ( q , o ) {
 		var self = this ;
+		if ( o === undefined ) o = {} ;
 		if ( undefined === q ) return "UNIDENTIFIED ITEM" ;
 		var qnum = q.replace(/\D/g,'') ;
 		var item = self.wd.items[q] ;
