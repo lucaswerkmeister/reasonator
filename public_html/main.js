@@ -324,6 +324,7 @@ var reasonator = {
 	
 	addPropTargetsToLoad : function ( items , props ) {
 		var self = this ;
+		if ( props === undefined ) props = [] ;
 		$.each ( items , function ( dummy0 , q ) {
 			q = 'Q'+(q+'').replace(/\D/g,'') ;
 			if ( undefined === self.wd.items[q] ) return ; // Paranoia
@@ -347,7 +348,7 @@ var reasonator = {
 				q:o.wdq
 			} , function ( d ) {
 				var items = [] ;
-				$.each ( d.items , function ( k , v ) {
+				$.each ( (d.items||[]) , function ( k , v ) {
 					self.to_load.push ( 'Q'+v ) ;
 					items.push ( 'Q'+v ) ;
 				} ) ;
@@ -473,7 +474,17 @@ var reasonator = {
 		var self = this ;
 		self.P = $.extend(true, self.P, self.P_all, self.P_websites);
 		self.main_type = 'generic' ;
-		self.loadRest ( function () { self.showGeneric ( q ) } ) ;
+
+		if ( self.wd.items[q].hasClaims('P279') ) {
+			self.loadBacktrack ( {
+				follow : [279] ,
+				wdq : 'tree['+(self.q+'').replace(/\D/g,'')+'][279]' ,
+				callback : function () {self.showGeneric ( q ) } // {self.loadRest ( function () { 
+			} ) ;
+		} else {
+			self.loadRest ( function () { self.showGeneric ( q ) } ) ;
+		}
+		
 	} ,
 	
 	loadPerson : function ( q ) {
@@ -541,7 +552,20 @@ var reasonator = {
 //		self.addMiscData(self.P_location) ; // Render misc data
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
-		self.finishDisplay () ; // Finish
+
+		// Render subclass chain
+		var h = '' ;
+		if ( self.wd.items[q].hasClaims('P279') ) {
+			var chain = self.findLongestPath ( { start:q , props:[279] } ) ;
+			h = "<h2>" + self.t('subclass_of') + "</h2>" ;
+			h += self.renderChain ( chain , [
+//				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
+				{ title:self.t('name') , name:true } ,
+	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+			] ) ;
+		}
+
+		self.finishDisplay ( h ) ; // Finish
 		$('div.other h2').remove() ;
 		
 		if ( undefined !== self.wd.items[q].raw.claims ) return ;
