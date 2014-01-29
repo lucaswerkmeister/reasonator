@@ -734,7 +734,7 @@ var reasonator = {
 				var taxonguess = {} ;
 				$.each ( candidates , function ( dummy , q ) {
 					var item = self.wd.items[q] ;
-					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; no parent taxon
+					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; not a parent taxon
 					if ( item === undefined ) return ; // Paranoia
 					has_candidate = true ;
 					var id = 'taxonguess_'+q ;
@@ -1102,7 +1102,26 @@ var reasonator = {
 							} ) ;
 							h2 = h2.join ( "<br/>" ) ;
 							if ( h2 == '' ) h2 = v.default || '' ;
-//							h2 = self.wd.items[q].getClaimTargetString(c[0]) || h2 ;
+						} else if ( v.type == 'date' ) {
+							h2 = [] ;
+							$.each ( c , function ( k2 , v2 ) {
+								var date = self.wd.items[q].getClaimDate(v2) ;
+								if ( date === undefined ) {
+									h2.push ( '???' ) ; // Unknown value
+									return ;
+								}
+								var m = date.time.match ( /^([+-])0+(\d{4,}-\d\d-\d\d)T/ ) ;
+								if ( m == null ) {
+									h2.push ( "MALFORMED DATE: " + date.time ) ;
+								} else {
+									var s = ( m[1] == '-' ) ? '-'+m[2] : ''+m[2] ;
+									var url = '?date='+s ;
+									if ( self.wd.main_languages[0] != 'en' ) url += "&lang="+self.wd.main_languages[0] ;
+									h2.push ( "<a href='"+url+"'>"+s+"</a>" ) ;
+								}
+							} ) ;
+							h2 = h2.join ( "<br/>" ) ;
+							if ( h2 == '' ) h2 = v.default || '' ;
 						} else {
 							h2 = [] ;
 							$.each ( c , function ( k2 , v2 ) {
@@ -1986,9 +2005,7 @@ var reasonator = {
 			}
 			
 			if ( undefined !== start && undefined !== end && ( i.p == 'P569' || i.p == 'P570' ) ) {
-				var title = i.p == 'P569' ? 'Born' : 'Died' ;
-				title += " on that date" ;
-				show = "<a target='_blank' title='"+title+"' class='external' href='http://tools.wmflabs.org/wikidata-todo/autolist.html?q=between["+i.p.substr(1)+","+start+","+end+"]'>" + show + "</a>" ;
+				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) } ) ;
 			}
 			
 			ret += show ;
@@ -2013,6 +2030,27 @@ var reasonator = {
 		
 		ret += "</div>" ;
 		return ret ;
+	} ,
+	
+	getSelfLink : function ( o ) {
+		var self = this ;
+		var q = o.q === undefined ? self.q : o.q ;
+		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
+		var label = o.label||'' ;
+		var title = o.title||'' ;
+		var cl = '' ;
+		var url = '?' ;
+		if ( o.date !== undefined ) {
+			label = o.date ;
+			url += "date=" + o.date ;
+		} else {
+			if ( label == '' ) label = self.wd.items[q].getLabel() ;
+			if ( title == '' ) title = q ;
+			url += "q=" + q ;
+		}
+		if ( lang != 'en' ) url += "&lang="+lang ;
+		
+		return "<a class='"+cl+"' title='"+title+"' href='"+url+"'>"+label+"</a>" ;
 	} ,
 
 	multimediaLazyLoad : function ( o ) {
@@ -2353,6 +2391,77 @@ var reasonator = {
 			} ) ;
 		} ) ;
 	} ,
+	
+	showDate : function () {
+		var self = this ;
+		var ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)$/ ) ;
+		if ( ymd == null ) { // TODO show error
+			return ;
+		}
+
+		$('#generic h1.main_title').html ( self.t('calendar_for').replace(/\$1/,self.date) ) ;
+		
+		var bracket = 10 ; // Years
+		var ongoing = {
+			from:(1*ymd[1]-bracket)+'-'+(ymd[2]||'01')+'-'+(ymd[3]||'01') ,
+			to:(1*ymd[1]+bracket)+'-'+(ymd[2]||'12')+'-'+(ymd[3]||'31')
+		} ;
+
+		var to_load = [] ;
+		var sections = [
+			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+self.date+','+self.date+']' , cols:[{title:'Died',prop:570,type:'date'}] } ,
+			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+self.date+','+self.date+']' , cols:[{title:'Born',prop:569,type:'date'}] } ,
+			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+self.date+','+self.date+']' , cols:[] } ,
+			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+self.date+'] AND BETWEEN[582,'+self.date+','+ongoing.to+']' , wdq_props:'580,582' , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
+		] ;
+			
+		function showResults () {
+			var h = '<div id="date">' ;
+			
+			$.each ( sections , function ( dummy , o ) {
+				if ( o.data === undefined || o.data.items === undefined || o.data.items.length == 0 ) return ;
+				
+				h += '<div class="panel panel-default">' ;
+				h += '<div class="panel-heading">'+o.title+'</div><div class="panel-body">' ;
+				
+				var items = [] ;
+				$.each ( o.data.items , function ( k , v ) { items.push ( 'Q'+v ) } ) ;
+				
+				var style = [ { title:self.t('name') , name:true } ] ;
+				style = style.concat ( o.cols ) ;
+				
+				h += self.renderChain ( items , style ) ;
+				h += "</div></div>" ;
+			} ) ;
+			h += "</div>" ;
+			
+			
+			$('#generic div.main').html ( h ) ;
+			self.addHoverboxes ( '#date' ) ;
+			$('#generic').show() ;
+			$('#main').show() ;
+			$('#main_content_sub').show() ;
+			$('#main_content').show() ;
+		}
+		
+		var running = 4 ;
+		$.each ( sections , function ( dummy , o ) {
+//			console.log ( o.wdq ) ;
+			$.getJSON ( self.wdq_url , { q:o.wdq,props:(o.wdq_props||'') } , function ( d ) {
+				o.data = d ;
+				$.each ( (d.items||[]) , function ( k , v ) { to_load.push ( 'Q'+v ) } ) ;
+				running-- ;
+				if ( running == 0 ) {
+					self.wd.getItemBatch ( to_load , function () {
+						showResults() ;
+					} ) ;
+				}
+			} ) ;
+		} ) ;
+
+	} ,
 
 	
 	initializeFromParameters : function () {
@@ -2386,7 +2495,7 @@ var reasonator = {
 		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
 		$('#random_item').html(self.t('random_item')).attr({title:self.t('random_item')+' [X]'}).click ( function () { reasonator.loadRandomItem() ; return false } ) ;
 		
-		if ( self.params.q === undefined && self.params.find == undefined) {
+		if ( self.params.q === undefined && self.params.find == undefined && self.params.date == undefined ) {
 			$('#language_select').hide() ;
 		} else {
 			var curlang = self.all_languages[self.wd.main_languages[0]] || 'Unknown language' ;
@@ -2395,9 +2504,13 @@ var reasonator = {
 
 		wd_auto_desc_wd.init() ;
 		wd_auto_desc.lang = self.wd.main_languages[0] ;
-		if ( undefined !== self.params.q ) self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
-		else if ( undefined !== self.params.find ) {
+		if ( undefined !== self.params.q ) {
+			self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
+		} else if ( undefined !== self.params.find ) {
 			self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
+		} else if ( undefined !== self.params.date ) {
+			self.date = self.params.date ;
+			self.showDate() ;
 		} else {
 			$('#main_content').show() ;
 			$('#intro').show() ;
