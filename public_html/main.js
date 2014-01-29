@@ -687,10 +687,12 @@ var reasonator = {
 
 		self.finishDisplay ( h ) ; // Finish
 		
-		
-		
-		
-		// Genus addition
+		self.suggestGenus ( q ) ;
+	} ,
+	
+	suggestGenus : function ( q ) {
+		var self = this ;
+
 		var parent_taxon_props = [405,141,183,427,566,171] ; // TODO incomplete?
 		var i = self.wd.items[q] ;
 		var parent_taxa = 0 ;
@@ -727,13 +729,14 @@ var reasonator = {
 				
 				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
 
-				
+				var has_candidate = false ;
 				h += "<table class='table-condensed table-striped'><tbody>" ;
 				var taxonguess = {} ;
 				$.each ( candidates , function ( dummy , q ) {
 					var item = self.wd.items[q] ;
 					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; no parent taxon
 					if ( item === undefined ) return ; // Paranoia
+					has_candidate = true ;
 					var id = 'taxonguess_'+q ;
 					taxonguess[q] = id ;
 					h += "<tr>" ;
@@ -744,6 +747,7 @@ var reasonator = {
 					h += "</tr>" ;
 				} ) ;
 				h += "</tbody></table></div></div>" ;
+				if ( !has_candidate ) return ;
 				$('#taxon div.main').append ( h ) ;
 				self.addHoverboxes ( '#taxonguess' ) ;
 				$.each ( taxonguess , function ( q , id ) {
