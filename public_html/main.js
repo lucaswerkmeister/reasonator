@@ -1083,6 +1083,7 @@ var reasonator = {
 		h += "</tr></thead><tbody>" ;
 		while ( chain.length > 0 ) {
 			var q = chain.pop() ;
+			if ( undefined === self.wd.items[q] ) continue ;
 			h += "<tr>" ;
 			$.each ( columns , function ( k , v ) {
 				if ( v.name ) {
@@ -1110,11 +1111,17 @@ var reasonator = {
 									h2.push ( '???' ) ; // Unknown value
 									return ;
 								}
-								var m = date.time.match ( /^([+-])0+(\d{4,}-\d\d-\d\d)T/ ) ;
+								var m = date.time.match ( /^([+-])0+(\d{4,})-(\d\d)-(\d\d)T/ ) ;
 								if ( m == null ) {
 									h2.push ( "MALFORMED DATE: " + date.time ) ;
 								} else {
-									var s = ( m[1] == '-' ) ? '-'+m[2] : ''+m[2] ;
+									var year = ( m[1] == '-' ) ? '-'+m[2] : ''+m[2] ;
+									var s = '???' ;
+									if ( date.precision >= 11 ) s = year+'-'+m[3]+'-'+m[4] ;
+									else if ( date.precision == 10 ) s = year+'-'+m[3] ;
+									else if ( date.precision == 9 ) s = year ;
+									else if ( date.precision == 8 ) s = parseInt(year/10)+'0s' ;
+									else if ( date.precision == 7 ) s = parseInt(year/100)+'00s' ;
 									var url = '?date='+s ;
 									if ( self.wd.main_languages[0] != 'en' ) url += "&lang="+self.wd.main_languages[0] ;
 									h2.push ( "<a href='"+url+"'>"+s+"</a>" ) ;
@@ -2392,48 +2399,117 @@ var reasonator = {
 		} ) ;
 	} ,
 	
-	showDate : function () {
+	
+	getStatusBarHTML : function ( id ) {
+		var h = '<div id="'+id+'" class="progress progress-striped active">' ;
+		h += '<div class="progress-bar"  role="progressbar">' ;
+//		h += '<span class="sr-only">45% Complete</span>' ;
+		h += '</div></div>' ;
+		return h ;
+	} ,
+	
+	showDate : function ( new_date ) {
 		var self = this ;
+		if ( undefined !== new_date ) self.date = new_date+'' ;
 		var ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)-(\d\d)$/ ) ;
 		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)$/ ) ;
 		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)$/ ) ;
 		if ( ymd == null ) { // TODO show error
 			return ;
 		}
+		
+		var precision = ymd[3]===undefined?(ymd[2]===undefined?9:10):11 ;
 
+		$('#generic').show() ;
+		$('#main').show() ;
+		$('#main_content_sub').show() ;
+		$('#main_content').show() ;
+		$('#generic div.main').show().html ( 
+			"<table style='width:100%'><tbody><tr><td valign='top'>" + 
+			self.t('loading') + "</td><td>" + 
+			"<div style='float:right;width:600px'>" + self.getStatusBarHTML('loading_status') + "</div><span id='cal_perc'></span>"  +
+			"</td></tr></tbody></table>"
+			) ;
 		$('#generic h1.main_title').html ( self.t('calendar_for').replace(/\$1/,self.date) ) ;
+		self.wd.loading_status_callback = function ( cur , total ) {
+			$('#loading_status .progress-bar').width ( (100*cur/total)+'%' ) ;
+//			$('#cal_perc').html ( parseInt(100*cur/total)+'%' ) ;
+//			$('#loading_status').attr ( { 'aria-valuenow':cur , 'aria-valuemax': total} ) ;
+//					var msg = "$1 of $2 items loaded" ;
+//					$(self.loading_status_selector).html ( msg.replace(/\$1/,self.loaded_count).replace(/\$2/,self.loading_count) ) ;
+//			selector = '#loading_status' ;
+		} ;
 		
 		var bracket = 10 ; // Years
 		var ongoing = {
 			from:(1*ymd[1]-bracket)+'-'+(ymd[2]||'01')+'-'+(ymd[3]||'01') ,
 			to:(1*ymd[1]+bracket)+'-'+(ymd[2]||'12')+'-'+(ymd[3]||'31')
 		} ;
+		
+		var dmin = [ ymd[1]*1 , (ymd[2]||'01') , (ymd[3]||'01') ].join('-') ;
+		var dmax = [ ymd[1]*1 , (ymd[2]||'12') , (ymd[3]||'31') ].join('-') ;
+
+		var sections = [
+			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+dmin+','+dmax+']' , cols:[] , props:[585] } ,
+			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+dmin+','+dmax+'] OR BETWEEN[575,'+dmin+','+dmax+']' , cols:[] , props:[571,575] } ,
+			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+dmax+'] AND BETWEEN[582,'+dmin+','+ongoing.to+']' , props:[580,582] , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
+			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+dmin+','+dmax+']' , cols:[{title:self.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
+			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+dmin+','+dmax+']' , cols:[{title:self.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
+		] ;
+		
+		var more_dates = precision < 11 ;
+		if ( more_dates ) {
+			sections[0].cols.push ( {title:self.t('cal_date'),prop:585,type:'date'} ) ;
+			sections[1].cols.push ( {title:self.t('cal_date'),prop:571,type:'date'} ) ;
+			sections[1].cols.push ( {title:self.t('cal_date'),prop:575,type:'date'} ) ;
+			sections[3].cols.unshift ( {title:self.t('born_on'),prop:569,type:'date'} ) ;
+			sections[4].cols.push ( {title:self.t('died_on'),prop:570,type:'date'} ) ;
+		}
 
 		var to_load = [] ;
-		var sections = [
-			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+self.date+','+self.date+']' , cols:[{title:self.t('died_on'),prop:570,type:'date'}] } ,
-			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+self.date+','+self.date+']' , cols:[{title:self.t('born_on'),prop:569,type:'date'}] } ,
-			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+self.date+','+self.date+'] OR BETWEEN[575,'+self.date+','+self.date+']' , cols:[] } ,
-			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+self.date+','+self.date+']' , cols:[] } ,
-			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+self.date+'] AND BETWEEN[582,'+self.date+','+ongoing.to+']' , wdq_props:'580,582' , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
-		] ;
 			
 		function showResults () {
 			var h = '<div id="date">' ;
 			
+			h += "<div><ul>" ;
+			$.each ( sections , function ( k , v ) {
+				h += "<li><a href='#cal_" + v.key + "'>" + v.title + "</a></li>" ;
+			} ) ;
+			h += "</ul></div>" ;
+			
 			$.each ( sections , function ( dummy , o ) {
 				if ( o.data === undefined || o.data.items === undefined || o.data.items.length == 0 ) return ;
 				
-				h += '<div class="panel panel-default">' ;
-				h += '<div class="panel-heading">'+o.title+'</div><div class="panel-body">' ;
+				if ( !more_dates && ( o.key == 'born' || o.key == 'died' ) ) {
+					var w = parseInt(self.banner_width/2-10) ;
+					var style = "display:inline-block;max-width:"+w+"px;width:"+w+"px"+(o.key=='died'?';margin-left:12px':'') ;
+					h += '<div style="'+style+'" class="panel panel-default">' ;
+				} else {
+					h += '<div class="panel panel-default">' ;
+				}
+				
+				h += '<div class="panel-heading"><a name="cal_'+o.key+'">'+o.title+'</a></div><div class="panel-body">' ;
 				
 				var items = [] ;
-				$.each ( o.data.items , function ( k , v ) { items.push ( 'Q'+v ) } ) ;
+				$.each ( o.data.items , function ( k , v ) {
+					var bad = false ;
+					var i = self.wd.items['Q'+v] ;
+					if ( i == undefined ) return ;
+					$.each ( o.props , function ( dummy2 , p ) {
+						var claims = i.getClaimsForProperty(p) ;
+						if ( claims.length == 0 ) return ; // Paranoia
+						var d = i.getClaimDate ( claims[0] ) ;
+						if ( d.precision >= precision ) return ; // Depending if we look at year, month, day, this is OK
+						bad = true ;
+					} ) ;
+					if ( o.key == 'ongoing' ) bad = false ; // Hardcoded exception for ongoing events; they can be fuzzy
+					if ( !bad ) items.push ( 'Q'+v ) ;
+				} ) ;
 				
-				var style = [ { title:self.t('name') , name:true } ] ;
+				var style = [ { title:self.t('item') , name:true } ] ;
 				style = style.concat ( o.cols ) ;
 				
-				h += self.renderChain ( items , style ) ;
+				h += self.renderChain ( items , style ) . replace ( /\bnowrap\b/g , '' ) ;
 				h += "</div></div>" ;
 			} ) ;
 			h += "</div>" ;
@@ -2441,16 +2517,12 @@ var reasonator = {
 			
 			$('#generic div.main').html ( h ) ;
 			self.addHoverboxes ( '#date' ) ;
-			$('#generic').show() ;
-			$('#main').show() ;
-			$('#main_content_sub').show() ;
-			$('#main_content').show() ;
 		}
 		
 		var running = sections.length ;
 		$.each ( sections , function ( dummy , o ) {
 //			console.log ( o.wdq ) ;
-			$.getJSON ( self.wdq_url , { q:o.wdq,props:(o.wdq_props||'') } , function ( d ) {
+			$.getJSON ( self.wdq_url , { q:o.wdq } , function ( d ) { // ,props:(o.wdq_props||'')
 				o.data = d ;
 				$.each ( (d.items||[]) , function ( k , v ) { to_load.push ( 'Q'+v ) } ) ;
 				running-- ;
@@ -2462,6 +2534,115 @@ var reasonator = {
 			} ) ;
 		} ) ;
 
+		self.showCalendarSidebar([ymd[1],ymd[2],ymd[3]]) ; // dmin.split('-')
+
+	} ,
+	
+	showCalendarSidebar : function ( ymd ) {
+		var self = this ;
+		
+		var mill = parseInt ( ymd[0] / 1000 ) ;
+		var cent = parseInt ( (ymd[0]-mill*1000) / 100 ) ;
+		var deca = parseInt ( (ymd[0]-mill*1000-cent*100) / 10 ) ;
+		var year = ymd[0]-mill*1000-cent*100-deca*10 ; // LAST DIGIT ONLY!
+	
+		var h = "<div>" ;
+		h += "<div class='cal_sb_header'>Millennium</div>" ;
+		h += "<div class='cal_sb_section'>" ;
+		for ( var i = -5 ; i <= 2 ; i++ ) {
+			var nd = i*1000 ;
+			h += "<span style='margin-right:5px'>" ;
+			var text = i<0 ? i*-1 + "&nbsp;BCE" : ( i==0?'1st':(i==1?'2nd':'3rd') ) ;
+			if ( i == mill ) h += "<b>" + text + "</b>" ;
+			else h += "<a href='#' onclick='reasonator.showDate("+nd+");return false'>" + text + "</a>" ;
+			h += "</span>" ;
+			if ( i == -1 ) h += "<br/>" ;
+		}
+		h += "</div>" ;
+
+		h += "<div class='cal_sb_header'>Century</div>" ;
+		h += "<div class='cal_sb_section'>" ;
+		for ( var i = 0 ; i <= 9 ; i++ ) {
+			var nd = mill*1000+i*100 ;
+			h += "<span style='margin-right:5px'>" ;
+			var text = mill+''+i+'00s' ;
+			if ( i == cent ) h += "<b>" + text + "</b>" ;
+			else h += "<a href='#' onclick='reasonator.showDate("+nd+");return false'>" + text + "</a>" ;
+			h += "</span>" ;
+			if ( i == 4 ) h += "<br/>" ;
+		}
+		h += "</div>" ;
+
+		h += "<div class='cal_sb_header'>Decade</div>" ;
+		h += "<div class='cal_sb_section'>" ;
+		for ( var i = 0 ; i <= 9 ; i++ ) {
+			var nd = mill*1000+cent*100+i*10 ;
+			h += "<span style='margin-right:5px'>" ;
+			var text = mill+''+cent+''+i+'0s' ;
+			if ( i == deca ) h += "<b>" + text + "</b>" ;
+			else h += "<a href='#' onclick='reasonator.showDate("+nd+");return false'>" + text + "</a>" ;
+			h += "</span>" ;
+			if ( i == 4 ) h += "<br/>" ;
+		}
+		h += "</div>" ;
+
+
+		h += "<div class='cal_sb_header'>Year</div>" ;
+		h += "<div class='cal_sb_section'>" ;
+		for ( var i = 0 ; i <= 9 ; i++ ) {
+			var nd = mill*1000+cent*100+deca*10+i ;
+			h += "<span style='margin-right:5px'>" ;
+			var text = mill+''+cent+''+deca+''+i ;
+			if ( i == year ) h += "<b>" + text + "</b>" ;
+			else h += "<a href='#' onclick='reasonator.showDate(\""+nd+"\");return false'>" + text + "</a>" ;
+			h += "</span>" ;
+			if ( i == 4 ) h += "<br/>" ;
+		}
+		h += "</div>" ;
+
+		h += "<div class='cal_sb_header'>Month</div>" ;
+		h += "<div class='cal_sb_section'>" ;
+		for ( var i = 1 ; i <= 12 ; i++ ) {
+			var nd = ymd[0]+'-'+(i<10?'0'+i:i) ;
+			h += "<span style='margin-right:5px'>" ;
+			var text = i < 10 ? '0'+i : i ;
+			if ( i == (ymd[1]||0) ) h += "<b>" + text + "</b>" ;
+			else h += "<a href='#' onclick='reasonator.showDate(\""+nd+"\");return false'>" + text + "</a>" ;
+			h += "</span>" ;
+		}
+		h += "</div>" ;
+
+		if ( undefined !== ymd[1] ) {
+			h += "<div class='cal_sb_header'>Day</div>" ;
+			h += "<div>" ;
+			var day = new Date ( ymd[0] , ymd[1]-1 , 1 ) ;
+			var monthEnd = new Date( ymd[0], ymd[1]-1 + 1, 1);
+			var monthLength = (monthEnd - day) / (1000 * 60 * 60 * 24) ;
+			var dotw = day.getDay() ;
+			h += "<table class='table-striped table-condensed' style='margin-left:auto;margin-right:auto;margin-top:5px'><thead>" ;
+			$.each ( ['S','M','T','W','T','F','S'] , function ( k , v ) { h += "<th>"+v+"</th>" } ) ;
+			h += "</thead><tbody><tr>" ;
+			var since_sunday = 6 ;
+			for ( var i = -dotw ; i <= monthLength ; i++ ) {
+				var nd = ymd[0]+'-'+ymd[1]+'-'+(i<10?'0'+i:i) ;
+				if ( since_sunday == 0 ) h += "<tr>" ;
+				h += "<td>" ;
+				var text = i <= 0 ? '' : (i<10?'0'+i:i) ;
+				if ( i <= 0 ) {}
+				else if ( i == ymd[2]*1 ) h += "<b>" + text + "</b>" ;
+				else h += "<a href='#' onclick='reasonator.showDate(\""+nd+"\");return false'>" + text + "</a>" ;
+				h += "</td>" ;
+				if ( since_sunday == 6 ) h += "</tr>" ;
+				since_sunday = (since_sunday+1) % 7 ;
+			}
+			h += "</tbody></table>" ;
+			h += "</div>" ;
+		}
+		
+		
+		h += "</div>" ;
+		$('#generic div.sidebar').html ( h ) ;
+		
 	} ,
 
 	

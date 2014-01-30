@@ -142,3 +142,13 @@ h3.ui-cluetip-header {
 .main_image,.main_coa,.main_seal,.main_video,.main_audio,.signature,.main_range_map,.main_flag_image {
 	text-align:center;
 }
+
+div.cal_sb_header {
+	text-align:center;
+	font-weight:bold;
+	background-color:#EEE;
+}
+
+div.cal_sb_section {
+	margin-left:10px;
+}
