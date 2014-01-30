@@ -693,7 +693,7 @@ var reasonator = {
 	suggestGenus : function ( q ) {
 		var self = this ;
 
-		var parent_taxon_props = [405,141,183,427,566,171] ; // TODO incomplete?
+		var parent_taxon_props = [171,71,70,77,76,75,273] ; // TODO incomplete?
 		var i = self.wd.items[q] ;
 		var parent_taxa = 0 ;
 		$.each ( parent_taxon_props , function ( k , v ) {
