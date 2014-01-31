@@ -1130,7 +1130,9 @@ var reasonator = {
 							h2 = h2.join ( "<br/>" ) ;
 							if ( h2 == '' ) h2 = v.default || '' ;
 							
-						// TODO : QUANTITIES!!!
+						} else if ( v.type == 'quantity' ) {
+		
+							h2 = self.renderQuantity ( v ) ;
 							
 						} else {
 							h2 = [] ;
@@ -2021,19 +2023,7 @@ var reasonator = {
 			ret += show ;
 
 		} else if ( i.type == 'quantity' ) {
-			
-			i.amount *= 1 ;
-			i.upperBound *= 1 ;
-			i.lowerBound *= 1 ;
-			
-			var fixJavaScriptFloatingPointBug = 1000000000 ;
-			var diff1 = i.upperBound-i.amount ;
-			var diff2 = i.amount-i.lowerBound ;
-			if ( diff1 == diff2 ) {
-				ret += i.amount + "&nbsp;&plusmn;&nbsp;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
-			} else {
-				ret += i.amount + " (" + i.lowerBound + "&ndash;" + i.upperBound + ")" ;
-			}
+			ret += self.renderQuantity ( i ) ;
 
 		} else { // also add in wikidata.js getObject ... something...
 			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
@@ -2053,6 +2043,23 @@ var reasonator = {
 		if ( qual.length > 0 ) ret += "<br/><div style='padding-left:10px;font-size:80%'>" + qual.join('<br/>') + "</div>" ;
 		
 		ret += "</div>" ;
+		return ret ;
+	} ,
+	
+	renderQuantity : function ( i ) {
+		var ret = 'UNKNOWN QUANTITY' ;
+		i.amount *= 1 ;
+		i.upperBound *= 1 ;
+		i.lowerBound *= 1 ;
+		
+		var fixJavaScriptFloatingPointBug = 1000000000 ;
+		var diff1 = i.upperBound-i.amount ;
+		var diff2 = i.amount-i.lowerBound ;
+		if ( diff1 == diff2 ) {
+			ret = i.amount + "&nbsp;&plusmn;&nbsp;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
+		} else {
+			ret = i.amount + " (" + i.lowerBound + "&ndash;" + i.upperBound + ")" ;
+		}
 		return ret ;
 	} ,
 	
