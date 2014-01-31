@@ -842,7 +842,7 @@ var reasonator = {
 			setTimeout ( function(){self.showLocation(q)} , 50 ) ;
 			return ;
 		}
-		
+
 		// RENDERING
 		var h = '' ;
 		self.setTopLink () ;
@@ -1217,7 +1217,7 @@ var reasonator = {
 	finishDisplay : function ( h ) {
 		var self = this ;
 		$.each ( self.mm_load , function ( k , v ) {
-			if ( k >= self.max_related_media ) {
+			if ( k >= self.max_related_media && v.secondary_file ) {
 				$(v.id).remove() ;
 			} else {
 				self.multimediaLazyLoad ( v ) ;
@@ -1580,6 +1580,7 @@ var reasonator = {
 							h3 = "<div>" + h3 + " <span style='font-size:9pt'>" + io.file + "</span></div>" ;
 						}
 						$('#'+self.main_type+' div.all_images').append ( h3 ) ;
+						if ( self.q == v.getID() ) io.secondary_file = true ;
 					}
 					self.mm_load.push ( io ) ;
 				} ) ;
