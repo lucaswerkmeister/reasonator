@@ -1129,6 +1129,9 @@ var reasonator = {
 							} ) ;
 							h2 = h2.join ( "<br/>" ) ;
 							if ( h2 == '' ) h2 = v.default || '' ;
+							
+						// TODO : QUANTITIES!!!
+							
 						} else {
 							h2 = [] ;
 							$.each ( c , function ( k2 , v2 ) {
@@ -2027,7 +2030,7 @@ var reasonator = {
 			var diff1 = i.upperBound-i.amount ;
 			var diff2 = i.amount-i.lowerBound ;
 			if ( diff1 == diff2 ) {
-				ret += i.amount + "&plusmn;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
+				ret += i.amount + "&nbsp;&plusmn;&nbsp;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
 			} else {
 				ret += i.amount + " (" + i.lowerBound + "&ndash;" + i.upperBound + ")" ;
 			}
