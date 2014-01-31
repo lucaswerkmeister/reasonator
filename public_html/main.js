@@ -2017,8 +2017,22 @@ var reasonator = {
 			
 			ret += show ;
 
+		} else if ( i.type == 'quantity' ) {
+			
+			i.amount *= 1 ;
+			i.upperBound *= 1 ;
+			i.lowerBound *= 1 ;
+			
+			var fixJavaScriptFloatingPointBug = 1000000000 ;
+			var diff1 = i.upperBound-i.amount ;
+			var diff2 = i.amount-i.lowerBound ;
+			if ( diff1 == diff2 ) {
+				ret += i.amount + "&plusmn;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
+			} else {
+				ret += i.amount + " (" + i.lowerBound + "&ndash;" + i.upperBound + ")" ;
+			}
 
-		} else {
+		} else { // also add in wikidata.js getObject ... something...
 			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
 			console.log ( i ) ;
 			ret += "UNKNOWN" ;
