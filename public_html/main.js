@@ -1641,7 +1641,7 @@ var reasonator = {
 			h += "</th>" ;
 			var row = 0 ;
 			$.each ( ql , function ( dummy , subrow ) {
-				no.add_desc = true ;
+//				no.add_desc = true ;
 				$.each ( subrow , function ( dummy , cq ) {
 					if ( row > 0 ) h += "<tr>" ;
 					h += "<td name='" + block_id + "' style='width:100%" ;
@@ -1652,7 +1652,7 @@ var reasonator = {
 					h += self.getItemLink ( cq , no ) ; // { internal:internal,desc:true,gender:true,q_desc:true }
 					h += "</td></tr>" ;
 					row++ ;
-					no.add_desc = false ;
+//					no.add_desc = false ;
 				} ) ;
 			} ) ;
 			if ( collapse ) {
@@ -1944,12 +1944,14 @@ var reasonator = {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
 		}
 		
-		if ( o.add_desc && !self.use_hoverbox ) {
+		if ( o.add_desc ) { //  && !self.use_hoverbox 
 			var d = item.getDesc()  ;
+			if ( d != '' ) h += " <span class='inline_desc'>" + d + "</span>" ;
+/*			
 			h += " <small class='autodesc_"+q+"'>" + d+ "</small>" ;
 			if ( d == '' && self.use_autodesc ) {
 				self.autodesc_items.push ( q ) ;
-			}
+			}*/
 		}
 		if ( o.show_q ) h += " <small class='qnumber'>(" + q + ")</small>" ;
 
