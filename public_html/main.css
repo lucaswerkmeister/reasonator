@@ -27,6 +27,10 @@ div.sidebar thead {
 	background-color:#DDDDDD; /* BBDAFF */
 }
 
+div.mainbar thead {
+	font-family:times new roman;
+}
+
 /* Descriptions */
 .autodesc div {
 	display:inline-block;
@@ -151,4 +155,13 @@ div.cal_sb_header {
 
 div.cal_sb_section {
 	margin-left:10px;
+}
+
+span.inline_desc {
+	font-size:8pt;
+	color:#666;
+}
+
+table.person_relatives > tbody > tr > td {
+	min-width:30%;
 }
