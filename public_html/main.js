@@ -92,6 +92,7 @@ var reasonator = {
 	urlid2prop : {} ,
 	taxon_list : [ 171 , 273 , 75 , 76 , 77 , 70 , 71 , 74 , 89 ] ,
 	location_props : [30,17,131,376,501] ,
+	ofen_used_items_with_media : ['Q5','Q2','Q36180'] ,
 	
 	// http://208.80.153.172/api?q=claim[279:56061]
 	location_list : [ 515,6256,1763527,
@@ -1550,7 +1551,7 @@ var reasonator = {
 			$.each ( self.wd.items , function ( k , v ) {
 				if ( v.isPlaceholder() || !v.isItem() ) return ;
 				if ( v.getID() != self.q && medium != 'image' ) return ; // Don't show non-image media from other items; show those inline instead
-				if ( v.getID() != self.q && -1 != $.inArray ( v.getID() , ['Q5','Q2']) ) return ; // No often-used images in related media
+				if ( v.getID() != self.q && -1 != $.inArray ( v.getID() , self.ofen_used_items_with_media ) ) return ; // No often-used images in related media
 				var im = v.getMultimediaFilesForProperty ( self.P[medium] ) ;
 				$.each ( im , function ( k2 , v2 ) {
 					self.imgcnt++ ;
