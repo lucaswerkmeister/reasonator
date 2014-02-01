@@ -12,6 +12,7 @@ var reasonator = {
 		maic : 301 , // Main article in category
 		flag_image : 41 ,
 		wikivoyage_banner : 948 ,
+		pronunciation_audio : 443 ,
 		coa : 94 ,
 		seal : 158 ,
 		chemical_structure : 117 ,
@@ -563,6 +564,7 @@ var reasonator = {
 			h += self.renderChain ( chain , [
 //				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
 				{ title:self.t('name') , name:true } ,
+				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
 		}
@@ -1540,7 +1542,7 @@ var reasonator = {
 		var has_header = false ;
 
 		var main_media = ['image','video'] ;
-		var audio_files = ['audio','voice_recording'] ;
+		var audio_files = ['audio','voice_recording','pronunciation_audio'] ;
 		var other_images = ['chemical_structure','astronomic_symbol'] ;
 		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map'] ;
 		var media =  main_media.concat(other_images).concat(special_images).concat(audio_files) ;
@@ -1554,7 +1556,7 @@ var reasonator = {
 					self.imgcnt++ ;
 					var medium2 = medium ;
 					if ( -1 != $.inArray ( medium , audio_files ) ) medium2 = 'audio' ;
-					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() } ;
+					var io = { file:v2 , type:medium2 , id:'#imgid'+self.imgcnt , title:v.getLabel() , prop:'P'+(''+self.P[medium]).replace(/\D/g,'') } ;
 					var medium_sidebar_div = 'main_'+medium2 ;
 					
 					if ( -1 != $.inArray ( medium , other_images ) ) {
@@ -1564,6 +1566,7 @@ var reasonator = {
 					}
 					
 					if ( self.q == v.getID() && k2 == 0 ) { // Main item, first file for this property
+						io.sidebar = true ;
 						io.tw = 260 ;
 						io.th = 400 ;
 						io.id = '#'+self.main_type+' div.'+medium_sidebar_div ;
@@ -2057,7 +2060,9 @@ var reasonator = {
 		var diff1 = i.upperBound-i.amount ;
 		var diff2 = i.amount-i.lowerBound ;
 		if ( diff1 == diff2 ) {
-			ret = i.amount + "&nbsp;&plusmn;&nbsp;" + (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
+			ret = i.amount ;
+			var pm = (parseInt(diff1*fixJavaScriptFloatingPointBug)/fixJavaScriptFloatingPointBug) ;
+			if ( pm != 0 ) ret += "&nbsp;&plusmn;&nbsp;" + pm ;
 		} else {
 			ret = i.amount + " (" + i.lowerBound + "&ndash;" + i.upperBound + ")" ;
 		}
@@ -2112,6 +2117,7 @@ var reasonator = {
 								h = "<a href='" + url + "' target='_blank'>"+self.t('download_file')+"</a>" ;
 							} else {
 								h = "<audio controls style='max-width:"+maxw+"px'><source src='" + url + "' type='audio/"+type+"'><small><i>Your browser <s>sucks</s> does not support HTML5 audio.</i></small></audio>" ;
+								if ( o.sidebar ) h = '<div>' + self.getItemLink ( { type:'item',q:o.prop } , { desc:true } ) + "</div>" + h ;
 							}
 						} else if ( o.type == 'image' ) {
 							h = "<img border=0 width='"+v.imageinfo[0].thumbwidth+"px' height='"+v.imageinfo[0].thumbheight+"px' src='" + v.imageinfo[0].thumburl + "' " ;
