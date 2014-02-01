@@ -2519,7 +2519,7 @@ var reasonator = {
 					h += '<div class="panel panel-default">' ;
 				}
 				
-				h += '<div class="panel-heading"><a name="cal_'+o.key+'">'+o.title+'</a></div><div class="panel-body">' ;
+				h += '<div class="panel-heading"><h4 style="margin:0px"><a name="cal_'+o.key+'"></a>'+o.title+'</h4></div><div class="panel-body">' ;
 				
 				var items = [] ;
 				$.each ( o.data.items , function ( k , v ) {
