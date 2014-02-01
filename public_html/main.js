@@ -1624,7 +1624,11 @@ var reasonator = {
 		no.desc = true ;
 		no.q_desc = true ;
 		var internal = (o.internal||false) ;
-		$.each ( sd , function ( op , qs ) {
+		var sd_keys = [] ;
+		$.each ( sd , function ( k , v ) { sd_keys.push ( k ) } ) ;
+		sd_keys = sd_keys.sort () ;
+		$.each ( sd_keys , function ( dummy , op ) {
+			var qs = sd[op] ;
 			var p = String(op).replace(/\D/g,'') ;
 			var ql = [] ;
 			$.each ( qs , function ( k , v ) { ql.push ( v ) } ) ;
