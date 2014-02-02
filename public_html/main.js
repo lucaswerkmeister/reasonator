@@ -568,6 +568,7 @@ var reasonator = {
 				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
+			h += self.getWDQnotice() ;
 		}
 
 		self.finishDisplay ( h ) ; // Finish
@@ -669,11 +670,7 @@ var reasonator = {
 		] ) ;
 
 		if ( self.use_wdq ) {
-			var url = self.getCurrentUrl ( { live:true } ) ;
-			var line = self.t('wdq_notice') ;
-			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
-			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+			h += self.getWDQnotice() ;
 		}
 		
 		// Render taxon properties
@@ -691,6 +688,15 @@ var reasonator = {
 		self.finishDisplay ( h ) ; // Finish
 		
 		self.suggestGenus ( q ) ;
+	} ,
+
+	getWDQnotice : function () {
+		var self = this ;
+		var url = self.getCurrentUrl ( { live:true } ) ;
+		var line = self.t('wdq_notice') ;
+		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
+		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
 	} ,
 	
 	suggestGenus : function ( q ) {
