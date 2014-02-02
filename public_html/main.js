@@ -568,7 +568,7 @@ var reasonator = {
 				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
-			h += self.getWDQnotice() ;
+			if ( self.use_wdq ) h += self.getWDQnotice() ;
 		}
 
 		self.finishDisplay ( h ) ; // Finish
