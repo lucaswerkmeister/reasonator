@@ -2002,8 +2002,11 @@ var reasonator = {
 		if ( o === undefined ) o = {} ;
 
 		if ( i.type == 'string' ) {
-			if ( i.p == 'P373' ) ret += "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
-			else ret += i.s ;
+			var h2 ;
+			if ( i.p == 'P373' ) h2 = "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
+			else h2 = i.s ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
+			ret += h2 ;
 		} else if ( i.type == 'item' ) {
 			o.rank = i.rank ;
 			ret += self.getQlink ( i.q , o ) ;
@@ -2035,11 +2038,13 @@ var reasonator = {
 				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) } ) ;
 			}
 			
+			if ( i.rank !== undefined ) show = "<span class='rank_" + i.rank + "'>" + show + "</span>" ;
 			ret += show ;
 
 		} else if ( i.type == 'quantity' ) {
-			ret += self.renderQuantity ( i ) ;
-
+			var h2 = self.renderQuantity ( i ) ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
+			ret += h2 ;
 		} else { // also add in wikidata.js getObject ... something...
 			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
 			console.log ( i ) ;
