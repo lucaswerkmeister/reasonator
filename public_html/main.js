@@ -1345,6 +1345,7 @@ var reasonator = {
 				var i = reasonator.wd.items[q] ;
 				var title = i.getLabel() ;
 				var dl = i.getLabelDefaultLanguage() ;
+				var rank = a.hasClass('rank_deprecated') ? 'deprecated' : ( a.hasClass('rank_preferred') ? 'preferred' : 'normal' ) ;
 
 				var h = "" ;
 				h += "<div><span style='margin-right:10px;font-size:12pt'><a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/Q"+qnum+"'>Q"+qnum+"</a></span>" ;
@@ -1377,6 +1378,9 @@ var reasonator = {
 				if ( self.use_autodesc ) {
 					h += "<div id='"+adid+"'>...</div>" ;
 				}
+				
+				// Rank
+				if ( rank != 'normal' ) h += "<div>" + self.t('rank_label') + " : " + self.t('rank_'+rank) + "</div>" ;
 			
 			
 				ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
@@ -1899,7 +1903,6 @@ var reasonator = {
 		
 		var internal = o.internal ;
 		if ( self.wd.items[q].isItem() ) {
-//			if ( self.isPerson(q) || self.isTaxon(q) || self.isLocation(q) ) 
 			internal = true ;
 		}
 		if ( o.force_external ) internal = false ;
@@ -1921,9 +1924,16 @@ var reasonator = {
 		if ( q == self.q ) {
 			h += "<b>" + label + "</b>" ;
 		} else {
+			var classes = [] ;
 			h += "<a" ;
-			if ( internal ) h += " q='"+qnum+"' class='q_internal' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ; //h += " href='#' onclick='reasonator.loadQ(" + q.replace(/\D/g,'') + ");return false'" ; // FIXME
-			else h += " class='wikidata' target='_blank' href='" + url + "'" ;
+			if ( internal ) {
+				classes.push ( 'q_internal' ) ;
+				h += " q='"+qnum+"' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ;
+			} else {
+				classes.push ( 'wikidata' ) ;
+				h += " target='_blank' href='" + url + "'" ;
+			}
+			if ( o.rank !== undefined ) classes.push ( 'rank_' + o.rank ) ;
 			var title = [] ;
 			if ( o.desc ) { title.unshift ( item.getDesc() ) ; if ( title[0] == '' ) title.shift() }
 			if ( o.q_desc ) { title.push ( q ) }
@@ -1931,16 +1941,14 @@ var reasonator = {
 		
 			if ( self.mark_missing_labels ) {
 				var dl = item.getLabelDefaultLanguage() ;
-	//			h += " dl='" + dl + "'" ;
-	//			var param_lang = (self.params.lang||'en').split(',') ;
-	//			if ( -1 == $.inArray ( dl , param_lang ) ) {
 				var param_lang = (self.params.lang||'en').split(',')[0] ;
 				if ( dl != param_lang ) {
 					h += " style='border-bottom:1px dotted red'" ;
 				}
 			}
+			if ( classes.length > 0 ) h += " class='" + classes.join ( ' ' ) + "'" ;
 			h += ">" ;
-			h += label ; //o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+			h += label ;
 			h += "</a>" ;
 		}
 		
@@ -1949,14 +1957,9 @@ var reasonator = {
 			h += " <span style='font-size:0.6em'><a href='" + url + "' class='wikidata' target='_blank'>WD</a></span>" ;
 		}
 		
-		if ( o.add_desc ) { //  && !self.use_hoverbox 
+		if ( o.add_desc ) {
 			var d = item.getDesc()  ;
 			if ( d != '' ) h += " <span class='inline_desc'>" + d + "</span>" ;
-/*			
-			h += " <small class='autodesc_"+q+"'>" + d+ "</small>" ;
-			if ( d == '' && self.use_autodesc ) {
-				self.autodesc_items.push ( q ) ;
-			}*/
 		}
 		if ( o.show_q ) h += " <small class='qnumber'>(" + q + ")</small>" ;
 
@@ -1997,11 +2000,12 @@ var reasonator = {
 		var self = this ;
 		var ret = "<div style='display:inline'>" ;
 		if ( o === undefined ) o = {} ;
-		
+
 		if ( i.type == 'string' ) {
 			if ( i.p == 'P373' ) ret += "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
 			else ret += i.s ;
 		} else if ( i.type == 'item' ) {
+			o.rank = i.rank ;
 			ret += self.getQlink ( i.q , o ) ;
 		} else if ( i.type == 'time' ) {
 			var pre = i.time.substr(0,1) == '+' ? 1 : -1 ;

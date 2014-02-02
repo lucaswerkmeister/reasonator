@@ -1,9 +1,12 @@
 /* Links */
 /*a { color:#0A4273 } ;*/
+.rank_normal { }
+.rank_deprecated { font-size:75%;font-style:italic }
+.rank_preferred { font-size:150%;font-weight:bold }
 a.wikidata { color:#0A4273; } /* #2DC800 */
 a.wikipedia { color:#3F7EA6; } /* #9669FE */
-a.external { color:#7AD95F; font-size:10pt; } /* #2DC800 */
-.sitelinks tbody { font-size:9pt; }
+a.external { color:#7AD95F; font-size:1em; } /* #2DC800 */
+.sitelinks tbody { font-size:0.9em; }
 div.sitelinks { min-height:200px; overflow:auto; }
 
 body {
@@ -38,14 +41,14 @@ div.mainbar thead {
 }
 
 .manual_description {
-	font-size:14pt;
+	font-size:1.3em;
 	margin-bottom:5px;
 }
 
 
 /* Misc */
 small.qnumber { color:#999999; }
-.misc_data { font-size:9pt; }
+.misc_data { font-size:0.9em; }
 .alias { display:inline-block; }
 
 
@@ -133,7 +136,7 @@ h1,h2,h3,h4,h5,h6 {
 /* Cluetip CSS */
 h3.ui-cluetip-header {
 	line-height: 100%;
-	font-size:20px;
+	font-size:1.5em;
 	padding:2px;
 	padding-left:10px;
 }
@@ -158,7 +161,7 @@ div.cal_sb_section {
 }
 
 span.inline_desc {
-	font-size:8pt;
+	font-size:0.8em;
 	color:#666;
 }
 
