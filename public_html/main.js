@@ -500,6 +500,7 @@ var reasonator = {
 			self.to_load = [] ;
 			self.addPropTargetsToLoad ( self.keys2array ( self.wd.items ) , self.P_person ) ;
 			self.loadRest ( function () {
+				$('div.personal_relations').show() ;
 				self.showPerson ( q ) ;
 			} ) ;
 		} ) ;
@@ -557,21 +558,9 @@ var reasonator = {
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
 
-		// Render subclass chain
-		var h = '' ;
-		if ( self.wd.items[q].hasClaims('P279') ) {
-			var chain = self.findLongestPath ( { start:q , props:[279] } ) ;
-			h = "<h2>" + self.t('subclass_of') + "</h2>" ;
-			h += self.renderChain ( chain , [
-//				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
-				{ title:self.t('name') , name:true } ,
-				{ title:self.t('description') , desc:true } ,
-	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
-			] ) ;
-			if ( self.use_wdq ) h += self.getWDQnotice() ;
-		}
+		self.renderSubclassChain() ;
 
-		self.finishDisplay ( h ) ; // Finish
+		self.finishDisplay () ; // Finish
 		$('div.other h2').remove() ;
 		
 		if ( undefined !== self.wd.items[q].raw.claims ) return ;
@@ -590,9 +579,28 @@ var reasonator = {
 			} ) ;
 			h += "</ul>" ;
 			h += "</div>" ;
-			$('#generic div.other').html(h) ;
+			$('#actual_content div.other').html(h) ;
 		} ) ;
 		
+	} ,
+	
+	
+	renderSubclassChain : function ( q ) { // Render subclass chain
+		var self = this ;
+		if ( q === undefined ) q = self.q ;
+		var h = '' ;
+		if ( self.wd.items[q].hasClaims('P279') ) {
+			var chain = self.findLongestPath ( { start:q , props:[279] } ) ;
+			h = "<h2>" + self.t('subclass_of') + "</h2>" ;
+			h += self.renderChain ( chain , [
+//				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
+				{ title:self.t('name') , name:true } ,
+				{ title:self.t('description') , desc:true } ,
+	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+			] ) ;
+			if ( self.use_wdq ) h += self.getWDQnotice() ;
+		}
+		$('div.classification').html ( h ) ;
 	} ,
 
 	addClaimItemOauth : function ( q , prop , target , o ) {
@@ -757,7 +765,7 @@ var reasonator = {
 				} ) ;
 				h += "</tbody></table></div></div>" ;
 				if ( !has_candidate ) return ;
-				$('#taxon div.main').append ( h ) ;
+				$('#actual_content div.main').append ( h ) ;
 				self.addHoverboxes ( '#taxonguess' ) ;
 				$.each ( taxonguess , function ( q , id ) {
 					wd_auto_desc.loadItem ( q , { target:$('#'+id) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
@@ -781,7 +789,7 @@ var reasonator = {
 				sd[p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'#'+self.main_type+' div.props',striped:true,title:self.t(self.main_type+'_props'),ucfirst:true } ) ;
+		self.renderPropertyTable ( sd , { id:'div.props',striped:true,title:self.t(self.main_type+'_props'),ucfirst:true } ) ;
 	} ,
 	
 	findLongestPath : function ( o ) {
@@ -914,7 +922,7 @@ var reasonator = {
 		var self = this ;
 		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
 		if ( im.length > 0 ) {
-			var io = { file:im[0] , type:'image' , id:'#person .signature' , title:im[0] , tw:260 , th:220 } ;
+			var io = { file:im[0] , type:'image' , id:'div.signature' , title:im[0] , tw:260 , th:220 } ;
 			self.mm_load.push ( io ) ;
 		}
 	} ,
@@ -1061,7 +1069,7 @@ var reasonator = {
 		if ( country != '' ) h.push ( self.t('from') ) ;
 		h.push ( country ) ;
 		h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
-		$('#person div.autodesc').html ( h ) ;
+		$('div.autodesc').html ( h ) ;
 	} ,
 
 
@@ -1073,13 +1081,12 @@ var reasonator = {
 	adjustSitelinksHeight : function () {
 		var self = this ;
 		var qr_code_height = 200 ;
-		var type = self.main_type ;
-		var min_height = parseInt($('#'+type+' div.sitelinks').css('min-height')) ;
-		var mainbar = $('#'+self.main_type+' .mainbar') ;
-		var h = parseInt(mainbar.height())-parseInt($('#'+type+' div.sitelinks').position().top);//+parseInt(mainbar.position().top);
+		var min_height = parseInt($('div.sitelinks').css('min-height')) ;
+		var mainbar = $('.mainbar') ;
+		var h = parseInt(mainbar.height())-parseInt($('div.sitelinks').position().top);
 		if ( self.showQRLink ) h -= qr_code_height ; // QR code
 		if ( h < min_height ) h = min_height ;
-		$('#'+type+' div.sitelinks').css({'max-height':h+'px'})
+		$('div.sitelinks').css({'max-height':h+'px'})
 	} ,
 
 	renderChain : function ( chain , columns ) {
@@ -1177,7 +1184,7 @@ var reasonator = {
 			h.push ( "<div class='alias'>" + v.replace(/\s/g,'&nbsp;') + "</div>" ) ;
 		} ) ;
 		h = h.join ( ' | ' ) ;
-		$('#'+self.main_type+' div.aliases').html ( h ) ;
+		$('div.aliases').html ( h ) ;
 	} ,
 
 	setTopLink : function () {
@@ -1201,14 +1208,14 @@ var reasonator = {
 		
 		label += " <small>(<a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/"+self.q+"'>"+self.q+"</a>)</small>" ;
 		
-		$('#'+self.main_type+' h1.main_title').html ( label ) ;
+		$('h1.main_title').html ( label ) ;
 		self.setDocTitle ( self.wd.items[self.q].getLabel() ) ;
 	} ,
 	
 	
 	showDescription : function () {
 		var self = this ;
-		$('#'+self.main_type+' div.manual_description').html ( self.wd.items[self.q].getDesc() ) ;
+		$('div.manual_description').html ( self.wd.items[self.q].getDesc() ) ;
 	} ,
 
 	setRTL : function () {
@@ -1236,11 +1243,11 @@ var reasonator = {
 
 		self.setRTL() ;
 
-		if ( undefined !== h ) $('#'+self.main_type+' .main').html ( h ) ;
-		$('#'+self.main_type).show() ;
+		if ( undefined !== h ) $('.main').html ( h ) ;
+		$('#actual_content').show() ;
 		
 		if ( self.use_js_refresh ) {
-			$('#'+self.main_type+' a').each ( function ( k , v ) {
+			$('#actual_content a').each ( function ( k , v ) {
 				if ( !$(v).hasClass('q_internal') ) return ;
 				$(v).click ( function () {
 					var a = $(this) ;
@@ -1255,6 +1262,7 @@ var reasonator = {
 		}
 
 		if ( undefined !== self.do_maps ) {
+			$('div.maps').show() ;
 			setTimeout ( function () {
 				$.each ( self.do_maps , function ( k , v ) {
 					self.setMap ( v[0] , v[1] , v[2] ) ;
@@ -1277,7 +1285,7 @@ var reasonator = {
 		
 		if ( self.showConceptCloudLink ) {
 			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
-			$('#'+self.main_type+' div.sidebar').append ( h ) ;
+			$('#actual_content div.sidebar').append ( h ) ;
 		}
 		
 		self.showQRcode() ;
@@ -1310,7 +1318,7 @@ var reasonator = {
 		var qrp_url = "//qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
 		var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
 		var h = '<div style="text-align:center" class="qrcode"></div>' ;
-		$('#'+self.main_type+' div.sidebar').append ( h ) ;
+		$('div.sidebar').append ( h ) ;
 		if ( true ) { // Direct QR code show
 			$('div.qrcode').html ( qr_img ) ;
 			self.adjustSitelinksHeight();
@@ -1469,7 +1477,7 @@ var reasonator = {
 			} ) ;
 		} ) ;
 		
-		var id = '.entity_'+self.main_type+' .misc_data' ;
+		var id = '.misc_data' ;
 		self.renderPropertyTable ( sd , { id:id , striped:true } ) ;
 		id += " table" ;
 		$(id).removeClass('table').removeClass('table-condensed').addClass('sidebar-table') ;
@@ -1489,12 +1497,12 @@ var reasonator = {
 			var s = i.getClaimTargetString ( claims[0] ) ;
 			delete self.wd.items[self.q].raw.claims['P242'] ; // Prevent showing up later
 
-			$('#'+self.main_type+' div.locator_map').html('<img/>') ;
+			$('div.locator_map').html('<img/>') ;
 			self.imgcnt++ ;
 			var io = { file:s , type:'image' , id:'#imgid'+self.imgcnt , title:self.wd.items['P242'].getLabel() } ;
 			io.tw = 220 ;
 			io.th = 220 ;
-			io.id = '#'+self.main_type+' div.locator_map img' ;
+			io.id = 'div.locator_map img' ;
 			io.append = true ;
 			self.mm_load.push ( io ) ;
 		}
@@ -1580,20 +1588,20 @@ var reasonator = {
 						io.sidebar = true ;
 						io.tw = 260 ;
 						io.th = 400 ;
-						io.id = '#'+self.main_type+' div.'+medium_sidebar_div ;
+						io.id = 'div.'+medium_sidebar_div ;
 						io.append = true ;
 						if ( -1 != $.inArray ( medium , special_images ) ) io.type = 'image' ;
 						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
 					} else {
 						if ( !has_header ) {
-							$('#'+self.main_type+' div.all_images').append ( "<div id='related_media_container'><h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div></div>" ) ;
+							$('div.all_images').append ( "<div id='related_media_container'><h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div></div>" ) ;
 							has_header = true ;
 						}
 						var h3 = "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ;
 						if ( medium2 == 'audio' ) {
 							h3 = "<div>" + h3 + " <span style='font-size:9pt'>" + io.file + "</span></div>" ;
 						}
-						$('#'+self.main_type+' div.all_images').append ( h3 ) ;
+						$('div.all_images').append ( h3 ) ;
 						if ( self.q == v.getID() ) io.secondary_file = true ;
 					}
 					self.mm_load.push ( io ) ;
@@ -1606,7 +1614,7 @@ var reasonator = {
 				if ( self.wd.items['P'+prop] === undefined ) return ;
 				var ct = self.wd.items['P'+prop].getLabel()  ;
 				if ( !has_header ) {
-					$('#'+self.main_type+' div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
+					$('div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
 					has_header = true ;
 				}
 				var c = self.wd.items[self.q].getClaimsForProperty ( prop ) ;
@@ -1714,7 +1722,7 @@ var reasonator = {
 				sd[p][ti.key].push ( $.extend(true,{p:p,mode:1},ti) ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
 
 	} ,
 	
@@ -1741,7 +1749,7 @@ var reasonator = {
 				} ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.entity_'+self.main_type+' .backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true } ) ;
 	} ,
 
 	showExternalIDs : function () {
@@ -1784,7 +1792,7 @@ var reasonator = {
 
 		if ( h.length == 0 ) return ;
 		h = "<table class='sidebar-table table-striped'><thead><th colspan=2>"+self.t('external_sources')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
-		$('.entity_'+self.main_type+' .external_ids').html ( h ) ;
+		$('.external_ids').html ( h ) ;
 	} ,
 
 
@@ -1806,7 +1814,7 @@ var reasonator = {
 		if ( h.length == 0 ) return ;
 
 		h = "<table class='sidebar-table table-striped'><thead><th>"+self.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
-		$('.entity_'+self.main_type+' .websites').html ( h ) ;
+		$('.websites').html ( h ) ;
 	} ,
 	
 	addSitelinks : function () {
@@ -2473,17 +2481,17 @@ var reasonator = {
 		
 		var precision = ymd[3]===undefined?(ymd[2]===undefined?9:10):11 ;
 
-		$('#generic').show() ;
+		$('#actual_content').show() ;
 		$('#main').show() ;
 		$('#main_content_sub').show() ;
 		$('#main_content').show() ;
-		$('#generic div.main').show().html ( 
+		$('#actual_content div.main').show().html ( 
 			"<table style='width:100%'><tbody><tr><td valign='top'>" + 
 			self.t('loading') + "</td><td>" + 
 			"<div style='float:right;width:600px'>" + self.getStatusBarHTML('loading_status') + "</div><span id='cal_perc'></span>"  +
 			"</td></tr></tbody></table>"
 			) ;
-		$('#generic h1.main_title').html ( self.t('calendar_for').replace(/\$1/,self.date) ) ;
+		$('h1.main_title').html ( self.t('calendar_for').replace(/\$1/,self.date) ) ;
 		self.wd.loading_status_callback = function ( cur , total ) {
 			$('#loading_status .progress-bar').width ( (100*cur/total)+'%' ) ;
 //			$('#cal_perc').html ( parseInt(100*cur/total)+'%' ) ;
@@ -2568,7 +2576,7 @@ var reasonator = {
 			h += "</div>" ;
 			
 			
-			$('#generic div.main').html ( h ) ;
+			$('#actual_content div.main').html ( h ) ;
 			self.addHoverboxes ( '#date' ) ;
 		}
 		
@@ -2694,7 +2702,7 @@ var reasonator = {
 		
 		
 		h += "</div>" ;
-		$('#generic div.sidebar').html ( h ) ;
+		$('#actual_content div.sidebar').html ( h ) ;
 		
 	} ,
 

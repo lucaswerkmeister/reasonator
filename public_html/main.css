@@ -13,6 +13,10 @@ body {
 	background-color:#FAFAFA;
 }
 
+div.maps {
+	display:none;
+}
+
 table.sidebar-table {
 	width:100%;
 	border:0;
@@ -167,4 +171,8 @@ span.inline_desc {
 
 table.person_relatives > tbody > tr > td {
 	min-width:30%;
+}
+
+div.personal_relations {
+	display:none;
 }
