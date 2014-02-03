@@ -890,7 +890,7 @@ var reasonator = {
 
 		self.addOther() ; // Render other properties
 		self.addMedia() ; // Render images
-		self.renderMainPropsTable ( [31] ) ;
+		self.renderMainPropsTable ( [31,421] ) ;
 		self.finishDisplay ( h ) ; // Finish
 	} ,
 	
