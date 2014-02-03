@@ -98,6 +98,7 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	internalCalendarBrowsing : false ,
 	showSearchImages : false ,
 	use_js_refresh : false , // FIXME
 	force_wdq : true ,
@@ -306,10 +307,12 @@ var reasonator = {
 	detectAndLoadQ : function ( q ) {
 		var self = this ;
 		if ( q === undefined ) return ; // TODO error "item not found"
-		if ( self.isPerson(q) ) self.loadPerson ( q ) ;
-		else if ( self.isTaxon(q) ) self.loadTaxon ( q ) ;
-		else if ( self.isLocation(q) ) self.loadLocation ( q ) ;
-		else self.loadGeneric ( q ) ;
+		
+		$.each ( reasonator_types , function ( dummy , type ) {
+			if ( !type.detect() ) return ;
+			type.load() ;
+			return false ;
+		} ) ;
 	} ,
 
 	addMissingPropsLinkingToMainItem : function () {
@@ -420,46 +423,7 @@ var reasonator = {
 		return self.isCategoryPage(q) || self.isTemplatePage(q) || self.isListPage(q) || self.isDisambiguationPage(q) ;
 	} ,
 	
-	isPerson : function ( q ) {
-		var self = this ;
-		if ( self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.person ) ) return true ;
-		if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , self.Q.person ) ) return true ;
-		if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , self.Q.human ) ) return true ;
-		return false ;
-	} ,
 
-	isTaxon : function ( q ) {
-		var self = this ;
-		var ret = false ;
-		var props = self.wd.items[q].getPropertyList() ;
-		var list = $.extend ( [] , self.taxon_list , [225,105] ) ;
-		$.each ( list , function ( k , v ) {
-			if ( -1 == $.inArray ( 'P'+v , props ) ) return ;
-			ret = true ;
-			return false ;
-		} ) ;
-		return ret ;
-	} ,
-
-	isLocation : function ( q ) {
-		var self = this ;
-		if ( self.wd.items[q] !== undefined && self.wd.items[q].raw !== undefined && self.wd.items[q].raw.claims !== undefined && self.wd.items[q].raw.claims['P625'] !== undefined ) return true ;
-		if ( self.wd.items[q] !== undefined && self.wd.items[q].raw !== undefined && self.wd.items[q].raw.claims !== undefined && self.wd.items[q].raw.claims['P131'] !== undefined ) return true ;
-		if ( self.wd.items[q].hasClaimItemLink ( self.P.entity_type , self.Q.geographical_feature ) ) return true ;
-		var ret = false ;
-		$.each ( self.location_list , function ( k , v ) {
-			if ( self.wd.items[q].hasClaimItemLink ( self.P.instance_of , v ) ) {
-				ret = true ;
-				return false ;
-			}
-
-		} ) ;
-		
-		return ret ;
-	} ,
-
-//__________________________________________________________________________________________
-// Load page types
 
 	// Used as final stage by all types
 	loadRest : function ( callback ) {
@@ -474,116 +438,8 @@ var reasonator = {
 		} ) ;
 	} ,
 
-	loadGeneric : function ( q ) {
-		var self = this ;
-		self.P = $.extend(true, self.P, self.P_all, self.P_websites);
-		self.main_type = 'generic' ;
-
-		if ( self.wd.items[q].hasClaims('P279') ) {
-			self.loadBacktrack ( {
-				follow : [279] ,
-				wdq : 'tree['+(self.q+'').replace(/\D/g,'')+'][279]' ,
-				callback : function () {self.showGeneric ( q ) } // {self.loadRest ( function () { 
-			} ) ;
-		} else {
-			self.loadRest ( function () { self.showGeneric ( q ) } ) ;
-		}
-		
-	} ,
-	
-	loadPerson : function ( q ) {
-		var self = this ;
-		self.P = $.extend(true, self.P, self.P_all, self.P_person,self.P_websites);
-		self.main_type = 'person' ;
-		$.each ( self.P_person , function ( k , v ) { self.to_load.push("P"+v) } ) ;
-		self.loadRest ( function () {
-			self.to_load = [] ;
-			self.addPropTargetsToLoad ( self.keys2array ( self.wd.items ) , self.P_person ) ;
-			self.loadRest ( function () {
-				$('div.personal_relations').show() ;
-				self.showPerson ( q ) ;
-			} ) ;
-		} ) ;
-	} ,
-
-	
-	loadTaxon : function ( the_q ) {
-		var self = this ;
-		self.P = $.extend(true, self.P, self.P_all, self.P_taxon);
-		self.main_type = 'taxon' ;
-
-		self.loadBacktrack ( {
-			follow : self.taxon_list ,
-			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
-			wdq : 'tree['+(the_q+'').replace(/\D/g,'')+']['+self.taxon_list.join(',')+']' ,
-			callback : function () { self.showTaxon ( the_q ) }
-		} ) ;
-	} ,
-	
-	loadLocation : function ( the_q ) {
-		var self = this ;
-		self.P = $.extend(true, self.P, self.P_all, self.P_location, self.P_websites);
-		self.main_type = 'location' ;
-		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { self.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
-		
-		self.loadBacktrack ( {
-			follow : self.location_props ,
-			preload : [ 131,132 ] ,
-			wdq : 'tree['+(the_q+'').replace(/\D/g,'')+']['+self.location_props.join(',')+']' ,
-			callback : function () {
-				self.showLocation ( the_q )
-			}
-		} ) ;
-	} ,
 
 
-
-
-//__________________________________________________________________________________________
-// Show types
-
-
-	showGeneric : function ( q ) {
-		var self = this ;
-		delete self.P.instance_of ; // So it will show, if set
-		self.setTopLink () ;
-		self.renderName () ; // Render name
-		self.showAliases ( q ) ; // Render aliases
-		self.showDescription () ; // Render manual description
-		self.showExternalIDs() ; // Render external ID links
-		self.showWebsites() ; // Render websites
-		self.addSitelinks() ; // Render sitelinks
-		self.addBacklinks() ; // Render backlinks
-//		self.addMiscData(self.P_location) ; // Render misc data
-		self.addOther() ; // Render other properties
-		self.addMedia() ; // Render images
-
-		self.renderSubclassChain() ;
-
-		self.finishDisplay () ; // Finish
-		$('div.other h2').remove() ;
-		
-		if ( undefined !== self.wd.items[q].raw.claims ) return ;
-		if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
-		
-		var non_content_types = [ self.Q.category_page , self.Q.template_page , self.Q.list_page , self.Q.disambiguation_page ] ;
-		self.wd.getItemBatch ( non_content_types , function () {
-			var h = "<div>" ;
-			h += "<h3>"+self.t('non_content_widar_header')+"</h3>" ;
-			h += "<div style='margin-bottom:10px'>"+self.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
-			h += "<ul>" ;
-			$.each ( non_content_types , function ( k , v ) {
-				h += "<li>" ;
-				h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+self.q+"\",\"P31\",\"Q"+v+"\");return false'>" + self.wd.items['Q'+v].getLabel() + "</a>" ;
-				h += "</li>" ;
-			} ) ;
-			h += "</ul>" ;
-			h += "</div>" ;
-			$('#actual_content div.other').html(h) ;
-		} ) ;
-		
-	} ,
-	
 	
 	renderSubclassChain : function ( q ) { // Render subclass chain
 		var self = this ;
@@ -621,82 +477,12 @@ var reasonator = {
 					location.reload();
 				}
 			} else alert ( d.error ) ;
+		} ) .fail(function( jqxhr, textStatus, error ) {
+			alert ( error ) ;
 		} ) ;
 	} ,
 
-
-	showPerson : function ( q ) {
-		var self = this ;
-		
-		$.each ( [ 'relatives','parents','siblings','children','other' ] , function ( k , v ) {
-			$('#person_'+v).html ( self.t('person_'+v) ) ;
-		} ) ;
-		
-		self.showPersonMain ( q ) ;
-		self.setTopLink () ;
-		self.renderName () ; // Render name
-		self.showAliases ( q ) ; // Render aliases
-		self.showDescription () ; // Render manual description
-		self.showAutoDescPerson () ; // Render automatic description
-		self.showExternalIDs() ; // Render external ID links
-		self.showWebsites() ; // Render websites
-		self.addSitelinks() ; // Render sitelinks
-		self.addBacklinks() ; // Render backlinks
-//		self.addMiscData(self.P_location) ; // Render misc data
-		self.addOther() ; // Render other properties
-		self.addMedia() ; // Render images
-		self.addSignature() ; // Render signature
-		self.finishDisplay () ; // Finish
-	} ,
 	
-	showTaxon : function ( q ) {
-		var self = this ;
-
-		// RENDERING
-		var h = '' ;
-		self.setTopLink () ;
-		self.renderName () ; // Render name
-		self.showAliases ( q ) ; // Render aliases
-		self.showDescription () ; // Render manual description
-//		self.showMaps() ; // Render maps
-		self.showExternalIDs() ; // Render external ID links
-//		self.showWebsites() ; // Render websites
-		self.addSitelinks() ; // Render sitelinks
-		self.addBacklinks() ; // Render backlinks
-//		self.addMiscData(self.P_location) ; // Render misc data
-		self.addOther() ; // Render other properties
-		self.addMedia() ; // Render images
-
-    
-		// Render taxon chain
-		var chain = self.findLongestPath ( { start:q , props:self.taxon_list } ) ;
-		h = "<h2>" + self.t('taxonomy') + "</h2>" ;
-		h += self.renderChain ( chain , [
-			{ title:self.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
-			{ title:self.t('name') , name:true } ,
-			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
-		] ) ;
-
-		if ( self.use_wdq ) {
-			h += self.getWDQnotice() ;
-		}
-		
-		// Render taxon properties
-		var taxon_props = [225,105,405,141,183,427,566] ;
-		self.renderMainPropsTable ( taxon_props ) ;
-		
-		// Label in italics, if same as taxon name
-		var label = self.wd.items[self.q].getLabel() ;
-		$.each ( self.wd.items[self.q].getStringsForProperty('P225') , function ( k , v ) {
-			if ( v != label ) return ;
-			$('#main_title_label').css({'font-style':'italic'}) ;
-			return false ;
-		} ) ;
-
-		self.finishDisplay ( h ) ; // Finish
-		
-		self.suggestGenus ( q ) ;
-	} ,
 
 	getWDQnotice : function () {
 		var self = this ;
@@ -705,74 +491,6 @@ var reasonator = {
 		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
 		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
 		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
-	} ,
-	
-	suggestGenus : function ( q ) {
-		var self = this ;
-
-		var parent_taxon_props = [171,71,70,77,76,75,273] ; // TODO incomplete?
-		var i = self.wd.items[q] ;
-		var parent_taxa = 0 ;
-		$.each ( parent_taxon_props , function ( k , v ) {
-			parent_taxa += i.getClaimItemsForProperty('P'+v).length ;
-		} ) ;
-		if ( parent_taxa > 0 ) return ; // Already has taxonomy
-		
-		var m = $('#main_title_label').text().match ( /^(\S+)\s(\S+)$/ ) ;
-		if ( m == null ) return ; // Not "Genus species" title
-		var putative_genus = m[1] ;
-
-		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
-			action:'query',
-			list:'search',
-			format:'json',
-			srsearch:putative_genus,
-			srnamespace:0,
-			srprop:'',
-			srlimit:10
-		} , function ( d ) {
-			if ( undefined === d.query || undefined === d.query.search ) return ;
-			var candidates = [] ;
-			$.each ( d.query.search , function ( k , v ) {
-				if ( v.title == self.q ) return ; // Not add self
-				candidates.push ( v.title ) ;
-			} ) ;
-			if ( candidates.length == 0 ) return ; // No candidates
-
-			self.wd.getItemBatch ( candidates , function () {
-				var h = "<hr/><div id='taxonguess'>" ;
-				h += "<h3>"+self.t('taxon_suggestion_header')+"</h3>" ;
-				h += "<div style='margin-bottom:10px'>"+self.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
-				
-				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
-
-				var has_candidate = false ;
-				h += "<table class='table-condensed table-striped'><tbody>" ;
-				var taxonguess = {} ;
-				$.each ( candidates , function ( dummy , q ) {
-					var item = self.wd.items[q] ;
-					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; not a parent taxon
-					if ( item === undefined ) return ; // Paranoia
-					has_candidate = true ;
-					var id = 'taxonguess_'+q ;
-					taxonguess[q] = id ;
-					h += "<tr>" ;
-					h += "<th>" + self.getQlink(q) + "</th>" ;
-					h += "<td><div id='"+id+"'>...</div></td>" ;
-//					h += "<td>" + item.getDesc() + "</td>" ;
-					h += "<td><a href='#' onclick='reasonator.addClaimItemOauth(\""+self.q+"\",\"P171\",\""+q+"\",{live:true});return false'>Set this as parent taxon</a></td>" ;
-					h += "</tr>" ;
-				} ) ;
-				h += "</tbody></table></div></div>" ;
-				if ( !has_candidate ) return ;
-				$('#actual_content div.main').append ( h ) ;
-				self.addHoverboxes ( '#taxonguess' ) ;
-				$.each ( taxonguess , function ( q , id ) {
-					wd_auto_desc.loadItem ( q , { target:$('#'+id) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
-				} ) ;
-			} ) ;
-			
-		} ) ;
 	} ,
 	
 	renderMainPropsTable : function ( props ) {
@@ -853,55 +571,6 @@ var reasonator = {
 	} ,
 
 
-	showLocation : function ( q ) {
-		var self = this ;
-		if ( !self.openlayers_loaded ) { // Race condition
-			setTimeout ( function(){self.showLocation(q)} , 50 ) ;
-			return ;
-		}
-
-		// RENDERING
-		var h = '' ;
-		self.setTopLink () ;
-		self.renderName () ; // Render name
-		self.showAliases ( q ) ; // Render aliases
-		self.showDescription () ; // Render manual description
-		self.showMaps() ; // Render maps
-		self.showExternalIDs() ; // Render external ID links
-		self.showWebsites() ; // Render websites
-		self.addSitelinks() ; // Render sitelinks
-		self.addBacklinks() ; // Render backlinks
-		self.addMiscData(self.P_location) ; // Render misc data
-		
-//		var chain = self.wd.getItem(q).followChain({props:self.location_props}) ;
-		var chain = self.findLongestPath ( { start:q , props:self.location_props } ) ;
-		h = "<h2>" + self.t('location') + "</h2>" ;
-		h += self.renderChain ( chain , [
-			{ title:self.t('name') , name:true } ,
-			{ title:self.t('description') , desc:true } ,
-			{ title:self.t('admin_division') , prop:132 } ,
-		] ) ;
-
-		if ( self.use_wdq ) {
-			var url = self.getCurrentUrl ( { live:true } ) ;
-			var line = self.t('wdq_notice') ;
-			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
-			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
-		}
-
-		self.P['type_of_administrative_division'] = 132 ;
-		$.each ( self.location_props , function ( k , v ) {
-			self.P['P'+v] = v ; // Prevent them showing in "other" list
-		} ) ;
-
-
-		self.addOther() ; // Render other properties
-		self.addMedia() ; // Render images
-		self.renderMainPropsTable ( [31,421] ) ;
-		self.finishDisplay ( h ) ; // Finish
-	} ,
-	
 	getCurrentUrl : function ( o ) {
 		var self = this ;
 		var url = ( o.hash ) ? '#' : '?' ;
@@ -912,164 +581,6 @@ var reasonator = {
 		if ( undefined === o.live ) o.live = self.params.live !== undefined ;
 		if ( o.live ) url += "&live" ;
 		return url ;
-	} ,
-
-
-//__________________________________________________________________________________________
-// PERSON details
-
-	addSignature : function () {
-		var self = this ;
-		var im = self.wd.items[self.q].getMultimediaFilesForProperty ( self.P.signature ) ;
-		if ( im.length > 0 ) {
-			var io = { file:im[0] , type:'image' , id:'div.signature' , title:im[0] , tw:260 , th:220 } ;
-			self.mm_load.push ( io ) ;
-		}
-	} ,
-
-
-	showPersonMain : function ( q ) {
-		var self = this ;
-		var rel = {} ;
-		rel[q] = {} ;
-		$.each ( self.wd.items , function ( dummy , item ) {
-			var cq = item.getID() ;
-			if ( item.hasClaimItemLink ( self.P.sex , self.Q.male ) ) item.gender = 'M' ;
-			else if ( item.hasClaimItemLink ( self.P.sex , self.Q.female ) ) item.gender = 'F' ;
-			else if ( item.hasClaimItemLink ( self.P.entity_type , self.Q.person ) ) item.gender = '?' ;
-			
-			$.each ( self.personal_relation_list , function ( dummy2 , p ) {
-				var items = item.getClaimObjectsForProperty ( p ) ;
-				if ( items.length == 0 ) return ;
-				if ( undefined === rel[cq] ) rel[cq] = {} ;
-				if ( undefined === rel[cq][p] ) rel[cq][p] = [] ;
-				$.each ( items , function ( k1 , v1 ) {
-					v1.source_q = item.getID();
-					v1.target_q = v1.q ;
-					rel[cq][p].push ( v1 ) ;
-				} ) ;
-			} ) ;
-		} ) ;
-		
-		var relations = { parents : {} , siblings : {} , children : {} , other : {} } ;
-		var has_relations = false ;
-		
-		// Setting relations from main item
-		$.each ( rel[q] , function ( p , ql ) {
-			var section ;
-			if ( p == self.P.father || p == self.P.mother) section = 'parents' ;
-			else if ( p == self.P.brother || p == self.P.sister ) section = 'siblings' ;
-			else if ( p == self.P.child ) section = 'children' ;
-			else section = 'other' ;
-			if ( relations[section][p] === undefined ) relations[section][p] = {} ;
-			$.each ( ql , function (k,v){
-				if ( relations[section][p][v.key] === undefined ) relations[section][p][v.key] = [] ;
-				relations[section][p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
-				has_relations = true ;
-			} ) ;
-		} ) ;
-		
-		// Setting relations "in reverse" from all other items
-		$.each ( rel , function ( cq , props ) {
-			if ( cq == q ) return ;
-			$.each ( props , function ( p , ql ) {
-				$.each ( ql , function ( k , v ) {
-					if ( v.type != 'item' || v.key != q ) return ; // Does not refer to main item
-					var section ;
-					var real_p = p ;
-					var val = {type:'item',mode:1} ;
-					if ( p == self.P.father || p == self.P.mother) {
-						section = 'children' ;
-						real_p = self.P.child ;
-					} else if ( p == self.P.brother || p == self.P.sister ) {
-						section = 'siblings' ;
-						if ( self.wd.items[cq].gender == 'M' ) real_p = self.P.brother ;
-						else if ( self.wd.items[cq].gender == 'F' ) real_p = self.P.sister ;
-						else val = {type:'item',mode:2} ;
-					} else if ( p == self.P.child ) {
-						section = 'parents' ;
-						if ( self.wd.items[cq].gender == 'M' ) real_p = self.P.father ;
-						else if ( self.wd.items[cq].gender == 'F' ) real_p = self.P.mother ;
-						else val = {type:'item',mode:2} ;
-					} else {
-						section = 'other' ;
-						if ( p != self.P.spouse ) val = {type:'item',mode:2} ;
-					}
-					val.q = cq ;
-					val.key = val.q ;
-					val.qualifiers = $.extend(true,{},v.qualifiers);
-//					if ( val.q === undefined ) return ;
-					if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
-					if ( relations[section][real_p][cq] === undefined ) { // Do not overwrite "1" with "2"
-						relations[section][real_p][cq] = [] ;
-						relations[section][real_p][cq].push ( val ) ;
-					}
-				} ) ;
-			} ) ;
-		} ) ;
-
-		// Siblings by same father/mother
-		var parents = [] ;
-		$.each ( relations['parents'] , function ( cp , cd ) {
-			$.each ( cd , function ( cq , dummy ) {
-				parents.push ( cq ) ;
-			} ) ;
-		} ) ;
-		
-		$.each ( parents , function ( dummy , par ) {
-			if ( undefined === rel[par] ) return ;
-			if ( undefined === rel[par][self.P.child] ) return ;
-			$.each ( rel[par][self.P.child] , function ( k , v ) {
-				if ( v.type != 'item' ) return ;
-				if ( v.key == q ) return ; // Refers to main item, had that
-				var section = 'siblings' ;
-				var real_p ;
-				var val = {type:'item',mode:1} ;
-				if ( self.wd.items[v.key] === undefined ) val = {type:'item',mode:2} ;
-				else if ( self.wd.items[v.key].gender == 'M' ) real_p = self.P.brother ;
-				else if ( self.wd.items[v.key].gender == 'F' ) real_p = self.P.sister ;
-				else val = {type:'item',mode:2} ;
-				val.q = v.key ;
-				val.key = val.q ;
-				val.qualifiers = $.extend(true,{},v.qualifiers);
-
-					if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
-					if ( relations[section][real_p][v.key] === undefined ) { // Do not overwrite "1" with "2"
-						relations[section][real_p][v.key] = [] ;
-						relations[section][real_p][v.key].push ( val ) ;
-					}
-//				if ( relations[section][real_p] === undefined ) relations[section][real_p] = {} ;
-//				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
-			} ) ;
-		} ) ;
-		
-		if ( !has_relations ) {
-			$('div.personal_relations').hide() ;
-			return ;
-		}
-
-		// Render relatives
-		var geneawiki_url = "geneawiki2/?q="+escattr(q) ;
-		$('#pr_full_tree').html ( self.t('family_tree') + ": <a class='internal' href='#'>"+self.t('inline')+"</a>/<a target='_blank' href='"+geneawiki_url+"' class='external'>"+self.t('new_page')+"</a>" ) ;
-		$('#pr_full_tree a.internal').click ( function () { self.showGeneawiki(); return false } ) ;
-		
-		$.each ( relations , function ( section , sd ) {
-			self.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
-		} ) ;
-	} ,
-	
-
-	showAutoDescPerson : function () {
-		var self = this ;
-		var q = self.q ;
-		var h = [] ;
-		h.push ( self.getItemLinks ( q , { p:self.P.sex,q_desc:true,desc:true } ) . join ( ' ' ) ) ;
-		h.push ( self.getItemLinks ( q , { p:self.P.occupation,q_desc:true,desc:true } ) . join ( '/' ) ) ;
-		var country = self.getItemLinks ( q , { p:self.P.nationality,q_desc:true,desc:true } ) . join ( ' ' ) ;
-		if ( country != '' ) h.push ( self.t('from') ) ;
-		h.push ( country ) ;
-		h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
-		$('div.autodesc').html ( h ) ;
 	} ,
 
 
@@ -1455,6 +966,8 @@ var reasonator = {
 				a.css({border:'none'}).text ( label ) ;
 				reasonator.wd.items[q].raw.labels[lang] = { language:lang , value:label } ;
 			} else alert ( d.error ) ;
+		} ) .fail(function( jqxhr, textStatus, error ) {
+			alert ( error ) ;
 		} ) ;
 	} ,
 	
@@ -2049,7 +1562,7 @@ var reasonator = {
 			}
 			
 			if ( undefined !== start && undefined !== end ) {
-				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) } ) ;
+				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) , label:show } ) ;
 			}
 			
 			if ( i.rank !== undefined ) show = "<span class='rank_" + i.rank + "'>" + show + "</span>" ;
@@ -2099,13 +1612,10 @@ var reasonator = {
 		return ret ;
 	} ,
 	
-	getSelfLink : function ( o ) {
+	getSelfURL : function ( o ) {
 		var self = this ;
 		var q = o.q === undefined ? self.q : o.q ;
 		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
-		var label = o.label||'' ;
-		var title = o.title||'' ;
-		var cl = '' ;
 		var url = '?' ;
 		if ( o.date !== undefined ) {
 			label = o.date ;
@@ -2116,6 +1626,17 @@ var reasonator = {
 			url += "q=" + q ;
 		}
 		if ( lang != 'en' ) url += "&lang="+lang ;
+		return url ;
+	} ,
+	
+	getSelfLink : function ( o ) {
+		var self = this ;
+		var q = o.q === undefined ? self.q : o.q ;
+		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
+		var label = o.label||'' ;
+		var title = o.title||'' ;
+		var cl = '' ;
+		var url = self.getSelfURL(o) ;
 		
 		return "<a class='"+cl+"' title='"+title+"' href='"+url+"'>"+label+"</a>" ;
 	} ,
@@ -2471,7 +1992,13 @@ var reasonator = {
 	
 	showDate : function ( new_date ) {
 		var self = this ;
-		if ( undefined !== new_date ) self.date = new_date+'' ;
+		if ( undefined !== new_date ) {
+			if ( self.internalCalendarBrowsing ) self.date = new_date+'' ;
+			else {
+				window.location = self.getSelfURL ( { date:new_date } ) ;
+				return ;
+			}
+		}
 		var ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)-(\d\d)$/ ) ;
 		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)$/ ) ;
 		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)$/ ) ;
