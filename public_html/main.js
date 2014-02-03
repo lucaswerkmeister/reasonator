@@ -1573,18 +1573,18 @@ var reasonator = {
 			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
 		} else { // also add in wikidata.js getObject ... something...
-			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
-			console.log ( i ) ;
-			ret += "UNKNOWN" ;
+//			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
+//			console.log ( i ) ;
+			ret += "<i>unknown/no value</i>" ;
 		}
 		
 		var qual = [] ;
 		$.each ( (i.qualifiers||[]) , function ( qp , qv ) {
 			var prop = { q:qp,type:'item' } ;
-			var qp = self.getItemLink(prop) ;
+			var qpl = self.getItemLink(qp) ;
 			$.each ( qv , function ( dummy , v ) {
 				var qi = self.getItemLink(v) ;
-				qual.push ( qp+' : '+qi ) ;
+				qual.push ( qpl+' : '+qi ) ;
 			} ) ;
 		} ) ;
 		if ( qual.length > 0 ) ret += "<br/><div style='padding-left:10px;font-size:80%'>" + qual.join('<br/>') + "</div>" ;

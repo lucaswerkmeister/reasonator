@@ -439,7 +439,7 @@ reasonator_types.push ( {
 		var me = this ;
 		var q = reasonator.q ;
 		if ( !reasonator.openlayers_loaded ) { // Race condition
-			setTimeout ( function(){me.showLocation()} , 50 ) ;
+			setTimeout ( function(){me.show()} , 50 ) ;
 			return ;
 		}
 
