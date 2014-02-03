@@ -29,253 +29,6 @@ reasonator_types.push ( {
 */
 
 
-// #########################################################################################################
-// REASONATOR TYPE
-// #########################################################################################################
-
-reasonator_types.push ( {
-
-	type : 'location' ,
-
-	detect : function () {
-		var q = reasonator.q ;
-		if ( reasonator.wd.items[q] !== undefined && reasonator.wd.items[q].raw !== undefined && reasonator.wd.items[q].raw.claims !== undefined && reasonator.wd.items[q].raw.claims['P625'] !== undefined ) return true ;
-		if ( reasonator.wd.items[q] !== undefined && reasonator.wd.items[q].raw !== undefined && reasonator.wd.items[q].raw.claims !== undefined && reasonator.wd.items[q].raw.claims['P131'] !== undefined ) return true ;
-		if ( reasonator.wd.items[q].hasClaimItemLink ( reasonator.P.entity_type , reasonator.Q.geographical_feature ) ) return true ;
-		var ret = false ;
-		$.each ( reasonator.location_list , function ( k , v ) {
-			if ( reasonator.wd.items[q].hasClaimItemLink ( reasonator.P.instance_of , v ) ) {
-				ret = true ;
-				return false ;
-			}
-
-		} ) ;
-		return ret ;
-	} ,
-
-	load : function () {
-		var me = this ;
-		var q = reasonator.q ;
-		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_location, reasonator.P_websites);
-		reasonator.main_type = 'location' ;
-		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { reasonator.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
-		
-		reasonator.loadBacktrack ( {
-			follow : reasonator.location_props ,
-			preload : [ 131,132 ] ,
-			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.location_props.join(',')+']' ,
-			callback : function () {
-				me.show();
-			}
-		} ) ;
-	} ,
-
-	show : function () {
-		var me = this ;
-		var q = reasonator.q ;
-		if ( !reasonator.openlayers_loaded ) { // Race condition
-			setTimeout ( function(){me.showLocation()} , 50 ) ;
-			return ;
-		}
-
-		// RENDERING
-		var h = '' ;
-		reasonator.setTopLink () ;
-		reasonator.renderName () ; // Render name
-		reasonator.showAliases ( q ) ; // Render aliases
-		reasonator.showDescription () ; // Render manual description
-		reasonator.showMaps() ; // Render maps
-		reasonator.showExternalIDs() ; // Render external ID links
-		reasonator.showWebsites() ; // Render websites
-		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
-		
-//		var chain = reasonator.wd.getItem(q).followChain({props:reasonator.location_props}) ;
-		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.location_props } ) ;
-		h = "<h2>" + reasonator.t('location') + "</h2>" ;
-		h += reasonator.renderChain ( chain , [
-			{ title:reasonator.t('name') , name:true } ,
-			{ title:reasonator.t('description') , desc:true } ,
-			{ title:reasonator.t('admin_division') , prop:132 } ,
-		] ) ;
-
-		if ( reasonator.use_wdq ) {
-			var url = reasonator.getCurrentUrl ( { live:true } ) ;
-			var line = reasonator.t('wdq_notice') ;
-			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
-			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
-		}
-
-		reasonator.P['type_of_administrative_division'] = 132 ;
-		$.each ( reasonator.location_props , function ( k , v ) {
-			reasonator.P['P'+v] = v ; // Prevent them showing in "other" list
-		} ) ;
-
-
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
-		reasonator.renderMainPropsTable ( [31,421] ) ;
-		reasonator.finishDisplay ( h ) ; // Finish
-	}
-	
-} ) ;
-
-
-
-// #########################################################################################################
-// REASONATOR TYPE
-// #########################################################################################################
-
-reasonator_types.push ( {
-
-	type : 'taxon' ,
-
-	detect : function () {
-		var q = reasonator.q ;
-		var ret = false ;
-		var props = reasonator.wd.items[q].getPropertyList() ;
-		var list = $.extend ( [] , reasonator.taxon_list , [225,105] ) ;
-		$.each ( list , function ( k , v ) {
-			if ( -1 == $.inArray ( 'P'+v , props ) ) return ;
-			ret = true ;
-			return false ;
-		} ) ;
-		return ret ;
-	} ,
-
-	load : function () {
-		var me = this ;
-		var q = reasonator.q ;
-		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_taxon);
-		reasonator.main_type = 'taxon' ;
-
-		reasonator.loadBacktrack ( {
-			follow : reasonator.taxon_list ,
-			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
-			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.taxon_list.join(',')+']' ,
-			callback : function () { me.show() }
-		} ) ;
-	} ,
-
-	show : function () {
-		var me = this ;
-		var q = reasonator.q ;
-		var h = '' ;
-		reasonator.setTopLink () ;
-		reasonator.renderName () ; // Render name
-		reasonator.showAliases ( q ) ; // Render aliases
-		reasonator.showDescription () ; // Render manual description
-//		reasonator.showMaps() ; // Render maps
-		reasonator.showExternalIDs() ; // Render external ID links
-//		reasonator.showWebsites() ; // Render websites
-		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
-
-    
-		// Render taxon chain
-		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.taxon_list } ) ;
-		h = "<h2>" + reasonator.t('taxonomy') + "</h2>" ;
-		h += reasonator.renderChain ( chain , [
-			{ title:reasonator.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
-			{ title:reasonator.t('name') , name:true } ,
-			{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
-		] ) ;
-
-		if ( reasonator.use_wdq ) {
-			h += reasonator.getWDQnotice() ;
-		}
-		
-		// Render taxon properties
-		var taxon_props = [225,105,405,141,183,427,566] ;
-		reasonator.renderMainPropsTable ( taxon_props ) ;
-		
-		// Label in italics, if same as taxon name
-		var label = reasonator.wd.items[reasonator.q].getLabel() ;
-		$.each ( reasonator.wd.items[reasonator.q].getStringsForProperty('P225') , function ( k , v ) {
-			if ( v != label ) return ;
-			$('#main_title_label').css({'font-style':'italic'}) ;
-			return false ;
-		} ) ;
-
-		reasonator.finishDisplay ( h ) ; // Finish
-		
-		me.suggestGenus ( q ) ;
-	} ,
-
-	
-	suggestGenus : function ( q ) {
-		var parent_taxon_props = [171,71,70,77,76,75,273] ; // TODO incomplete?
-		var i = reasonator.wd.items[q] ;
-		var parent_taxa = 0 ;
-		$.each ( parent_taxon_props , function ( k , v ) {
-			parent_taxa += i.getClaimItemsForProperty('P'+v).length ;
-		} ) ;
-		if ( parent_taxa > 0 ) return ; // Already has taxonomy
-		
-		var m = $('#main_title_label').text().match ( /^(\S+)\s(\S+)$/ ) ;
-		if ( m == null ) return ; // Not "Genus species" title
-		var putative_genus = m[1] ;
-
-		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
-			action:'query',
-			list:'search',
-			format:'json',
-			srsearch:putative_genus,
-			srnamespace:0,
-			srprop:'',
-			srlimit:10
-		} , function ( d ) {
-			if ( undefined === d.query || undefined === d.query.search ) return ;
-			var candidates = [] ;
-			$.each ( d.query.search , function ( k , v ) {
-				if ( v.title == reasonator.q ) return ; // Not add reasonator
-				candidates.push ( v.title ) ;
-			} ) ;
-			if ( candidates.length == 0 ) return ; // No candidates
-
-			reasonator.wd.getItemBatch ( candidates , function () {
-				var h = "<hr/><div id='taxonguess'>" ;
-				h += "<h3>"+reasonator.t('taxon_suggestion_header')+"</h3>" ;
-				h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
-				
-				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
-
-				var has_candidate = false ;
-				h += "<table class='table-condensed table-striped'><tbody>" ;
-				var taxonguess = {} ;
-				$.each ( candidates , function ( dummy , q ) {
-					var item = reasonator.wd.items[q] ;
-					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; not a parent taxon
-					if ( item === undefined ) return ; // Paranoia
-					has_candidate = true ;
-					var id = 'taxonguess_'+q ;
-					taxonguess[q] = id ;
-					h += "<tr>" ;
-					h += "<th>" + reasonator.getQlink(q) + "</th>" ;
-					h += "<td><div id='"+id+"'>...</div></td>" ;
-//					h += "<td>" + item.getDesc() + "</td>" ;
-					h += "<td><a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P171\",\""+q+"\",{live:true});return false'>Set this as parent taxon</a></td>" ;
-					h += "</tr>" ;
-				} ) ;
-				h += "</tbody></table></div></div>" ;
-				if ( !has_candidate ) return ;
-				$('#actual_content div.main').append ( h ) ;
-				reasonator.addHoverboxes ( '#taxonguess' ) ;
-				$.each ( taxonguess , function ( q , id ) {
-					wd_auto_desc.loadItem ( q , { target:$('#'+id) , reasonator_lang:(reasonator.params.lang||'en') , links:'reasonator_local' } ) ;
-				} ) ;
-			} ) ;
-			
-		} ) ;
-	}
-	
-} ) ;
-
 
 // #########################################################################################################
 // REASONATOR TYPE
@@ -297,7 +50,6 @@ reasonator_types.push ( {
 		var me = this ;
 		var q = reasonator.q ;
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_person,reasonator.P_websites);
-		reasonator.main_type = 'person' ;
 		$.each ( reasonator.P_person , function ( k , v ) { reasonator.to_load.push("P"+v) } ) ;
 		reasonator.loadRest ( function () {
 			reasonator.to_load = [] ;
@@ -489,6 +241,253 @@ reasonator_types.push ( {
 } ) ;
 
 
+
+// #########################################################################################################
+// REASONATOR TYPE
+// #########################################################################################################
+
+reasonator_types.push ( {
+
+	type : 'taxon' ,
+
+	detect : function () {
+		var q = reasonator.q ;
+		var ret = false ;
+		var props = reasonator.wd.items[q].getPropertyList() ;
+		var list = $.extend ( [] , reasonator.taxon_list , [225,105] ) ;
+		$.each ( list , function ( k , v ) {
+			if ( -1 == $.inArray ( 'P'+v , props ) ) return ;
+			ret = true ;
+			return false ;
+		} ) ;
+		return ret ;
+	} ,
+
+	load : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_taxon);
+
+		reasonator.loadBacktrack ( {
+			follow : reasonator.taxon_list ,
+			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
+			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.taxon_list.join(',')+']' ,
+			callback : function () { me.show() }
+		} ) ;
+	} ,
+
+	show : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		var h = '' ;
+		reasonator.setTopLink () ;
+		reasonator.renderName () ; // Render name
+		reasonator.showAliases ( q ) ; // Render aliases
+		reasonator.showDescription () ; // Render manual description
+//		reasonator.showMaps() ; // Render maps
+		reasonator.showExternalIDs() ; // Render external ID links
+//		reasonator.showWebsites() ; // Render websites
+		reasonator.addSitelinks() ; // Render sitelinks
+		reasonator.addBacklinks() ; // Render backlinks
+//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+		reasonator.addOther() ; // Render other properties
+		reasonator.addMedia() ; // Render images
+
+    
+		// Render taxon chain
+		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.taxon_list } ) ;
+		h = "<h2>" + reasonator.t('taxonomy') + "</h2>" ;
+		h += reasonator.renderChain ( chain , [
+			{ title:reasonator.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
+			{ title:reasonator.t('name') , name:true } ,
+			{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+		] ) ;
+
+		if ( reasonator.use_wdq ) {
+			h += reasonator.getWDQnotice() ;
+		}
+		
+		// Render taxon properties
+		var taxon_props = [225,105,405,141,183,427,566] ;
+		reasonator.renderMainPropsTable ( taxon_props ) ;
+		
+		// Label in italics, if same as taxon name
+		var label = reasonator.wd.items[reasonator.q].getLabel() ;
+		$.each ( reasonator.wd.items[reasonator.q].getStringsForProperty('P225') , function ( k , v ) {
+			if ( v != label ) return ;
+			$('#main_title_label').css({'font-style':'italic'}) ;
+			return false ;
+		} ) ;
+
+		reasonator.finishDisplay ( h ) ; // Finish
+		
+		me.suggestGenus ( q ) ;
+	} ,
+
+	
+	suggestGenus : function ( q ) {
+		var parent_taxon_props = [171,71,70,77,76,75,273] ; // TODO incomplete?
+		var i = reasonator.wd.items[q] ;
+		var parent_taxa = 0 ;
+		$.each ( parent_taxon_props , function ( k , v ) {
+			parent_taxa += i.getClaimItemsForProperty('P'+v).length ;
+		} ) ;
+		if ( parent_taxa > 0 ) return ; // Already has taxonomy
+		
+		var m = $('#main_title_label').text().match ( /^(\S+)\s(\S+)$/ ) ;
+		if ( m == null ) return ; // Not "Genus species" title
+		var putative_genus = m[1] ;
+
+		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+			action:'query',
+			list:'search',
+			format:'json',
+			srsearch:putative_genus,
+			srnamespace:0,
+			srprop:'',
+			srlimit:10
+		} , function ( d ) {
+			if ( undefined === d.query || undefined === d.query.search ) return ;
+			var candidates = [] ;
+			$.each ( d.query.search , function ( k , v ) {
+				if ( v.title == reasonator.q ) return ; // Not add reasonator
+				candidates.push ( v.title ) ;
+			} ) ;
+			if ( candidates.length == 0 ) return ; // No candidates
+
+			reasonator.wd.getItemBatch ( candidates , function () {
+				var h = "<hr/><div id='taxonguess'>" ;
+				h += "<h3>"+reasonator.t('taxon_suggestion_header')+"</h3>" ;
+				h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
+				
+				h += '<div class="panel panel-default"><div class="panel-heading">Candidate parent taxa</div>' ;
+
+				var has_candidate = false ;
+				h += "<table class='table-condensed table-striped'><tbody>" ;
+				var taxonguess = {} ;
+				$.each ( candidates , function ( dummy , q ) {
+					var item = reasonator.wd.items[q] ;
+					if ( item.hasClaimItemLink('P105','Q7432') ) return ; // Species; not a parent taxon
+					if ( item === undefined ) return ; // Paranoia
+					has_candidate = true ;
+					var id = 'taxonguess_'+q ;
+					taxonguess[q] = id ;
+					h += "<tr>" ;
+					h += "<th>" + reasonator.getQlink(q) + "</th>" ;
+					h += "<td><div id='"+id+"'>...</div></td>" ;
+//					h += "<td>" + item.getDesc() + "</td>" ;
+					h += "<td><a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P171\",\""+q+"\",{live:true});return false'>Set this as parent taxon</a></td>" ;
+					h += "</tr>" ;
+				} ) ;
+				h += "</tbody></table></div></div>" ;
+				if ( !has_candidate ) return ;
+				$('#actual_content div.main').append ( h ) ;
+				reasonator.addHoverboxes ( '#taxonguess' ) ;
+				$.each ( taxonguess , function ( q , id ) {
+					wd_auto_desc.loadItem ( q , { target:$('#'+id) , reasonator_lang:(reasonator.params.lang||'en') , links:'reasonator_local' } ) ;
+				} ) ;
+			} ) ;
+			
+		} ) ;
+	}
+	
+} ) ;
+
+
+
+// #########################################################################################################
+// REASONATOR TYPE
+// #########################################################################################################
+
+reasonator_types.push ( {
+
+	type : 'location' ,
+
+	detect : function () {
+		var q = reasonator.q ;
+		if ( reasonator.wd.items[q] !== undefined && reasonator.wd.items[q].raw !== undefined && reasonator.wd.items[q].raw.claims !== undefined && reasonator.wd.items[q].raw.claims['P625'] !== undefined ) return true ;
+		if ( reasonator.wd.items[q] !== undefined && reasonator.wd.items[q].raw !== undefined && reasonator.wd.items[q].raw.claims !== undefined && reasonator.wd.items[q].raw.claims['P131'] !== undefined ) return true ;
+		if ( reasonator.wd.items[q].hasClaimItemLink ( reasonator.P.entity_type , reasonator.Q.geographical_feature ) ) return true ;
+		var ret = false ;
+		$.each ( reasonator.location_list , function ( k , v ) {
+			if ( reasonator.wd.items[q].hasClaimItemLink ( reasonator.P.instance_of , v ) ) {
+				ret = true ;
+				return false ;
+			}
+
+		} ) ;
+		return ret ;
+	} ,
+
+	load : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_location, reasonator.P_websites);
+		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { reasonator.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
+		
+		reasonator.loadBacktrack ( {
+			follow : reasonator.location_props ,
+			preload : [ 131,132 ] ,
+			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.location_props.join(',')+']' ,
+			callback : function () {
+				me.show();
+			}
+		} ) ;
+	} ,
+
+	show : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		if ( !reasonator.openlayers_loaded ) { // Race condition
+			setTimeout ( function(){me.showLocation()} , 50 ) ;
+			return ;
+		}
+
+		// RENDERING
+		var h = '' ;
+		reasonator.setTopLink () ;
+		reasonator.renderName () ; // Render name
+		reasonator.showAliases ( q ) ; // Render aliases
+		reasonator.showDescription () ; // Render manual description
+		reasonator.showMaps() ; // Render maps
+		reasonator.showExternalIDs() ; // Render external ID links
+		reasonator.showWebsites() ; // Render websites
+		reasonator.addSitelinks() ; // Render sitelinks
+		reasonator.addBacklinks() ; // Render backlinks
+		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+		
+//		var chain = reasonator.wd.getItem(q).followChain({props:reasonator.location_props}) ;
+		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.location_props } ) ;
+		h = "<h2>" + reasonator.t('location') + "</h2>" ;
+		h += reasonator.renderChain ( chain , [
+			{ title:reasonator.t('name') , name:true } ,
+			{ title:reasonator.t('description') , desc:true } ,
+			{ title:reasonator.t('admin_division') , prop:132 } ,
+		] ) ;
+
+		if ( reasonator.use_wdq ) {
+			var url = reasonator.getCurrentUrl ( { live:true } ) ;
+			var line = reasonator.t('wdq_notice') ;
+			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
+			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+		}
+
+		reasonator.P['type_of_administrative_division'] = 132 ;
+		$.each ( reasonator.location_props , function ( k , v ) {
+			reasonator.P['P'+v] = v ; // Prevent them showing in "other" list
+		} ) ;
+
+		$('div.maps').show() ;
+		reasonator.addOther() ; // Render other properties
+		reasonator.addMedia() ; // Render images
+		reasonator.renderMainPropsTable ( [31,421] ) ;
+		reasonator.finishDisplay ( h ) ; // Finish
+	}
+	
+} ) ;
+
+
 // #########################################################################################################
 // REASONATOR TYPE
 // #########################################################################################################
@@ -503,7 +502,6 @@ reasonator_types.push ( {
 		var me = this ;
 		var q = reasonator.q ;
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_websites);
-		reasonator.main_type = 'generic' ;
 
 		if ( reasonator.wd.items[q].hasClaims('P279') ) {
 			reasonator.loadBacktrack ( {

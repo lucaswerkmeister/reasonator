@@ -310,6 +310,7 @@ var reasonator = {
 		
 		$.each ( reasonator_types , function ( dummy , type ) {
 			if ( !type.detect() ) return ;
+			self.main_type = type.type ;
 			type.load() ;
 			return false ;
 		} ) ;
@@ -773,7 +774,6 @@ var reasonator = {
 		}
 
 		if ( undefined !== self.do_maps ) {
-			$('div.maps').show() ;
 			setTimeout ( function () {
 				$.each ( self.do_maps , function ( k , v ) {
 					self.setMap ( v[0] , v[1] , v[2] ) ;
