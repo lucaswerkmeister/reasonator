@@ -244,18 +244,20 @@ var reasonator = {
 		} ) ;
 	} ,
 
-	addToLoadLater : function ( the_q ) {
+	addToLoadLater : function ( the_q , qualifiers_only ) {
 		var self = this ;
+		if ( undefined === qualifiers_only ) qualifiers_only = false ;
 		var i = self.wd.items[the_q] ;
 		$.each ( i.getPropertyList() , function ( k1 , p ) {
 			self.to_load.push ( 'P'+(p+'').replace(/\D/g,'') ) ;
-			var qs = i.getClaimItemsForProperty(p,true) ;
-			$.each ( qs , function ( k2 , q2 ) {
-				self.to_load.push ( q2 ) ;
-			} ) ;
+			if ( !qualifiers_only ) {
+				var qs = i.getClaimItemsForProperty(p,true) ;
+				$.each ( qs , function ( k2 , q2 ) {
+					self.to_load.push ( q2 ) ;
+				} ) ;
+			}
 			$.each ( self.wd.items[the_q].raw.claims[p] , function ( dummy , c ) {
-				if ( c.qualifiers === undefined ) return ;
-				$.each ( c.qualifiers , function ( p2 , cv ) {
+				$.each ( (c.qualifiers||[]) , function ( p2 , cv ) {
 					self.to_load.push ( p2 ) ;
 					$.each ( cv , function ( dummy2 , c ) {
 						if ( c.datavalue === undefined ) return ;
@@ -325,6 +327,34 @@ var reasonator = {
 					if ( undefined !== self.wd.items[prop] ) return ;
 					if ( -1 != $.inArray ( prop , self.to_load ) ) return ;
 					self.to_load.push ( prop ) ;
+				} ) ;
+			} ) ;
+		} ) ;
+		self.addMissingQualifiers() ;
+	} ,
+	
+	addMissingQualifiers : function () {
+		var self = this ;
+		$.each ( self.wd.items , function ( qp , i ) {
+			$.each ( ((i.raw||{}).claims||[]) , function ( prop , v0 ) {
+				$.each ( i.getClaimsForProperty(prop) , function ( dummy , c ) {
+					var q = i.getClaimTargetItemID ( c ) ;
+
+					if ( ( q === undefined || q != self.q ) && qp != self.q ) return ; // Main item, or claim linking to main item
+
+					$.each ( (c.qualifiers||[]) , function ( claim_prop , qual_claims ) {
+
+//					if ( prop == 'P1081' ) console.log ( claim_prop ) ;
+						
+						if ( undefined === self.wd[claim_prop] && -1 == $.inArray(claim_prop,self.to_load) ) self.to_load.push ( claim_prop ) ;
+						
+/*
+						$.each ( qual_claims , function ( dummy2 , qual_claim ) { // TODO find item targets and add them
+							
+						} ) ;
+*/
+					} ) ;
+					
 				} ) ;
 			} ) ;
 		} ) ;
@@ -1256,7 +1286,7 @@ var reasonator = {
 				$.each ( ci , function ( dummy2 , ti ) {
 					if ( ti.key != self.q ) return ;
 					if ( undefined === sd[p] ) sd[p] = {} ;
-					var o = {type:'item',mode:1,q:item.getID(),key:item.getID()} ;
+					var o = {type:'item',mode:1,q:item.getID(),key:item.getID()} ; // ,qualifiers:ti.qualifiers
 					if ( sd[p][q] === undefined ) sd[p][q] = [] ;
 					sd[p][q].push ( o ) ;
 				} ) ;
@@ -1581,7 +1611,7 @@ var reasonator = {
 		var qual = [] ;
 		$.each ( (i.qualifiers||[]) , function ( qp , qv ) {
 			var prop = { q:qp,type:'item' } ;
-			var qpl = self.getItemLink(qp) ;
+			var qpl = self.getQlink(qp) ;//self.getItemLink(qp) ;
 			$.each ( qv , function ( dummy , v ) {
 				var qi = self.getItemLink(v) ;
 				qual.push ( qpl+' : '+qi ) ;

@@ -55,7 +55,6 @@ reasonator_types.push ( {
 			reasonator.to_load = [] ;
 			reasonator.addPropTargetsToLoad ( reasonator.keys2array ( reasonator.wd.items ) , reasonator.P_person ) ;
 			reasonator.loadRest ( function () {
-				$('div.personal_relations').show() ;
 				me.show() ;
 			} ) ;
 		} ) ;
@@ -214,6 +213,7 @@ reasonator_types.push ( {
 			$('div.personal_relations').hide() ;
 			return ;
 		}
+		$('div.personal_relations').show() ;
 
 		// Render relatives
 		var geneawiki_url = "geneawiki2/?q="+escattr(q) ;
@@ -272,7 +272,9 @@ reasonator_types.push ( {
 			follow : reasonator.taxon_list ,
 			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
 			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.taxon_list.join(',')+']' ,
-			callback : function () { me.show() }
+			callback : function () {
+				reasonator.loadRest ( function () { me.show() } ) ;
+			}
 		} ) ;
 	} ,
 
