@@ -136,6 +136,7 @@ var reasonator = {
 	clear : function () {
 		var self = this ;
 		var tmp = {} ;
+		self.timeline_candidates = {} ;
 		$.each ( self.wd.items , function ( q , v ) {
 			if ( /^P/.test(q) ) tmp[q] = v ;
 		} ) ;
@@ -830,6 +831,7 @@ var reasonator = {
 		}
 		
 		self.showQRcode() ;
+		reasonator.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
 	} ,
 	
@@ -1654,11 +1656,11 @@ var reasonator = {
 		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
 		var url = '?' ;
 		if ( o.date !== undefined ) {
-			label = o.date ;
+//			label = o.date ;
 			url += "date=" + o.date ;
 		} else {
-			if ( label == '' ) label = self.wd.items[q].getLabel() ;
-			if ( title == '' ) title = q ;
+//			if ( label == '' ) label = self.wd.items[q].getLabel() ;
+//			if ( label == '' ) title = q ;
 			url += "q=" + q ;
 		}
 		if ( lang != 'en' ) url += "&lang="+lang ;
@@ -2321,6 +2323,204 @@ var reasonator = {
 			$('#main_content').show() ;
 			$('#intro').show() ;
 		}
+	} ,
+	
+	generateTimelineData : function () {
+		var self = this ;
+		self.timeline_data = [] ;
+		
+		var point_props = ['P577','P585','P571','P574','P746','P622'] ;
+		var start_props = ['P580','P569','P729'].concat(point_props) ;
+		var end_props = ['P582','P570','P576','P730'].concat(point_props) ;
+		var time_props = [].concat(start_props).concat(end_props) ;
+
+		function getTimepointsFromQualifiers () {
+
+			$.each ( self.wd.items , function ( qp , i ) {
+				$.each ( ((i.raw||{}).claims||[]) , function ( prop , v0 ) {
+					$.each ( i.getClaimsForProperty(prop) , function ( dummy , c ) {
+						var q = i.getClaimTargetItemID ( c ) ;
+						if ( q != self.q && qp != self.q ) return ; // Main item, or claim linking to main item
+						var range = { source_q:qp , target_q:q , prop:prop } ;
+						$.each ( (c.qualifiers||[]) , function ( claim_prop , qual_claims ) {
+							var qc = { mainsnak : qual_claims[0] } ; // Fake claim
+							if ( -1 != $.inArray ( claim_prop , start_props ) ) range.start = i.getClaimDate ( qc ) ;
+							if ( -1 != $.inArray ( claim_prop , end_props ) ) range.end = i.getClaimDate ( qc ) ;
+						} ) ;
+						
+						if ( range.start === undefined && range.end === undefined ) return ;
+						self.timeline_data.push ( range ) ;
+					
+					} ) ;
+				} ) ;
+			} ) ;
+		}
+		
+		function getTimepointsFromItem () {
+			self.timeline_candidates[self.q] = 1 ; // Dummy value for self.q
+			$.each ( self.timeline_candidates , function ( q , candidate_props ) {
+				var i = self.wd.items[q] ;
+				if ( i === undefined ) return ; // Paranoia
+				$.each ( ((self.wd.items[q].raw||{}).claims||[]) , function ( prop , v0 ) {
+					if ( q != self.q && -1 == $.inArray ( prop , candidate_props ) ) return ;
+					if ( -1 == $.inArray ( prop , time_props ) ) return ;
+					var range = { source_q:q , prop:prop } ;
+					if ( q != self.q ) range.from_candidates = true ;
+					$.each ( v0 , function ( dummy0 , v1 ) {
+						range.start = i.getClaimDate ( v1 ) ;
+						range.end = i.getClaimDate ( v1 ) ;
+						return false ; // Use first one only
+					} ) ;
+					if ( range.start === undefined && range.end === undefined ) return ;
+					self.timeline_data.push ( range ) ;
+				} ) ;
+			} ) ;
+		}
+		
+		getTimepointsFromItem() ;
+		getTimepointsFromQualifiers() ;
+		
+//		console.log ( self.timeline_data ) ;
+		
+		if ( self.timeline_data.length <= 1 ) return ;
+		
+		self.showTimeline() ;
+		
+	} ,
+	
+	showTimeline : function () {
+		var self = this ;
+		
+		function getFormatDate ( d ) {
+			if ( d === undefined || d.time === undefined || d.precision === undefined ) return '' ;
+			if ( d.precision >= 11 ) return d.time.substr ( 8 , 10 ) ;
+			if ( d.precision == 10 ) return d.time.substr ( 8 , 7 ) ;
+			if ( d.precision <=  9 ) return d.time.substr ( 8 , 4 ) ;
+		}
+		
+		var min = '9999-99-99' ;
+		var max = '0000-00-00' ;
+		var years = [] ;
+		$.each ( self.timeline_data , function ( dummy , range ) {
+			if ( undefined !== range.start ) {
+				range.start_string = getFormatDate ( range.start ) ;
+				if ( min > range.start_string ) min = range.start_string ;
+			}
+			if ( undefined !== range.end ) {
+				range.end_string = getFormatDate ( range.end ) ;
+				if ( undefined !== range.end_string && max < range.end_string ) max = range.end_string ;
+			}
+			if ( undefined !== range.start_string ) years.push ( range.start_string ) ;
+			else years.push ( range.end_string ) ;
+		} ) ;
+
+		// Sorting items by date
+		self.timeline_data = self.timeline_data.sort ( function ( a , b ) {
+			var t1 = a.start_string || a.end_string || '' ;
+			var t2 = b.start_string || b.end_string || '' ;
+			return t1 == t2 ? 0 : ( t1 < t2 ? -1 : 1 ) ;
+		} ) ;
+
+		// Finding middle item
+		years = years.sort() ;
+		var mid_item = 0 ;
+		var mid_date = years[Math.floor(years.length/2)] ;
+		$.each ( self.timeline_data , function ( dummy , range ) {
+			if ( range.start_string != mid_date ) return ;
+			mid_item = dummy ;
+			return false ;
+		} ) ;
+
+		var tl = {
+			timeline : {
+				headline : self.wd.items[self.q].getLabel() ,
+				type : 'default' ,
+				text : self.wd.items[self.q].getDesc() ,
+				date : [] ,
+				lang : self.wd.main_languages[0] ,
+				era : [ {
+					startDate : min.replace(/-/g,',') ,
+					endDate : max.replace(/-/g,',') ,
+					headline: self.wd.items[self.q].getLabel()
+				}]
+			}
+		} ;
+
+		$.each ( self.timeline_data , function ( itemid , range ) {
+			var d = {} ;
+			if ( undefined !== range.start_string ) {
+				d.startDate = range.start_string.replace(/-/g,',') ;
+			}
+			if ( undefined !== range.end_string ) d.endDate = range.end_string.replace(/-/g,',') ;
+			
+			if ( range.source_q == self.q ) { // Properties of other items
+				d.headline = self.wd.items[range.prop].getLabel() ;
+				if ( range.target_q !== undefined ) {
+					var l2 = self.wd.items[range.target_q].getLabel() ;
+//					l2 = l2 + '|' + range.target_q ;
+					d.headline += ": <br/>" + l2 ;
+					d.text = self.wd.items[range.target_q].getDesc() + '|' + range.target_q;
+				} else {
+					d.text = self.wd.items[self.q].getLabel() ;
+				}
+			} else { // For properties of the item itself
+				d.headline = self.wd.items[range.prop].getLabel() ;
+				if ( range.from_candidates && self.wd.items[range.source_q] !== undefined ) {
+					var l2 = self.wd.items[range.source_q].getLabel() ;
+//					l2 = l2 + '|' + range.source_q ;
+					d.headline += ": <br/>" + l2 ;
+					d.text = self.wd.items[range.source_q].getDesc() + '|' + range.source_q;
+				} else {
+					var l2 = self.wd.items[range.source_q].getLabel() ;
+					d.headline += ": <br/>" + l2 ;
+					d.text = self.wd.items[range.source_q].getDesc() + '|' + range.source_q;
+				}
+			}
+			
+			// TODO add text and images
+			tl.timeline.date.push ( d ) ;
+		} ) ;
+
+		
+
+		var years = max.substr(0,4) - min.substr(0,4) ;
+
+		createStoryJS({
+			type:       'timeline',
+	//		width:      '800',
+			height:     '400',
+			source:     tl,
+			start_at_slide : mid_item+1 ,
+			
+//			start_zoom_adjust : years > 100 ? -2 : -1 ,
+			embed_id:   'timeline'
+		});
+
+		function fixHeadings () {
+			if ( $('#timeline div.marker').length < 1 || $('#timeline div.container').length < 1 ) {
+				setTimeout ( fixHeadings , 100 ) ;
+				return ;
+			}
+
+			$('#timeline div.container p').each ( function () {
+				var o = $(this) ;
+				var m = o.text().match(/\|(Q\d+)$/) ;
+				o.text ( o.text().replace(/\|Q\d+$/,'') ) ;
+				if ( m == null ) return ;
+				var q = m[1] ;
+				var h3 = $(o.parent().find('h3')) ;
+				var h = h3.html() ;
+				m = h.match ( /<br>([^<].*)$/ ) ;
+				if ( m == null ) return ;
+				var url = self.getSelfURL ( { q:q } ) ;
+				h = h.replace ( /<br>[^<].*$/ , " <a href='"+url+"'>"+m[1]+"</a>" ) ;
+				h3.html ( h ) ;
+			} ) ;
+
+		}
+		
+		fixHeadings() ;
+
 	} ,
 
 	fin : false

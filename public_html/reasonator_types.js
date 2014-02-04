@@ -220,6 +220,12 @@ reasonator_types.push ( {
 		$('#pr_full_tree').html ( reasonator.t('family_tree') + ": <a class='internal' href='#'>"+reasonator.t('inline')+"</a>/<a target='_blank' href='"+geneawiki_url+"' class='external'>"+reasonator.t('new_page')+"</a>" ) ;
 		$('#pr_full_tree a.internal').click ( function () { reasonator.showGeneawiki(); return false } ) ;
 		
+		$.each ( relations['children'] , function ( p , v ) {
+			$.each ( v , function ( cq , v2 ) {
+				reasonator.timeline_candidates['Q'+(cq+'').replace(/\D/g,'')] = [ 'P569' ] ;
+			} ) ;
+		} ) ;
+		
 		$.each ( relations , function ( section , sd ) {
 			reasonator.renderPropertyTable ( sd , { id:'#pr_'+section,internal:true } ) ;
 		} ) ;
