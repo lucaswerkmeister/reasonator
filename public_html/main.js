@@ -1035,6 +1035,7 @@ var reasonator = {
 		var claims = i.getClaimsForProperty ( 242 ) ; // Locator map
 		var hide_maps = true ;
 		
+		var uses_locator_map = false ;
 		if ( claims.length > 0 ) {
 			hide_maps = false ;
 			var s = i.getClaimTargetString ( claims[0] ) ;
@@ -1048,6 +1049,7 @@ var reasonator = {
 			io.id = 'div.locator_map img' ;
 			io.append = true ;
 			self.mm_load.push ( io ) ;
+			uses_locator_map = true ;
 		}
 
 
@@ -1061,6 +1063,10 @@ var reasonator = {
 				[ v , 'location_map1' , 3 ] ,
 				[ v , 'location_map2' , 5 ]
 			] ;
+			if ( !uses_locator_map ) {
+				self.do_maps.push ( [ v , 'location_map3' , 7 ] ) ;
+				$('.entity .maps div.locator_map').replaceWith ( "<div id='location_map3' class='map map3'></div>" ) ;
+			}
 		}
 		
 		if ( hide_maps ) $('.entity .maps').hide() ;
