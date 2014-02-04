@@ -2382,7 +2382,7 @@ var reasonator = {
 		
 //		console.log ( self.timeline_data ) ;
 		
-		if ( self.timeline_data.length <= 1 ) return ;
+		if ( self.timeline_data.length <= 2 ) return ;
 		
 		self.showTimeline() ;
 		
