@@ -2702,18 +2702,17 @@ var reasonator = {
 		
 			$('body').append ( h ) ;
 
-//			$.each ( images , function ( iid , i ) {
-				$('#addImagesDialog a.add_image').each ( function () {
-					var a = $(this) ;
-					var i = images[a.attr('iid')] ;
-					a.attr({title:i.title}) ;
-					a.click ( function () {
-						addImage ( a.attr('iid') ) ;
-						return false ;
-					} ) ;
+			$('#addImagesDialog a.add_image').each ( function () {
+				var a = $(this) ;
+				var i = images[a.attr('iid')] ;
+				a.attr({title:i.title}) ;
+				a.click ( function () {
+					addImage ( a.attr('iid') ) ;
+					return false ;
 				} ) ;
-//			} ) ;
+			} ) ;
 			
+			jQuery.noConflict() 
 			$('#addImagesDialog').modal({show:true,width:700}) ;
 			return false ;
 		}
