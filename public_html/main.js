@@ -2581,6 +2581,7 @@ var reasonator = {
 		});
 
 		function fixHeadings () {
+//			if ( $('#timeline').length < 0 ) return ;
 			if ( $('#timeline div.marker').length < 1 || $('#timeline div.container').length < 1 ) {
 				setTimeout ( fixHeadings , 100 ) ;
 				return ;
@@ -2589,8 +2590,8 @@ var reasonator = {
 			$('#timeline div.container p').each ( function () {
 				var o = $(this) ;
 				var m = o.text().match(/\|(Q\d+)$/) ;
-				o.text ( o.text().replace(/\|Q\d+$/,'') ) ;
 				if ( m == null ) return ;
+				o.text ( o.text().replace(/\|Q\d+$/,'') ) ;
 				var q = m[1] ;
 				var h3 = $(o.parent().find('h3')) ;
 				var h = h3.html() ;
@@ -2600,6 +2601,8 @@ var reasonator = {
 				h = h.replace ( /<br>[^<].*$/ , " <a href='"+url+"'>"+m[1]+"</a>" ) ;
 				h3.html ( h ) ;
 			} ) ;
+			
+			setTimeout ( fixHeadings , 1000 ) ; // Keep going, forever...
 
 		}
 		
@@ -2712,7 +2715,7 @@ var reasonator = {
 				} ) ;
 			} ) ;
 			
-			jQuery.noConflict() 
+			jQuery.noConflict() ;
 			$('#addImagesDialog').modal({show:true,width:700}) ;
 			return false ;
 		}
