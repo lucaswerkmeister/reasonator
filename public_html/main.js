@@ -131,6 +131,11 @@ var reasonator = {
 	 * @type {string}
 	 */
 	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
+	
+	/** WiDaR API URL.
+	 * @type {string}
+	 */
+	widar_url : '/widar/index.php?callback=?' ,
 
 	/** Width of top banner from WikiVoyage, in pixel.
 	 * @type {number}
@@ -573,7 +578,7 @@ var reasonator = {
 		var self = reasonator ;
 		if ( o === undefined ) o = {} ;
 
-		$.getJSON ( '/widar/index.php?callback=?' , {
+		$.getJSON ( self.widar_url , {
 			action:'set_claims',
 			ids:q,
 			prop:prop,
@@ -909,7 +914,7 @@ var reasonator = {
 		}
 		
 		self.showQRcode() ;
-		reasonator.generateTimelineData() ;
+		self.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
 	} ,
 	
@@ -1064,7 +1069,7 @@ var reasonator = {
 		
 		if(label == "" || label == null) return ;
 
-		$.getJSON ( '/widar/index.php?callback=?' , {
+		$.getJSON ( self.widar_url , {
 			action:'set_label',
 			q:q,
 			lang:lang,
@@ -1257,6 +1262,7 @@ var reasonator = {
 			}
 		} ) ;
 		
+		self.checkWikipediaImages() ;
 	} ,
 	
 	/*
@@ -2600,6 +2606,174 @@ var reasonator = {
 		fixHeadings() ;
 
 	} ,
+	
+	checkWikipediaImages : function () {
+		var self = this ;
+		var has_main_image = false ;
+		$.each ( self.mm_load , function ( k , v ) {
+			if ( v.id != 'div.main_image' ) return ;
+			has_main_image = true ;
+			return false ;
+		} ) ;
+		if ( has_main_image ) return ; // Already has image
+		
+		var i = self.wd.items[self.q] ;
+		var links = i.getWikiLinks() ;
+		var queries = [] ;
+		$.each ( links , function ( k , v ) {
+			var m = k.match ( /^(.+)wiki$/ ) ;
+			if ( m == null ) return ; // Wikipedias only, for now
+			queries.push ( { lang:m[1] , title:v.title } ) ;
+		} ) ;
+		
+		var image_props = [ 'P18' , 'P94' , 'P41' , 'P242' , 'P158' , 'P109' , 'P154' , 'P10' ] ;
+		
+		var image_blacklist = [
+			'Blue morpho butterfly 300x271.jpg',
+			'Copris lunaris. MHNT.jpg',
+			'951 Gaspra.jpg',
+			'Football France.png',
+			'Earth Eastern Hemisphere.jpg'
+		] ;
+		
+		var min_file_size = 80000 ; // Min bytes for a file to show; excludes many icons
+		var thumbsize = 160 ;
+		var images = {} ; // This will become an array later!
+		
+		function addImage ( iid ) {
+			var prop = $("input:radio[name=use_image_prop]:checked").val() ;
+
+			$.getJSON ( self.widar_url , {
+				action:'set_string',
+				id:self.q,
+				prop:prop,
+				text:images[iid].title,
+				botmode:1
+			} , function ( d ) {
+				if ( d.error == 'OK' ) {
+					$('div.addimage_thumbnail_container[iid='+iid+']').html(self.t('image_added')).css({'background-color':'#1FCB4A'}) ;
+					$('#reload_page_after_image_added').show() ;
+				} else alert ( d.error ) ;
+			} ) .fail(function( jqxhr, textStatus, error ) {
+				alert ( error ) ;
+			} ) ;
+			return false ;
+		}
+		
+		function showImageCandidatesStage2 () {
+			var diag_title = self.t('add_image') ;
+			var diag_desc = self.t('has_no_image') ;
+			diag_desc = diag_desc.replace ( /\$1/ , images.length ) . replace ( /\$2/ , '<a target="_blank" href="/widar">' ) ;
+			
+			$('#addImagesDialog').remove() ;
+			
+			var h = '' ;
+			h += '<div id="addImagesDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+			h += '<div class="modal-dialog"><div class="modal-content">' ;
+			h += '<div class="modal-header">' ;
+			h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
+			h += '<h3 id="languageDialogLabel">' + diag_title + '</h3>' ;
+			h += diag_desc ;
+			h += '</div>' ;
+			h += '<div class="modal-body" style="max-height:600px;overflow:auto">' ;
+			
+			$.each ( images , function ( iid , i ) {
+				var off = Math.floor((thumbsize-i.thumbheight)/2) ;
+				h += "<div iid='"+iid+"' style='text-align:center;vertical-align:top;display:inline-block;width:"+thumbsize+"px;height:"+(thumbsize+20)+"px;margin:5px' class='addimage_thumbnail_container'>" ;
+				h += "<div style='padding-top:"+off+"px;padding-bottom:"+(thumbsize-off-i.thumbheight)+"px'><a class='add_image' href='#' iid='"+iid+"'>" ;
+				h += "<img style='width:"+i.thumbwidth+"px;height:"+i.thumbheight+"px' src='"+i.thumburl+"' border=0 /></a></div>" ;
+				h += "<div>"+i.usage_counter+"&times; (<a target='_blank' href='"+i.descriptionurl+"'>"+self.t('commons')+"</a>)</div>" ;
+				h += "</div>" ;
+			} ) ;
+			
+			h += '</div>' ;
+			h += '<div class="modal-header">' ;
+			h += "Set as: <form class='form-inline'>" ;
+			$.each ( image_props , function ( dummy , prop ) {
+				h += " <label><input type='radio' name='use_image_prop' value='"+prop+"' " ;
+				if ( dummy == 0 ) h += "checked" ;
+				h += "/>&nbsp;" + self.wd.items[prop].getLabel() + "</label>" ;
+			} ) ;
+			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+self.t('reload_page')+"</a></span>" ;
+			h += "</form>" ;
+			h += '</div>' ;
+			h += '</div></div>' ;
+			h += '</div>' ;
+		
+			$('body').append ( h ) ;
+
+//			$.each ( images , function ( iid , i ) {
+				$('#addImagesDialog a.add_image').each ( function () {
+					var a = $(this) ;
+					var i = images[a.attr('iid')] ;
+					a.attr({title:i.title}) ;
+					a.click ( function () {
+						addImage ( a.attr('iid') ) ;
+						return false ;
+					} ) ;
+				} ) ;
+//			} ) ;
+			
+			$('#addImagesDialog').modal({show:true,width:700}) ;
+			return false ;
+		}
+		
+		function showImageCandidates () {
+			self.wd.getItemBatch ( image_props , function () {
+				showImageCandidatesStage2() ;
+			} ) ;
+			return false ;
+		}
+		
+		function allLoaded () {
+			var i2 = [] ;
+			$.each ( images , function ( k , v ) { i2.push(v) ; } ) ;
+			images = i2.sort ( function ( a , b ) {
+				if ( a.usage_counter == b.usage_counter ) {
+					return a.size == b.size ? 0 : ( a.size < b.size ? 1 : -1 ) ;
+				} else {
+					return a.usage_counter < b.usage_counter ? 1 : -1 ;
+				}
+			} ) ;
+			if ( images.length == 0 ) return ;
+			
+			var txt = self.t('add_wikipedia_images') ;
+			var h = "<div style='text-align:center;margin:20px'><a href='#'>"+txt+"</a></div>" ;
+			$('div.main_image').html ( h ) ;
+			$('div.main_image a').click ( showImageCandidates ) ;
+		}
+		
+		var loaded = 0 ;
+		$.each ( queries , function ( dummy , v ) {
+			$.getJSON ( '//'+v.lang+'.wikipedia.org/w/api.php?callback=?' , {
+				action:'query',
+				generator:'images',
+				prop:'imageinfo',
+				titles:v.title,
+				gimlimit:20,
+				iiprop:'url|size',
+				iiurlwidth:thumbsize,
+				iiurlheight:thumbsize,
+				format:'json'
+			} , function ( d ) {
+				$.each ( ((d.query||{}).pages||[]) , function ( dummy , image ) {
+					if ( image.imagerepository != 'shared' ) return ; // Commons only
+					var o = image.imageinfo[0] ;
+					if ( o.size < min_file_size ) return ;
+					o.usage_counter = 1 ;
+					o.title = image.title.replace ( /^[^:]+:/ , '' ) ;
+					if ( null != o.title.match(/\.svg$/i) ) return ; // no SVG
+					if ( -1 != $.inArray ( o.title , image_blacklist ) ) return ; // Image on blacklist
+					if ( images[o.title] === undefined ) images[o.title] = o ;
+					else images[o.title].usage_counter++ ;
+				} ) ;
+				loaded++ ;
+				if ( loaded == queries.length ) allLoaded() ;
+			} ) ;
+		} ) ;
+		
+	} ,
+
 
 	fin : false
 } ;
