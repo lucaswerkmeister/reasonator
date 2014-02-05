@@ -1,3 +1,7 @@
+/**
+ * @namespace 
+ * @author Magnus Manske
+ */
 var reasonator = {
 	i18n : {} ,
 	collapse_item_list : 20 ,
@@ -98,29 +102,92 @@ var reasonator = {
 	location_list : [ 515,6256,1763527,
 		7688,15284,19576,24279,27002,28575,34876,41156,41386,50201,50202,50218,50231,50464,50513,55292,74063,86622,112865,137413,149621,156772,182547,192287,192498,203323,213918,243669,244339,244836,270496,319796,361733,379817,380230,387917,398141,399445,448801,475050,514860,533309,542797,558330,558941,562061,610237,629870,646728,650605,672490,685320,691899,693039,697379,717478,750277,765865,770948,772123,831889,837766,838185,841753,843752,852231,852446,855451,867371,867606,874821,877127,878116,884030,910919,911736,914262,924986,936955,1025116,1044181,1048835,1051411,1057589,1077333,1087635,1143175,1149621,1151887,1160920,1196054,1229776,1293536,1342205,1344042,1350310,1365122,1434505,1499928,1548518,1548525,1550119,1569620,1631888,1647142,1649296,1670189,1690124,1724017,1753792,1764608,1771656,1779026,1798622,1814009,1850442,2072997,2097994,2115448,2271985,2280192,2311958,2327515,2365748,2487479,2490986,2513989,2513995,2520520,2520541,2533461,2695008,2726038,2824644,2824645,2824654,2836357,2878104,2904292,2916486,3042547,3076562,3098609,3183364,3247681,3253485,3356092,3360771,3395432,3435941,3455524,3491994,3502438,3502496,3507889,3645512,3750285,3917124,3976641,3976655,4057633,4115671,4161597,4286337,4494320,4683538,4683555,4683558,4683562,4976993,5154611,5195043,5284423,5639312,6501447,6594710,6697142,7631029,7631060,7631066,7631075,7631083,7631093,9301005,9305769,10296503,13220202,13220204,13221722,13558886,14757767,14921966,14921981,14925259,15042137,15044083,15044339,15044747,15045746,15046491,15052056,15055297,15055414,15055419,15055423,15055433,15058775,15063032,15063053,15063057,15063111,15063123,15063160,15063167,15063262,15072309,15072596,15092269,15097620,15125829,15126920,15126956,15133451 ] ,
 	
+	/** Use in-page reload of dates - quicker, but does not update the URL.
+	 * @type {boolean}
+	 */
 	internalCalendarBrowsing : false ,
-	showSearchImages : false ,
-	use_js_refresh : false , // FIXME
-	force_wdq : true ,
-	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
-	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
-	banner_width : 850 ,
-	max_related_media : 50 ,
-	showConceptCloudLink : true ,
-	showQRLink : true ,
-	allowLabelOauthEdit : false ,
-	use_hoverbox : true ,
-	mark_missing_labels : true ,
-	allow_rtl : true ,
-	use_autodesc : true ,
-	autodesc_items : [] ,
 	
+	/** Show images in the search results.
+	 * @type {boolean}
+	 */
+	showSearchImages : false ,
+	
+	/** Use in-page reload of pages - quicker, but updates the URL in an ugly fashion. Not bug-free.
+	 * @type {boolean}
+	 */
+	use_js_refresh : false ,
+	
+	/** Make sure WikiDataQuery is available; force http over https, as wdq VM does not do https.
+	 * @type {boolean}
+	 */
+	force_wdq : true ,
+
+	/** Use WikiDataQuery, unless page is "live".
+	 * @type {boolean}
+	 */
+	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
+
+	/** WikiDataQuery URL.
+	 * @type {string}
+	 */
+	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
+
+	/** Width of top banner from WikiVoyage, in pixel.
+	 * @type {number}
+	 */
+	banner_width : 850 ,
+
+	/** Maximum number of thumbnails in the "related media" section.
+	 * @type {number}
+	 */
+	max_related_media : 50 ,
+
+	/** Whether to show a link to the concept cloud tool in the sidebar.
+	 * @type {boolean}
+	 */
+	showConceptCloudLink : true ,
+
+	/** Whether or not to show a QR code in the sidebar.
+	 * @type {boolean}
+	 */
+	showQRLink : true ,
+
+	/** Whether to offer, in a hoverbox, the setting a missing item label via OAuth (WiDaR). Waiting for Wikidata API bugfix.
+	 * @type {boolean}
+	 */
+	allowLabelOauthEdit : false ,
+
+	/** Whether to show infoboxes when hovering over an item link.
+	 * @type {boolean}
+	 */
+	use_hoverbox : true ,
+
+	/** Whether to mark labels missing in the current language (red dotted underline).
+	 * @type {boolean}
+	 */
+	mark_missing_labels : true ,
+
+	/** Whether to allow right-to-left layout.
+	 * @type {boolean}
+	 */
+	allow_rtl : true ,
+
+	/** Whether to use autodesc for automatic item descriptions.
+	 * @type {boolean}
+	 */
+	use_autodesc : true ,
+
+	autodesc_items : [] ,
 	imgcnt : 0 ,
 	table_block_counter : 0 ,
 
 	
 	
-	
+	/**
+	 * Get interface text in the current language. Fallback to English.
+	 * @param {string} k - The key for the translated string.
+	 * @returns {string} Interface text in current language.
+	 */
 	t : function ( k ) {
 		var self = this ;
 		var ret = self.i18n['en'][k] ; // Fallback
@@ -133,6 +200,9 @@ var reasonator = {
 		return ret ;
 	} ,
 
+	/**
+	 * Reset all data. Used in init and for in-page reloading. Incomplete.
+	 */
 	clear : function () {
 		var self = this ;
 		var tmp = {} ;
@@ -152,6 +222,10 @@ var reasonator = {
 		} ) ;
 	} ,
 
+	/**
+	 * Get URL parameters. Prefers hash "#" parameters over GET "?" ones, for using in-page loading.
+	 * @returns {hash} URL parameters.
+	 */
 	getUrlVars : function () {
 		var vars = {} ;
 		var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1) ;
@@ -168,6 +242,10 @@ var reasonator = {
 		return vars;
 	} ,
 
+	/**
+	 * Initializes the object, loads the root object and interface texts, then runs callback.
+	 * @param {function} callback - Callback function.
+	 */
 	init : function ( callback ) {
 		var self = this ;
 		self.q = undefined ;

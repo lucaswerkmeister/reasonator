@@ -1,3 +1,8 @@
+/**
+ * @author Magnus Manske
+ */
+
+
 var reasonator_types = [] ;
 
 /*
@@ -486,7 +491,7 @@ reasonator_types.push ( {
 			reasonator.P['P'+v] = v ; // Prevent them showing in "other" list
 		} ) ;
 
-		$('div.maps').show() ;
+		if ( reasonator.wd.items[reasonator.q].hasClaims('P625') ) $('div.maps').show() ;
 		reasonator.addOther() ; // Render other properties
 		reasonator.addMedia() ; // Render images
 		reasonator.renderMainPropsTable ( [31,421] ) ;
