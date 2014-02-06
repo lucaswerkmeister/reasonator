@@ -167,6 +167,11 @@ var reasonator = {
 	 */
 	use_hoverbox : true ,
 
+	/** Whether to show infoboxes when hovering over a wiki(m|p)edia link.
+	 * @type {boolean}
+	 */
+	use_wiki_hoverbox : true ,
+
 	/** Whether to mark labels missing in the current language (red dotted underline).
 	 * @type {boolean}
 	 */
@@ -920,6 +925,7 @@ var reasonator = {
 		}
 		
 		self.addHoverboxes () ;
+		self.addWikiHoverboxes () ;
 				
 		if ( self.use_autodesc && !self.use_hoverbox ) {
 			var x = {} ;
@@ -980,6 +986,53 @@ var reasonator = {
 			} ) ;
 		}
 
+	} ,
+	
+	addWikiHoverboxes : function () {
+		var self = this ;
+		if ( !self.use_wiki_hoverbox ) return ;
+		$('div.sitelinks a.wikipedia').each ( function () {
+			var a = $(this) ;
+			var m = a.attr('href').match ( /^(.+?)\/wiki\/(.+)$/ ) ;
+			if ( m == null ) { console.log ( "No hover box for " + a.attr('href') ) ; return ; }
+			var sitebase = m[1] ;
+			var page = m[2] ;
+
+			a.cluetip ( { // http://plugins.learningjquery.com/cluetip/#options
+				splitTitle:'|',
+				multiple : false,
+				sticky : true ,
+				mouseOutClose : 'both' ,
+				cluetipClass : 'myclue' ,
+				leftOffset : 0 ,
+				onShow : function(ct, ci) { // Outer/inner jQuery node
+				$('div.maps div').css({'z-index':0}) ; // 
+					var title = decodeURIComponent(page).replace(/_/g,' ') ;
+					ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
+					var title_element = $(ct.find('h3')) ;
+					title_element.html ( title ) ;
+					ci.html ( '<i>'+self.t('loading_intro')+'</i>' ) ;
+//					if ( self.isRTL ) ci.css ( { 'direction':'RTL' } ) ;
+
+					$.getJSON ( sitebase + '/w/api.php?callback=?' , {
+						action:'query',
+						prop:'extracts',
+						exsentences:3,
+						titles:m[2],
+						exintro:'',
+						format:'json'
+					} , function ( d ) {
+						var h = '<i>'+self.t('no_intro')+'</i>' ;
+						$.each ( ((d.query||[]).pages||[]) , function ( pageid , pd ) {
+							if ( pd.extract === undefined ) return ;
+							h = "<div>" + pd.extract + "</div>" ;
+						} ) ;
+						ci.html ( h ) ;
+					} ) ;
+				}
+			
+			} ) ;
+		} ) ;
 	} ,
 	
 	addHoverboxes : function  ( selector ) {
