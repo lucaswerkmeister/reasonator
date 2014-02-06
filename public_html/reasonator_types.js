@@ -455,6 +455,8 @@ reasonator_types.push ( {
 			setTimeout ( function(){me.show()} , 50 ) ;
 			return ;
 		}
+		
+		var show_location_props = [31,421,669] ;
 
 		// RENDERING
 		var h = '' ;
@@ -492,9 +494,9 @@ reasonator_types.push ( {
 		} ) ;
 
 		if ( reasonator.wd.items[reasonator.q].hasClaims('P625') ) $('div.maps').show() ;
+		reasonator.renderMainPropsTable ( show_location_props ) ; // Location properties section
 		reasonator.addOther() ; // Render other properties
 		reasonator.addMedia() ; // Render images
-		reasonator.renderMainPropsTable ( [31,421] ) ;
 		reasonator.finishDisplay ( h ) ; // Finish
 	}
 	
