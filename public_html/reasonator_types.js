@@ -77,7 +77,7 @@ reasonator_types.push ( {
 		reasonator.renderName () ; // Render name
 		reasonator.showAliases ( q ) ; // Render aliases
 		reasonator.showDescription () ; // Render manual description
-		me.showAutoDescPerson () ; // Render automatic description
+		me.showAutoDesc () ; // Render automatic description
 		reasonator.showExternalIDs() ; // Render external ID links
 		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
@@ -101,6 +101,7 @@ reasonator_types.push ( {
 
 
 	showPersonMain : function ( q ) {
+		var me = this ;
 		var rel = {} ;
 		rel[q] = {} ;
 		$.each ( reasonator.wd.items , function ( dummy , item ) {
@@ -213,6 +214,8 @@ reasonator_types.push ( {
 //				if ( relations[section][real_p][v.key] === undefined ) relations[section][real_p][v.key] = val ; // Do not overwrite "1" with "2"
 			} ) ;
 		} ) ;
+
+		me.relations = relations ; // For later
 		
 		if ( !has_relations ) {
 			$('div.personal_relations').hide() ;
@@ -237,16 +240,451 @@ reasonator_types.push ( {
 	} ,
 	
 
-	showAutoDescPerson : function () {
+	showAutoDesc : function () {
+		var me = this ;
 		var q = reasonator.q ;
-		var h = [] ;
-		h.push ( reasonator.getItemLinks ( q , { p:reasonator.P.sex,q_desc:true,desc:true } ) . join ( ' ' ) ) ;
-		h.push ( reasonator.getItemLinks ( q , { p:reasonator.P.occupation,q_desc:true,desc:true } ) . join ( '/' ) ) ;
-		var country = reasonator.getItemLinks ( q , { p:reasonator.P.nationality,q_desc:true,desc:true } ) . join ( ' ' ) ;
-		if ( country != '' ) h.push ( reasonator.t('from') ) ;
-		h.push ( country ) ;
-		h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
-		$('div.autodesc').html ( h ) ;
+		var wd = reasonator.wd ;
+		var lang = reasonator.getMainLang() ;
+		
+		var show_people_dates = false ;
+		
+		if ( reasonator.use_long_autodesc && lang == 'en' ) {
+		
+			var i = wd.items[q] ;
+			var h = [] ;
+			
+			var is_dead = i.hasClaims ( 'P570' ) ;
+			var is_male = !i.hasClaimItemLink('P21','Q6581072') ;
+			var s_he = (is_male?'He':'She') ;
+			var his_er = (is_male?'His':'Her') ;
+			
+			function renderDate ( claim , o ) {
+				if ( o === undefined ) o = {} ;
+				var ret = { after:' ' } ;
+				var d = (claim.time===undefined) ? (claim.datavalue===undefined?i.getClaimDate(claim):claim.datavalue.value) : claim ;
+				var month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ;
+
+				var pre = d.time.substr(0,1) == '+' ? 1 : -1 ;
+				var dp = d.time.substr(1).split(/[-T:Z]/) ;
+
+				var year = dp[0]*1 ;
+				var month = reasonator.pad ( dp[1] , 2 ) ;
+				var day = reasonator.pad ( dp[2] , 2 ) ;
+				
+				if ( o.just_year ) return { label:year } ;
+			
+				var iso = d.time ; // Fallback
+				var label = d.time ; // Fallback
+				if ( d.precision <= 9 ) {
+					iso = year*pre ;
+					ret.label = year ;
+					if ( !o.no_prefix ) ret.before = 'in ' ;
+				} else if ( d.precision == 10 ) {
+					iso = year*pre + '-' + month ;
+					ret.label = month_label[month*1] + ' ' + year ;
+					if ( !o.no_prefix ) ret.before = 'in ' ;
+				} else if ( d.precision == 11 ) {
+					iso = year*pre + '-' + month + '-' + day ;
+					ret.label = month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+					if ( !o.no_prefix ) ret.before = 'on ' ;
+				}
+				if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
+				
+				ret.url = reasonator.getSelfURL ( { date:iso } ) ;
+
+				return ret ;
+			}
+			
+			function getParent ( p ) {
+				if ( me.relations === undefined ) return ;
+				if ( me.relations.parents === undefined ) return ;
+				if ( me.relations.parents[p] === undefined ) return ;
+				var ret ;
+				$.each ( me.relations.parents[p] , function ( k , v ) { ret = k ; return false } ) ;
+				return ret ;
+			}
+			
+			function addPerson ( pq , after ) {
+				h.push ( { q:pq } ) ;
+				
+				var born = wd.items[pq].raw.claims['P569'] ;
+				var died = wd.items[pq].raw.claims['P570'] ;
+
+				if ( show_people_dates && ( born !== undefined || died !== undefined ) ) {
+					h.push ( { label:' (' } ) ;
+					if ( born !== undefined ) h.push ( renderDate ( born[0] , {just_year:true} ) ) ;
+					if ( born !== undefined && died !== undefined ) h.push ( { label:'&ndash;' } ) ;
+					if ( died !== undefined ) h.push ( renderDate ( died[0] , {just_year:true} ) ) ;
+					h.push ( { label:')' } ) ;
+				}
+				
+				if ( after !== undefined && after != '' ) h.push ( { label:after } ) ;
+			}
+			
+			function addPlace ( o ) {
+				if ( o.before !== undefined ) h.push ( { label:o.before } ) ;
+				h.push ( { q:o.q } ) ; // TODO country, city etc.
+				if ( o.after !== undefined ) h.push ( { label:o.after } ) ;
+			}
+			
+			function getSepAfter ( arr , pos ) {
+				if ( pos+1 == arr.length ) return ' ' ;
+				if ( pos == 0 && arr.length == 2 ) return ' and ' ;
+				if ( arr.length == pos+2 ) return ', and ' ;
+				return ', ' ;
+			}
+			
+			function getQualifierItem ( qualifiers , prop ) {
+				if ( qualifiers[prop] === undefined ) return ;
+				if ( qualifiers[prop][0].datavalue === undefined ) return ;
+				if ( qualifiers[prop][0].datavalue.value === undefined ) return ;
+				return 'Q' + qualifiers[prop][0].datavalue.value['numeric-id'] ;
+			}
+
+			function getDatesFromQualifier ( qualifiers ) {
+				var ret = {} ;
+				if ( qualifiers === undefined ) return ret ;
+				if ( qualifiers['P581'] !== undefined ) {
+					ret.from = qualifiers['P581'][0] ;
+					ret.to = qualifiers['P581'][0] ;
+					ret.pit = true ; // Point In Time
+				} else {
+					if ( qualifiers['P580'] !== undefined ) ret.from = qualifiers['P580'][0] ;
+					if ( qualifiers['P582'] !== undefined ) ret.to = qualifiers['P582'][0] ;
+				}
+				return ret ;
+			}
+
+			function sortByDate ( x ) {
+				return x.sort ( function ( a , b ) {
+					if ( a.dates.from !== undefined && b.dates.from !== undefined ) {
+						return a.dates.from.time == b.dates.from.time ? 0 : ( a.dates.from.time < b.dates.from.time ? -1 : 1 ) ;
+					} else if ( a.dates.to !== undefined && b.dates.to !== undefined ) {
+						return a.dates.to.time == b.dates.to.time ? 0 : ( a.dates.to.time < b.dates.to.time ? -1 : 1 ) ;
+					}
+					return a.q == b.q ? 0 : ( a.q < b.q ? -1 : 1 ) ;
+				} ) ;
+			}
+
+
+			// qualifiers need to be item links
+			function getRelatedItemsWithQualifiers ( o ) {
+				if ( o === undefined ) o = {} ;
+
+				var ret = [] ;
+				$.each ( (o.properties||[]) , function ( dummy , prop ) {
+					$.each ( (i.raw.claims[prop]||[]) , function ( k , claim ) {
+						var eq = i.getClaimTargetItemID(claim) ;
+						if ( undefined === eq ) return ;
+						var em = { q:eq } ;
+						if ( o.dates ) em.dates = getDatesFromQualifier(claim.qualifiers) ;
+						$.each ( (o.qualifiers||[]) , function ( k , v ) {
+							var tmp = [] ;
+							$.each ( v , function ( dummy2 , prop2 ) {
+								if ( claim.qualifiers === undefined ) return ;
+								tmp = tmp.concat ( getQualifierItem(claim.qualifiers,prop2) ) ;
+							} ) ;
+							em[k] = tmp ;
+						} ) ;
+						ret.push ( em ) ;
+					} ) ;
+				} ) ;
+				
+				if ( o.sort == 'date' ) ret = sortByDate ( ret ) ;
+				
+				return ret ;
+			}
+
+
+			function getRelationsList ( k1 , props , use_birth_death ) {
+				var ret = [] ;
+				$.each ( props , function ( dummy0 , prop ) {
+					$.each ( (((me.relations||{})[k1]||{})[prop]||[]) , function ( q2 , v ) {
+						$.each ( v , function ( dummy , v2 ) {
+							if ( wd.items[q2] === undefined ) return ;
+							var sp = { q:q2 , dates:{} } ;
+							if ( use_birth_death ) {
+								if ( wd.items[q2].hasClaims('P569') ) sp.dates.from = wd.items[q2].getClaimDate ( wd.items[q2].raw.claims['P569'][0] ) ;
+								if ( wd.items[q2].hasClaims('P570') ) sp.dates.to = wd.items[q2].getClaimDate ( wd.items[q2].raw.claims['P570'][0] ) ;
+							} else {
+								sp.dates = getDatesFromQualifier(v2.qualifiers) ;
+							}
+							ret.push ( sp ) ;
+						} ) ;
+					} ) ;
+				} ) ;
+				ret = sortByDate ( ret ) ;
+				return ret ;
+			}
+
+
+
+
+			
+			
+
+			
+
+			
+			
+			// BASE CLASS FOR LANGUAGE RENDERING
+			function lang_class () {
+
+				this.listNationalities = function () {
+					var countries = i.raw.claims['P27'] ;
+					$.each ( (countries||[]) , function ( k , claim ) {
+						var country = i.getClaimTargetItemID(claim) ;
+						if ( undefined === country ) return ;
+						var country_name = wd.items[country].getLabel(lang) ;
+						var not_last = k+1 != countries.length ;
+						var s = wd_auto_desc.getNationalityFromCountry ( country_name , wd.items[q].raw.claims , {not_last:not_last} ) ;
+						h.push ( { label:s , q:country , after:(not_last?'-':' ') } ) ;
+					} ) ;
+				}
+
+				this.listOccupations = function () {
+					var occupations = i.raw.claims['P106'] ;
+					$.each ( (occupations||[]) , function ( k , claim ) {
+						var occupation = i.getClaimTargetItemID(claim) ;
+						if ( occupation === undefined ) return ;
+						var not_last = k+1 != occupations.length ;
+						h.push ( { q:occupation , after:getSepAfter(occupations,k) } ) ;
+					} ) ;
+				}
+
+				this.listSentence = function  ( o ) {
+					if ( o.data === undefined ) o.data = [] ;
+					if ( o.data.length == 0 ) return ;
+					if ( undefined !== o.start ) o.start() ;
+					$.each ( o.data , function ( k , v ) {
+						if ( undefined !== o.item_start ) o.item_start ( function(){h.push ( { q:v.q })} ) ;
+						var dates = v.dates ;
+						var show_date = false ;
+						$.each ( (o.qualifiers||[]) , function ( qual , cb ) { if ( v[qual] !== undefined ) show_date = true } ) ;
+						if ( dates !== undefined && ( dates.from !== undefined || dates.to !== undefined ) ) show_date = true ;
+						if ( show_date ) {
+							if ( undefined !== o.date_start ) o.date_start() ;
+							if ( dates.from !== undefined && undefined !== o.date_from ) o.date_from ( function(o2){h.push ( renderDate ( dates.from , o2 ) )} ) ;
+							if ( dates.to !== undefined && undefined !== o.date_to ) o.date_to ( function(o2){h.push ( renderDate ( dates.to , o2 ) )} ) ;
+							$.each ( (o.qualifiers||[]) , function ( qual , cb ) {
+								if ( v[qual] === undefined ) return ;
+								if ( v[qual].length == 0 ) return ;
+								if ( v[qual][0] === undefined ) return ;
+								cb ( v[qual] ) ;
+							} ) ;
+							if ( undefined !== o.date_end ) o.date_end() ;
+						}
+						var sep = getSepAfter(o.data,k) ;
+						if ( undefined !== o.item_end ) o.item_end ( k , sep ) ;
+					} ) ;
+					if ( undefined !== o.end ) o.end() ;
+				}
+
+			}
+			
+			
+			// TODO make an object of those, one per language, set this to the current language, or fallback
+			var language_specs = [] ;
+			
+			
+			// ENGLISH
+			language_specs['en'] = new lang_class ;
+
+			language_specs['en'].employers = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:s_he+' worked for ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					date_from : function(cb) { h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
+					date_to : function(cb) { h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
+					qualifiers : { job:function(qv){h.push ( { before:'as ' , q:qv[0] , after:' ' } )} } ,
+					item_end : function(num,sep) { h.push ( { label:sep+(num+1<d.length?'for ':'') } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+
+			language_specs['en'].position = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:s_he+' was'+(is_dead?'':'/is')+' ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					date_from : function(cb) { h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
+					date_to : function(cb) { h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
+//					qualifiers : { job:function(qv){h.push ( { before:'as ' , q:qv[0] , after:' ' } )} } ,
+//					item_end : function(num,sep) { h.push ( { label:sep+(num+1<d.length?'for ':'') } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+
+			language_specs['en'].alma = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:s_he+' studied at ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					date_from : function(cb) { h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
+					date_to : function(cb) { h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+			
+			language_specs['en'].field = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:his_er+' field of work include'+(is_dead?'d':'s')+' ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+
+			language_specs['en'].spouses = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:s_he+' married ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					date_from : function(cb) { cb(); h.push ( { label:' ' } ) ; } ,
+					date_to : function(cb) { h.push ( { label:'(married until ' } ) ; cb() ; h.push ( { label:') ' } ) } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+
+			language_specs['en'].children = function ( d ) {
+				lang_spec.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:his_er+' children include ' } ) } ,
+					item_start : function(cb) { cb() } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+			
+			
+			language_specs['en'].firstSentence = function () {
+				h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
+				h.push ( { label:(is_dead?'was':'is') , after:' a ' } ) ;
+				this.listNationalities() ;
+				this.listOccupations() ;
+				h.push ( { label:'. ' } ) ;
+				h.push ( { label:'<br/>' } ) ;
+			}
+
+
+			// Setting current language
+			var lang_spec = language_specs['en'] ;
+
+			
+
+
+
+			// First sentence
+			lang_spec.firstSentence () ;
+		
+			
+			// Birth/parents
+			var birthdate = i.raw.claims['P569'] ;
+			var birthplace = i.raw.claims['P19'] ;
+			var birthname = i.raw.claims['P513'] ;
+			if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
+				h.push ( { label:s_he , after:' was born ' } ) ;
+				if ( birthname !== undefined ) h.push ( { label:i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
+				if ( birthdate !== undefined ) h.push ( renderDate(birthdate[0]) ) ;
+				if ( birthplace !== undefined ) addPlace ( { q:i.getClaimTargetItemID(birthplace[0]) , before:'in ' , after:' ' } ) ;
+				var father = getParent ( 22 ) ;
+				var mother = getParent ( 25 ) ;
+				if ( father !== undefined || mother !== undefined ) {
+					h.push ( { label:'to ' } ) ;
+					if ( father !== undefined ) addPerson ( father , ' ' ) ;
+					if ( father !== undefined && mother !== undefined ) h.push ( { label:'and ' } ) ;
+					if ( mother !== undefined ) addPerson ( mother , ' ' ) ;
+				}
+			}
+			h.push ( { label:'. ' } ) ;
+			h.push ( { label:'<br/>' } ) ;
+			
+			// Work
+			var alma = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P69'] } ) ;
+			var field = getRelatedItemsWithQualifiers ( { properties:['P136','P101'] } ) ;
+			var position = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P39'] } ) ;
+			var employers = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P108'],qualifiers:{'job':['P794']} } ) ;
+			lang_spec.alma ( alma ) ;
+			lang_spec.field ( field ) ;
+			lang_spec.position ( position ) ;
+			lang_spec.employers ( employers ) ;
+			h.push ( { label:'<br/>' } ) ;
+			
+			
+			// Family
+			var spouses = getRelationsList ( 'other' , [26] , false ) ;
+			var children = getRelationsList ( 'children' , [40] , true ) ;
+			lang_spec.spouses ( spouses ) ;
+			lang_spec.children ( children ) ;
+			h.push ( { label:'<br/>' } ) ;
+
+
+			
+			// Death
+			var deathdate = i.raw.claims['P570'] ;
+			var deathplace = i.raw.claims['P20'] ;
+			if ( deathdate !== undefined || deathplace !== undefined ) {
+				h.push ( { label:s_he , after:' died ' } ) ;
+				if ( deathdate !== undefined ) h.push ( renderDate(deathdate[0]) ) ;
+				if ( deathplace !== undefined ) addPlace ( { q:i.getClaimTargetItemID(deathplace[0]) , before:'in ' , after:' ' } ) ;
+				h.push ( { label:'. ' } ) ;
+			}
+
+			var burialplace = i.raw.claims['P119'] ;
+			if ( burialplace !== undefined ) {
+				addPlace ( { q:i.getClaimTargetItemID(burialplace[0]) , before:s_he+' was buried at ' , after:'. ' } ) ;
+			}			
+			
+			
+//			console.log ( h ) ;
+			
+			var qs = [] ;
+			$.each ( h , function ( k , v ) {
+				if ( v.q !== undefined ) qs.push ( v.q ) ;
+			} ) ;
+			wd.getItemBatch ( qs , function () {
+				var h2 = '' ;
+				
+				$.each ( h , function ( k , v ) {
+					if ( v === undefined ) return ; // Paranoia
+					var main = v.label ;
+					if ( main === undefined ) main = wd.items[v.q].getLabel(lang) ;
+					if ( v.url !== undefined ) {
+						main = "<a href='" + v.url + "'>" + main + "</a>" ;
+					} else {
+						if ( v.q !== undefined ) main = reasonator.getQlink ( v.q , { label:v.label } ) ;
+					}
+					h2 += (v.before||'') ;
+					h2 += main ;
+					h2 += (v.after||'') ;
+				} ) ;
+				h2 = h2.replace ( /\s+/g , ' ' ) ; // Excessive spaces
+				h2 = h2.replace ( /\s([.])/g , '.' ) ; // Space before punctuation
+				h2 = h2.replace ( /\s([,])/g , ',' ) ; // Space before punctuation
+				h2 = h2.replace ( /\.+/g , '.' ) ; // Multiple end dots
+//				console.log ( h2 ) ;
+				
+				$('div.autodesc').html ( "<div class='lead' style='background-color:#EEE;padding:2px;text-align:left;font-size:12pt'>" + h2 + "</div>" ) ;
+			} ) ;
+			
+
+
+
+		} else { // Generic fallback
+			var h = [] ;
+			h.push ( reasonator.getItemLinks ( q , { p:reasonator.P.sex,q_desc:true,desc:true } ) . join ( ' ' ) ) ;
+			h.push ( reasonator.getItemLinks ( q , { p:reasonator.P.occupation,q_desc:true,desc:true } ) . join ( '/' ) ) ;
+			var country = reasonator.getItemLinks ( q , { p:reasonator.P.nationality,q_desc:true,desc:true } ) . join ( ' ' ) ;
+			if ( country != '' ) h.push ( reasonator.t('from') ) ;
+			h.push ( country ) ;
+			h = $.trim(h.join(' ').replace(/\s+/g,' ')) ;
+			$('div.autodesc').html ( h ) ;
+		}
+		
 	}
 	
 } ) ;

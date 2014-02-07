@@ -187,6 +187,11 @@ var reasonator = {
 	 */
 	use_autodesc : true ,
 
+	/** Whether to use long automatic descriptions, where available.
+	 * @type {boolean}
+	 */
+	use_long_autodesc : true ,
+
 	autodesc_items : [] ,
 	imgcnt : 0 ,
 	table_block_counter : 0 ,
@@ -657,8 +662,8 @@ var reasonator = {
 		var tree = {} ;
 		
 		function preset ( qs ) {
-			var new_q = [] ;
 			$.each ( qs , function ( dummy , q ) {
+				var new_q = [] ;
 				if ( undefined !== tree[q] ) return ;
 				tree[q] = [] ;
 				$.each ( props , function ( dummy , p ) {
@@ -674,7 +679,6 @@ var reasonator = {
 		}
 		
 		preset ( [ o.start ] ) ;
-		
 	
 		function iterate ( qs ) {
 			var nqs = [] ;
@@ -706,7 +710,8 @@ var reasonator = {
 			
 		}
 		
-		return iterate ( [ { q:o.start , hist:[o.start] } ] ) ;
+		var ret = iterate ( [ { q:o.start , hist:[o.start] } ] ) ;
+		return ret ;
 	} ,
 
 
@@ -794,7 +799,7 @@ var reasonator = {
 									else if ( date.precision == 8 ) s = parseInt(year/10)+'0s' ;
 									else if ( date.precision == 7 ) s = parseInt(year/100)+'00s' ;
 									var url = '?date='+s ;
-									if ( self.wd.main_languages[0] != 'en' ) url += "&lang="+self.wd.main_languages[0] ;
+									if ( self.getMainLang() != 'en' ) url += "&lang="+self.wd.main_languages[0] ;
 									h2.push ( "<a href='"+url+"'>"+s+"</a>" ) ;
 								}
 							} ) ;
@@ -829,6 +834,11 @@ var reasonator = {
 		}
 		h += "</tbody></table>" ;
 		return h ;
+	} ,
+	
+	getMainLang : function () {
+		var self = this ;
+		return self.wd.main_languages[0] ;
 	} ,
 
 
@@ -1641,6 +1651,7 @@ var reasonator = {
 		}
 		
 		var label = o.ucfirst ? ucFirst(item.getLabel()) : item.getLabel() ;
+		if ( o.label !== undefined ) label = o.label ;
 		if ( label == q ) { // No "common" label, pick one
 			if ( undefined !== item.raw && undefined !== item.raw.labels ) {
 				$.each ( item.raw.labels , function ( k , v ) { label = v.value ; return false } ) ;
