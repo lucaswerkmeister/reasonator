@@ -452,6 +452,16 @@ reasonator_types.push ( {
 					} ) ;
 				}
 
+				this.simpleList = function ( d , start , end ) {
+					this.listSentence ( {
+						data : d ,
+						start : function() { h.push ( { label:start } ) } ,
+						item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+						item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+						end : function() { h.push ( { label:end } ) }
+					} ) ;
+				}
+
 				this.listSentence = function  ( o ) {
 					if ( o.data === undefined ) o.data = [] ;
 					if ( o.data.length == 0 ) return ;
@@ -491,7 +501,7 @@ reasonator_types.push ( {
 			language_specs['en'] = new lang_class ;
 
 			language_specs['en'].employers = function ( d ) {
-				lang_spec.listSentence ( {
+				this.listSentence ( {
 					data : d ,
 					start : function() { h.push ( { label:s_he+' worked for ' } ) } ,
 					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
@@ -504,20 +514,33 @@ reasonator_types.push ( {
 			}
 
 			language_specs['en'].position = function ( d ) {
-				lang_spec.listSentence ( {
+				this.listSentence ( {
 					data : d ,
 					start : function() { h.push ( { label:s_he+' was'+(is_dead?'':'/is')+' ' } ) } ,
 					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
 					date_from : function(cb) { h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 					date_to : function(cb) { h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
 //					qualifiers : { job:function(qv){h.push ( { before:'as ' , q:qv[0] , after:' ' } )} } ,
-//					item_end : function(num,sep) { h.push ( { label:sep+(num+1<d.length?'for ':'') } ) } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
+					end : function() { h.push ( { label:'. ' } ) }
+				} ) ;
+			}
+
+			language_specs['en'].member = function ( d ) {
+				this.listSentence ( {
+					data : d ,
+					start : function() { h.push ( { label:s_he+' was'+(is_dead?'':'/is')+' a member of ' } ) } ,
+					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
+					date_from : function(cb) { h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
+					date_to : function(cb) { h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
+//					qualifiers : { job:function(qv){h.push ( { before:'as ' , q:qv[0] , after:' ' } )} } ,
+					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
 					end : function() { h.push ( { label:'. ' } ) }
 				} ) ;
 			}
 
 			language_specs['en'].alma = function ( d ) {
-				lang_spec.listSentence ( {
+				this.listSentence ( {
 					data : d ,
 					start : function() { h.push ( { label:s_he+' studied at ' } ) } ,
 					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
@@ -528,18 +551,13 @@ reasonator_types.push ( {
 				} ) ;
 			}
 			
-			language_specs['en'].field = function ( d ) {
-				lang_spec.listSentence ( {
-					data : d ,
-					start : function() { h.push ( { label:his_er+' field of work include'+(is_dead?'d':'s')+' ' } ) } ,
-					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
-					item_end : function(num,sep) { h.push ( { label:sep } ) } ,
-					end : function() { h.push ( { label:'. ' } ) }
-				} ) ;
-			}
+			language_specs['en'].field = function ( d ) { this.simpleList ( d , his_er+' field of work include'+(is_dead?'d':'s')+' ' , '. ' ) ; }
+			language_specs['en'].cause_of_death = function ( d ) { this.simpleList ( d , 'of ' , ' ' ) ; }
+			language_specs['en'].killer = function ( d ) { this.simpleList ( d , 'by ' , ' ' ) ; }
+			language_specs['en'].sig_event = function ( d ) { this.simpleList ( d , s_he+' played a role in ' , '.' ) ; }
 
 			language_specs['en'].spouses = function ( d ) {
-				lang_spec.listSentence ( {
+				this.listSentence ( {
 					data : d ,
 					start : function() { h.push ( { label:s_he+' married ' } ) } ,
 					item_start : function(cb) { cb(); h.push ( { label:' ' } ) } ,
@@ -551,7 +569,7 @@ reasonator_types.push ( {
 			}
 
 			language_specs['en'].children = function ( d ) {
-				lang_spec.listSentence ( {
+				this.listSentence ( {
 					data : d ,
 					start : function() { h.push ( { label:his_er+' children include ' } ) } ,
 					item_start : function(cb) { cb() } ,
@@ -567,7 +585,7 @@ reasonator_types.push ( {
 				this.listNationalities() ;
 				this.listOccupations() ;
 				h.push ( { label:'. ' } ) ;
-				h.push ( { label:'<br/>' } ) ;
+				if ( h.length == 3 ) h = [] ; // No information, skip it.
 			}
 
 
@@ -580,6 +598,9 @@ reasonator_types.push ( {
 
 			// First sentence
 			lang_spec.firstSentence () ;
+			var sig_event = getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
+			lang_spec.sig_event ( sig_event ) ;
+			h.push ( { label:'<br/>' } ) ;
 		
 			
 			// Birth/parents
@@ -599,18 +620,20 @@ reasonator_types.push ( {
 					if ( father !== undefined && mother !== undefined ) h.push ( { label:'and ' } ) ;
 					if ( mother !== undefined ) addPerson ( mother , ' ' ) ;
 				}
+				h.push ( { label:'. ' } ) ;
+				h.push ( { label:'<br/>' } ) ;
 			}
-			h.push ( { label:'. ' } ) ;
-			h.push ( { label:'<br/>' } ) ;
 			
 			// Work
 			var alma = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P69'] } ) ;
 			var field = getRelatedItemsWithQualifiers ( { properties:['P136','P101'] } ) ;
 			var position = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P39'] } ) ;
+			var member = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P463'] } ) ;
 			var employers = getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P108'],qualifiers:{'job':['P794']} } ) ;
 			lang_spec.alma ( alma ) ;
 			lang_spec.field ( field ) ;
 			lang_spec.position ( position ) ;
+			lang_spec.member ( member ) ;
 			lang_spec.employers ( employers ) ;
 			h.push ( { label:'<br/>' } ) ;
 			
@@ -627,12 +650,17 @@ reasonator_types.push ( {
 			// Death
 			var deathdate = i.raw.claims['P570'] ;
 			var deathplace = i.raw.claims['P20'] ;
-			if ( deathdate !== undefined || deathplace !== undefined ) {
+			var deathcause = i.hasClaims('P509') ;
+			var killer = i.hasClaims('P157') ;
+			if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
 				h.push ( { label:s_he , after:' died ' } ) ;
+				if ( deathcause !== undefined ) lang_spec.cause_of_death ( getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
+				if ( killer !== undefined ) lang_spec.killer ( getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 				if ( deathdate !== undefined ) h.push ( renderDate(deathdate[0]) ) ;
 				if ( deathplace !== undefined ) addPlace ( { q:i.getClaimTargetItemID(deathplace[0]) , before:'in ' , after:' ' } ) ;
 				h.push ( { label:'. ' } ) ;
 			}
+			
 
 			var burialplace = i.raw.claims['P119'] ;
 			if ( burialplace !== undefined ) {
@@ -666,6 +694,7 @@ reasonator_types.push ( {
 				h2 = h2.replace ( /\s([.])/g , '.' ) ; // Space before punctuation
 				h2 = h2.replace ( /\s([,])/g , ',' ) ; // Space before punctuation
 				h2 = h2.replace ( /\.+/g , '.' ) ; // Multiple end dots
+				h2 = h2.replace ( /(<br\/>\s*)+/g , '<br/>' ) ; // Multiple new lines
 //				console.log ( h2 ) ;
 				
 				$('div.autodesc').html ( "<div class='lead' style='background-color:#EEE;padding:2px;text-align:left;font-size:12pt'>" + h2 + "</div>" ) ;
