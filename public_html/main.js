@@ -191,6 +191,13 @@ var reasonator = {
 	 * @type {boolean}
 	 */
 	use_long_autodesc : true ,
+	
+	/** Whether to use Flickr search to find free images.
+	 * @type {boolean}
+	 */
+	use_flickr : true ,
+
+	thumbsize : 160 ,
 
 	autodesc_items : [] ,
 	imgcnt : 0 ,
@@ -267,6 +274,7 @@ var reasonator = {
 		self.wd = new WikiData ;
 		self.do_maps = undefined ;
 		self.clear() ;
+		if ( '0' == $.cookie('use_flickr') ) self.use_flickr = false ;
 		
 		self.params = self.getUrlVars() ;
 		
@@ -284,8 +292,8 @@ var reasonator = {
 			} ) ;
 		}
 
-
 		var loadcnt = 3 ;
+		if ( self.use_flickr ) loadcnt++ ;
 		if ( self.params.live !== undefined ) self.use_wdq = false ;
 		if ( self.params.q !== undefined ) {
 			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
@@ -336,6 +344,14 @@ var reasonator = {
 			$.each ( d.query.languages , function ( k , v ) { self.all_languages[v.code] = v['*'] } ) ;
 			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 		} ) ;
+		
+		if ( self.use_flickr ) {
+			$.get ( '/reasonator/flickr.key' , function ( d ) {
+				self.flickr_key = $.trim ( d ) ;
+				loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+			} ) ;
+		}
+		
 	} ,
 
 	addToLoadLater : function ( the_q , qualifiers_only ) {
@@ -724,9 +740,10 @@ var reasonator = {
 		var self = this ;
 		var url = ( o.hash ) ? '#' : '?' ;
 		url += "q=" + self.q ;
-		var lang = '' ;
-		if ( self.params.lang != 'en' && self.params.lang != '' ) lang = "&lang=" + self.params.lang ;
-		if ( undefined !== o.lang ) lang = o.lang ;
+		var lang = self.wd.main_languages[0] ;
+
+		url += self.getLangParam(o.lang) ;
+		
 		if ( undefined === o.live ) o.live = self.params.live !== undefined ;
 		if ( o.live ) url += "&live" ;
 		return url ;
@@ -799,7 +816,7 @@ var reasonator = {
 									else if ( date.precision == 8 ) s = parseInt(year/10)+'0s' ;
 									else if ( date.precision == 7 ) s = parseInt(year/100)+'00s' ;
 									var url = '?date='+s ;
-									if ( self.getMainLang() != 'en' ) url += "&lang="+self.wd.main_languages[0] ;
+									url += self.getLangParam() ;
 									h2.push ( "<a href='"+url+"'>"+s+"</a>" ) ;
 								}
 							} ) ;
@@ -1016,7 +1033,7 @@ var reasonator = {
 				cluetipClass : 'myclue' ,
 				leftOffset : 0 ,
 				onShow : function(ct, ci) { // Outer/inner jQuery node
-				$('div.maps div').css({'z-index':0}) ; // 
+					$('div.maps div').css({'z-index':0}) ; // 
 					var title = decodeURIComponent(page).replace(/_/g,' ') ;
 					ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
 					var title_element = $(ct.find('h3')) ;
@@ -1066,6 +1083,7 @@ var reasonator = {
 			leftOffset : 0 ,
 //				delayedClose : 500 ,
 			onShow : function(ct, ci) { // Outer/inner jQuery node
+				$('div.maps div').css({'z-index':0}) ; // 
 				var a = $(this) ;
 				var qnum = a.attr('q').replace(/\D/g,'') ;
 				var q = 'Q'+qnum ;
@@ -1665,7 +1683,7 @@ var reasonator = {
 			h += "<a" ;
 			if ( internal ) {
 				classes.push ( 'q_internal' ) ;
-				h += " q='"+qnum+"' href='?lang="+self.wd.main_languages[0]+"&q=" + qnum + "'" ;
+				h += " q='"+qnum+"' href='?" + self.getLangParam() + "&q=" + qnum + "'" ;
 			} else {
 				classes.push ( 'wikidata' ) ;
 				h += " target='_blank' href='" + url + "'" ;
@@ -1835,7 +1853,7 @@ var reasonator = {
 //			if ( label == '' ) title = q ;
 			url += "q=" + q ;
 		}
-		if ( lang != 'en' ) url += "&lang="+lang ;
+		url += self.getLangParam(o.lang) ;
 		return url ;
 	} ,
 	
@@ -1977,11 +1995,11 @@ var reasonator = {
 			
 				if ( offset != 0 || data.query.searchinfo.totalhits > cnt ) {
 					var x = [] ;
-					var l = self.params.lang || 'en' ;
+//					var l = self.params.lang || 'en' ;
 					for ( var i = 0 ; i < data.query.searchinfo.totalhits ; i += 50 ) {
 						var t = (i+50>data.query.searchinfo.totalhits) ? data.query.searchinfo.totalhits : i+50 ;
 						t = (i+1) + "&ndash;" + t ;
-						if ( i != offset ) t = "<a href='?lang="+l+"&offset="+i+"&find="+escape(s)+"'>" + t + "</a>" ;
+						if ( i != offset ) t = "<a href='?"+self.getLangParam()+"&offset="+i+"&find="+escape(s)+"'>" + t + "</a>" ;
 						else t = "<b>" + t + "</b>" ;
 						x.push ( t ) ;
 					}
@@ -2163,6 +2181,14 @@ var reasonator = {
 		} ) ;
 	} ,
 	
+	getLangParam : function ( l ) {
+		var self = this ;
+		if ( l == undefined ) l = self.wd.main_languages[0] ;
+		var m = ($.cookie('preferred_languages')||'').match ( /^([^,]+)/ ) ;
+		if ( m != null && l == m[1] ) return '' ;
+		if ( l == 'en' ) return '' ;
+		return '&lang=' + l ;
+	} ,
 	
 	loadRandomItem : function () {
 		var self = this ;
@@ -2182,9 +2208,7 @@ var reasonator = {
 					self.q = q ;
 					self.reShow() ;
 				} else {
-					var l = self.wd.main_languages[0] ;
-					var url = "?q=" + q ;
-					if ( l != 'en' ) url += "&lang=" + l ;
+					var url = "?q=" + q + self.getLangParam() ;
 					window.location = url ;
 				}
 			} ) ;
@@ -2209,19 +2233,22 @@ var reasonator = {
 				return ;
 			}
 		}
-		var ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)-(\d\d)$/ ) ;
-		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)-(\d\d)$/ ) ;
-		if ( ymd == null ) ymd = self.date.match ( /^(\d\d\d\d)$/ ) ;
-		if ( ymd == null ) { // TODO show error
-			return ;
-		}
-		
-		var precision = ymd[3]===undefined?(ymd[2]===undefined?9:10):11 ;
 
 		$('#actual_content').show() ;
 		$('#main').show() ;
 		$('#main_content_sub').show() ;
 		$('#main_content').show() ;
+
+		var ymd = self.date.match ( /^(-\d{1,4})-(\d\d)-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(-\d{1,4})-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(-\d{1,4})$/ ) ;
+		if ( ymd == null || ymd[1] < 0 ) { // TODO show error
+			$('#main').html ( "Apologies, dates before year 1 C.E. do not work correctly yet." ) ;
+			return ;
+		}
+		
+		var precision = ymd[3]===undefined?(ymd[2]===undefined?9:10):11 ;
+
 		$('#actual_content div.main').show().html ( 
 			"<table style='width:100%'><tbody><tr><td valign='top'>" + 
 			self.t('loading') + "</td><td>" + 
@@ -2451,11 +2478,16 @@ var reasonator = {
 			$('input[name="lang"]').val ( self.params.lang ) ;
 			var l = self.params.lang.split(',').reverse() ;
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
+		} else if ( undefined !== $.cookie('preferred_languages') ) {
+//			console.log ( $.cookie('preferred_languages') ) ;
+			var l = $.cookie('preferred_languages').split(',').reverse() ;
+			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		
 		$('#btn_search').text(self.t('find')) ;
 		$('#edit_interface_link').text ( self.t('translate_interface') ) ;
 		$('#aux_dropdown_button_label').text ( 'Other' ) ;
+		$('#personal_settings').click ( reasonator.personalSettings ) ;
 		
 		$.each ( [
 			['btn_search','find'] ,
@@ -2709,6 +2741,7 @@ var reasonator = {
 	 */
 	checkWikipediaImages : function () {
 		var self = this ;
+		if ( self.isNonContentPage ( self.q ) ) return ; // Don't bother for categories etc.
 		var has_main_image = false ;
 		$.each ( self.mm_load , function ( k , v ) {
 			if ( v.id != 'div.main_image' ) return ;
@@ -2721,9 +2754,10 @@ var reasonator = {
 		var links = i.getWikiLinks() ;
 		var queries = [] ;
 		$.each ( links , function ( k , v ) {
+			if ( k == 'commonswiki' ) return ;
 			var m = k.match ( /^(.+)wiki$/ ) ;
 			if ( m == null ) return ; // Wikipedias only, for now
-			queries.push ( { lang:m[1] , title:v.title } ) ;
+			queries.push ( { lang:m[1].replace(/_/g,'-') , title:v.title } ) ;
 		} ) ;
 		
 		var image_props = [ 'P18' , 'P94' , 'P41' , 'P242' , 'P158' , 'P109' , 'P154' , 'P10' ] ;
@@ -2733,12 +2767,18 @@ var reasonator = {
 			'Copris lunaris. MHNT.jpg',
 			'951 Gaspra.jpg',
 			'Football France.png',
-			'Earth Eastern Hemisphere.jpg'
+			'Earth Eastern Hemisphere.jpg',
+			'Basketball.png'
 		] ;
 		
 		var min_file_size = 80000 ; // Min bytes for a file to show; excludes many icons
-		var thumbsize = 160 ;
 		var images = {} ; // This will become an array later!
+		
+		$('div.main_image').html ( "<div id='images_commons'></div><div id='images_flickr'></div>" ) ;
+		$('#images_commons').html ( "<small><i>" + self.t('looking4images_wiki') + "</i></small>" ) ;
+		if ( self.flickr_key ) self.checkFlickr() ;
+		
+		if ( queries.length == 0 ) $('#images_commons').html ( '' ) ;
 		
 		function addImage ( iid ) {
 			var prop = $("input:radio[name=use_image_prop]:checked").val() ;
@@ -2778,9 +2818,9 @@ var reasonator = {
 			h += '<div class="modal-body" style="max-height:600px;overflow:auto">' ;
 			
 			$.each ( images , function ( iid , i ) {
-				var off = Math.floor((thumbsize-i.thumbheight)/2) ;
-				h += "<div iid='"+iid+"' style='text-align:center;vertical-align:top;display:inline-block;width:"+thumbsize+"px;height:"+(thumbsize+20)+"px;margin:5px' class='addimage_thumbnail_container'>" ;
-				h += "<div style='padding-top:"+off+"px;padding-bottom:"+(thumbsize-off-i.thumbheight)+"px'><a class='add_image' href='#' iid='"+iid+"'>" ;
+				var off = Math.floor((self.thumbsize-i.thumbheight)/2) ;
+				h += "<div iid='"+iid+"' style='text-align:center;vertical-align:top;display:inline-block;width:"+self.thumbsize+"px;height:"+(self.thumbsize+20)+"px;margin:5px' class='addimage_thumbnail_container'>" ;
+				h += "<div style='padding-top:"+off+"px;padding-bottom:"+(self.thumbsize-off-i.thumbheight)+"px'><a class='add_image' href='#' iid='"+iid+"'>" ;
 				h += "<img style='width:"+i.thumbwidth+"px;height:"+i.thumbheight+"px' src='"+i.thumburl+"' border=0 /></a></div>" ;
 				h += "<div>"+i.usage_counter+"&times; (<a target='_blank' href='"+i.descriptionurl+"'>"+self.t('commons')+"</a>)</div>" ;
 				h += "</div>" ;
@@ -2834,15 +2874,27 @@ var reasonator = {
 					return a.usage_counter < b.usage_counter ? 1 : -1 ;
 				}
 			} ) ;
-			if ( images.length == 0 ) return ;
+			if ( images.length == 0 ) {
+				$('#images_commons').html ( '' ) ;
+				return ;
+			}
 			
 			var txt = self.t('add_wikipedia_images') ;
 			var h = "<div style='text-align:center;margin:20px'><a href='#'>"+txt+"</a></div>" ;
-			$('div.main_image').html ( h ) ;
-			$('div.main_image a').click ( showImageCandidates ) ;
+			$('#images_commons').html ( h ) ;
+			$('#images_commons a').click ( showImageCandidates ) ;
 		}
+
 		
 		var loaded = 0 ;
+		function loadStatus () {
+			return ; // Comment out this line for testing image candidate loading
+			var txt = "Checked " + loaded + " of " + queries.length + " Wikipedias for images" ;
+			var h = "<div style='text-align:center;margin:20px'>"+txt+"</div>" ;
+			$('#images_commons').html ( h ) ;
+		}
+		
+		loadStatus() ;
 		$.each ( queries , function ( dummy , v ) {
 			$.getJSON ( '//'+v.lang+'.wikipedia.org/w/api.php?callback=?' , {
 				action:'query',
@@ -2851,8 +2903,8 @@ var reasonator = {
 				titles:v.title,
 				gimlimit:20,
 				iiprop:'url|size',
-				iiurlwidth:thumbsize,
-				iiurlheight:thumbsize,
+				iiurlwidth:self.thumbsize,
+				iiurlheight:self.thumbsize,
 				format:'json'
 			} , function ( d ) {
 				$.each ( ((d.query||{}).pages||[]) , function ( dummy , image ) {
@@ -2867,10 +2919,184 @@ var reasonator = {
 					else images[o.title].usage_counter++ ;
 				} ) ;
 				loaded++ ;
+				loadStatus() ;
+				if ( loaded == queries.length ) allLoaded() ;
+			} ) .fail(function() {
+				loaded++ ;
+				loadStatus() ;
 				if ( loaded == queries.length ) allLoaded() ;
 			} ) ;
 		} ) ;
 		
+	} ,
+	
+	checkFlickr : function () {
+		var self = this ;
+		var title = $('#main_title_label').text().replace ( /\(.+$/ , '' ) ;
+		$('#images_flickr').html ( "<small><i>" + self.t('looking4images_flickr') + "</i></small>" ) ;
+
+		function showImageCandidates ( images ) {
+			var diag_title = self.t('add_image_flickr') ;
+			var diag_desc = self.t('has_no_image_flickr') ;
+			diag_desc = diag_desc.replace ( /\$1/ , images.length ) ;
+			
+			$('#addImagesDialog').remove() ;
+			
+			var h = '' ;
+			h += '<div id="addImagesDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+			h += '<div class="modal-dialog"><div class="modal-content">' ;
+			h += '<div class="modal-header">' ;
+			h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
+			h += '<h3 id="languageDialogLabel">' + diag_title + '</h3>' ;
+			h += diag_desc ;
+			h += '</div>' ;
+			h += '<div class="modal-body" style="max-height:600px;overflow:auto">' ;
+			
+			$.each ( images , function ( iid , i ) {
+			
+				if ( i.width_s > self.thumbsize || i.height_s > self.thumbsize ) {
+					if ( i.width_s > i.height_s ) {
+						i.height_s = Math.floor ( i.height_s * self.thumbsize / i.width_s ) ;
+						i.width_s = self.thumbsize ;
+					} else {
+						i.width_s = Math.floor ( i.width_s * self.thumbsize / i.height_s ) ;
+						i.height_s = self.thumbsize ;
+					}
+				}
+			
+				var flickr_page = 'https://secure.flickr.com/photos/'+i.owner+'/'+i.id+'/' ;
+				var off = Math.floor((self.thumbsize-i.height_s)/2) ;
+				h += "<div iid='"+iid+"' style='text-align:center;vertical-align:top;display:inline-block;width:"+self.thumbsize+"px;height:"+(self.thumbsize+20)+"px;margin:5px' class='addimage_thumbnail_container'>" ;
+				h += "<div style='padding-top:"+off+"px;padding-bottom:"+(self.thumbsize-off-i.height_s)+"px'><a class='add_image' href='/flickr2commons/?photoid="+i.id+"' target='_blank' iid='"+iid+"'>" ;
+				h += "<img style='width:"+i.width_s+"px;height:"+i.height_s+"px' src='"+i.url_s+"' border=0 /></a></div>" ;
+				h += "<div>(<a target='_blank' href='"+flickr_page+"'>Flickr</a>)</div>" ;
+				h += "</div>" ;
+			} ) ;
+			
+			h += '</div>' ;
+/*			h += '<div class="modal-header">' ;
+			h += "Set as: <form class='form-inline'>" ;
+			$.each ( image_props , function ( dummy , prop ) {
+				h += " <label><input type='radio' name='use_image_prop' value='"+prop+"' " ;
+				if ( dummy == 0 ) h += "checked" ;
+				h += "/>&nbsp;" + self.wd.items[prop].getLabel() + "</label>" ;
+			} ) ;
+			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+self.t('reload_page')+"</a></span>" ;
+			h += "</form>" ;
+			h += '</div>' ;*/
+			h += '</div></div>' ;
+			h += '</div>' ;
+		
+			$('body').append ( h ) ;
+
+			$('#addImagesDialog a.add_image').each ( function () {
+				var a = $(this) ;
+				var id = a.attr('iid') ;
+				var i = images[id] ;
+				a.attr({title:i.title}) ;
+/*				a.click ( function () {
+					console.log ( images[id] ) ;
+					return false ;
+				} ) ;*/
+			} ) ;
+			
+			if ( typeof $.modal === undefined ) jQuery.noConflict() ;
+			$('#addImagesDialog').modal({show:true,width:700}) ;
+			return false ;
+		}
+
+		$.getJSON ( 'https://api.flickr.com/services/rest/?jsoncallback=?' , {
+			method:'flickr.photos.search',
+			api_key:self.flickr_key,
+			text:title,
+			license:'4,5,7,8',
+			extras:'description,url_s',
+			format:'json'
+		} , function ( d ) {
+			if ( d.photos.pages == 0 ) { // No free images on flickr either
+				$('#images_flickr').html ( '' ) ;
+				return ;
+			}
+			var txt = self.t('add_flickr_images') ;
+			var h = "<div style='text-align:center;margin:20px'><a href='#'>"+txt+"</a></div>" ;
+			$('#images_flickr').html ( h ) ;
+			$('#images_flickr a').click ( function () {
+				showImageCandidates ( d.photos.photo ) ;
+				return false ;
+			} ) ;
+		} ) ;
+	} ,
+	
+	personalSettings : function () {
+		var self = reasonator ;
+		var diag_title = "Personal settings" ;
+		var diag_desc = "Here, you can import your Babel settings from Wikidata and use other settings.<br/>Data will be stored on this computer as cookies." ;
+
+		$('#personalSettingsDialog').remove() ;
+		
+		var h = '' ;
+		h += '<div id="personalSettingsDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+		h += '<div class="modal-dialog"><div class="modal-content">' ;
+		h += '<div class="modal-header">' ;
+		h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
+		h += '<h3 id="languageDialogLabel">' + diag_title + '</h3>' ;
+		h += diag_desc ;
+		
+		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='Your Wikidata user name' style='width:300px' /> <button id='wdun_update'>Update languages from Babel template</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='Your preferred languages, e.g. en,de' style='width:300px' /> <button id='pl_update'>Update languages</button></form></div>" ;
+		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> Automatically search Flickr for images on items without image</label></form></div>" ;
+		
+		h += '</div>' ;
+		h += '<div class="modal-body" style="max-height:600px;overflow:auto">' ;
+		h += '</div></div></div></div>' ;
+		
+		function updatePreferredLanguages () {
+			var pl = ($('#preferred_languages').val()+'').replace(/\s/g,'').toLowerCase().replace(/\bauto[a-z]+/g,'').split(/,/g) ;
+			pl = pl.join(',') ;
+			$.cookie('preferred_languages',pl) ;
+			$('#preferred_languages').val(pl) ;
+			return false ;
+		}
+		
+		function updateFromUserPage () {
+			var username = $('#wikidata_user_name').val() ;
+			$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+				action:'parse',
+				page:'User:'+username,
+				format:'json',
+				prop:'wikitext'
+			} , function ( d ) {
+				if ( undefined !== d.error ) {
+					alert ( d.error.info ) ;
+					return ;
+				}
+				$.cookie ( 'wikidata_user_name' , username ) ;
+				var text = d.parse.wikitext['*'].replace ( /\s/ , ' ' ) ; // Newlines, just in case...
+				var m = text.match ( /\{\{\#babel:(.+?)\}\}/i ) ;
+				if ( m == null ) {
+					alert ( "Could not seed your preferred language list from your Babel template" ) ;
+					return false ;
+				}
+				var babel = m[1].replace(/-\d+/g,'').split ( /\|/g ) ;
+				$('#preferred_languages').val ( babel.join(',') ) ;
+				updatePreferredLanguages() ;
+			} ) ;
+			return false ;
+		}
+
+		$('body').append ( h ) ;
+		$('#wikidata_user_name').val ( $.cookie('wikidata_user_name')||'' ) .focus() ;
+		$('#preferred_languages').val ( $.cookie('preferred_languages')||'' ) ;
+		
+		if ( typeof $.cookie('use_flickr') == 'undefined' ) { console.log(self.use_flickr); $.cookie('use_flickr',self.use_flickr?1:0) ; }
+		if ( 1 == $.cookie('use_flickr') ) $('#use_flickr').prop('checked', true) ;
+		$('#use_flickr').change ( function () { $.cookie('use_flickr',$('#use_flickr').is(":checked")?1:0) } ) ;
+		
+		$('#wdun_update').click ( updateFromUserPage ) ;
+		$('#pl_update').click ( updatePreferredLanguages ) ;
+		if ( typeof $.modal === undefined ) jQuery.noConflict() ;
+		$('#personalSettingsDialog').modal ( { show:true } ) ;
+		return false ;
 	} ,
 
 
