@@ -26,10 +26,10 @@ function lang_class () {
 	}
 
 	this.renderDate = function ( claim , o ) {
+		var me = this ;
 		if ( o === undefined ) o = {} ;
 		var ret = { after:' ' } ;
 		var d = (claim.time===undefined) ? (claim.datavalue===undefined?this.i.getClaimDate(claim):claim.datavalue.value) : claim ;
-		var month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ;
 
 		var pre = d.time.substr(0,1) == '+' ? 1 : -1 ;
 		var dp = d.time.substr(1).split(/[-T:Z]/) ;
@@ -48,11 +48,11 @@ function lang_class () {
 			if ( !o.no_prefix ) ret.before = 'in ' ;
 		} else if ( d.precision == 10 ) {
 			iso = year*pre + '-' + month ;
-			ret.label = month_label[month*1] + ' ' + year ;
+			ret.label = me.month_label[month*1] + ' ' + year ;
 			if ( !o.no_prefix ) ret.before = 'in ' ;
 		} else if ( d.precision == 11 ) {
 			iso = year*pre + '-' + month + '-' + day ;
-			ret.label = month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+			ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
 			if ( !o.no_prefix ) ret.before = 'on ' ;
 		}
 		if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
@@ -316,6 +316,7 @@ language_specs['en'] = new lang_class ;
 
 language_specs['en'].setup = function () {
 	this.init() ;
+	this.month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ; // First one needs to be empty!!
 	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
 	this.s_he = (this.is_male?'He':'She') ;
 	this.his_er = (this.is_male?'His':'Her') ;
@@ -471,6 +472,7 @@ language_specs['nl'] = new lang_class ;
 
 language_specs['nl'].setup = function () {
 	this.init() ;
+	this.month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ; // First one needs to be empty!!
 	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
 	this.s_he = (this.is_male?'He':'She') ;
 	this.his_er = (this.is_male?'His':'Her') ;

@@ -2210,25 +2210,43 @@ var reasonator = {
 	
 	loadRandomItem : function () {
 		var self = this ;
+		var pl = self.preferred_languages.split(',') ;
 		$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , { // Get site info (languages)
 			action:'query',
 			list:'random',
+			rnlimit:10,
 			rnnamespace:'0',
 			format:'json'
 		} , function ( d ) {
-			var q = d.query.random[0].title ;
-			self.wd.getItemBatch ( [q] , function () {
-				if ( self.isNonContentPage ( q ) ) {
-					self.loadRandomItem() ;
-					return ;
-				}
-				if ( self.use_js_refresh ) {
-					self.q = q ;
-					self.reShow() ;
-				} else {
+			var filter = ($.cookie('random_page_language')||'all') ;
+			var qs = [] ;
+			$.each ( d.query.random , function ( k , v ) { qs.push ( v.title ) } ) ;
+
+			self.wd.getItemBatch ( qs , function () {
+				$.each ( qs , function ( dummy , q ) {
+
+					if ( self.isNonContentPage ( q ) ) return ;
+					var i = self.wd.items[q] ;
+					
+					var usable = false ;
+					if ( filter == 'all' ) usable = true ;
+					else if ( filter == 'with_lang' ) {
+						$.each ( pl , function ( dummy2 , l ) { if ( undefined !== (i.raw.labels||{})[l] ) usable = true ; } ) ;
+					} else if ( filter == 'without_lang' ) {
+						var cnt = 0 ;
+						$.each ( pl , function ( dummy2 , l ) { if ( undefined === (i.raw.labels||{})[l] ) cnt++ ; } ) ;
+						if ( cnt == pl.length ) usable = true ;
+					}
+					if ( !usable ) return ;
+					
+//					console.log ( i.raw.labels ) ; return ;
+					
 					var url = "?q=" + q + self.getLangParam() ;
 					window.location = url ;
-				}
+					return false ;
+				} ) ;
+				
+				self.loadRandomItem() ; // Play it again, Sam!
 			} ) ;
 		} ) ;
 	} ,
@@ -3076,8 +3094,13 @@ var reasonator = {
 	personalSettings : function () {
 		var self = reasonator ;
 		var h = '' ;
-		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='"+self.t('ps_un_placeholder')+"' style='width:300px' /> <button id='wdun_update'>"+self.t('ps_update_from_babel')+"</button></form></div>" ;
-		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='"+self.t('ps_pl_placeholder')+"' style='width:300px' /> <button id='pl_update'>"+self.t('ps_update_languages')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='"+self.t('ps_un_placeholder')+"' style='width:250px' /> <button id='wdun_update'>"+self.t('ps_update_from_babel')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='"+self.t('ps_pl_placeholder')+"' style='width:250px' /> <button id='pl_update'>"+self.t('ps_update_languages')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'>Random page shows " ;
+		h += "<label><input type='radio' name='random_page_language' value='all' /> all</label>, <i>or,</i> only " ;
+		h += "<label><input type='radio' name='random_page_language' value='with_lang' /> with</label> " ;
+		h += "<label><input type='radio' name='random_page_language' value='without_lang' /> without</label> a label in your languages" ;
+		h += "</form></div>" ;
 		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> "+self.t('ps_flickr')+"</label></form></div>" ;
 		self.setupDialog ( { title:self.t('ps_title') , desc:self.t('ps_desc') , h:h , id:'personalSettingsDialog' } ) ;
 		
@@ -3122,10 +3145,13 @@ var reasonator = {
 		$ = jQuery ;
 		$('#wikidata_user_name').val ( $.cookie('wikidata_user_name')||'' ) .focus() ;
 		$('#preferred_languages').val ( $.cookie('preferred_languages')||'' ) ;
+
+		$('input:radio[name=random_page_language][value='+($.cookie('random_page_language')||'all')+']').prop('checked', true);
 		
 		if ( typeof $.cookie('use_flickr') == 'undefined' ) { console.log(self.use_flickr); $.cookie('use_flickr',self.use_flickr?1:0) ; }
 		if ( 1 == $.cookie('use_flickr') ) $('#use_flickr').prop('checked', true) ;
 		$('#use_flickr').change ( function () { $.cookie('use_flickr',$('#use_flickr').is(":checked")?1:0) } ) ;
+		$('input:radio[name=random_page_language]').change ( function () { $.cookie('random_page_language',$(this).attr('value')) } ) ;
 		
 		$('#wdun_update').click ( updateFromUserPage ) ;
 		$('#pl_update').click ( updatePreferredLanguages ) ;
