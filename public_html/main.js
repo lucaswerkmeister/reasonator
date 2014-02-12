@@ -197,6 +197,8 @@ var reasonator = {
 	 */
 	use_flickr : true ,
 
+	use_property_suggest : false , // For now
+
 	thumbsize : 160 ,
 
 	autodesc_items : [] ,
@@ -291,6 +293,8 @@ var reasonator = {
 				return false ;
 			} ) ;
 		}
+		
+		self.preferred_languages = ($.cookie('preferred_languages')||'') ;
 
 		var loadcnt = 3 ;
 		if ( self.use_flickr ) loadcnt++ ;
@@ -423,6 +427,7 @@ var reasonator = {
 		$.each ( reasonator_types , function ( dummy , type ) {
 			if ( !type.detect() ) return ;
 			self.main_type = type.type ;
+			self.main_type_object = type ;
 			type.load() ;
 			return false ;
 		} ) ;
@@ -970,6 +975,10 @@ var reasonator = {
 			$('#actual_content div.sidebar').append ( h ) ;
 		}
 		
+		if ( self.use_property_suggest ) {
+			self.suggestProperties() ;
+		}
+		
 		self.showQRcode() ;
 		self.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
@@ -1062,6 +1071,15 @@ var reasonator = {
 		} ) ;
 	} ,
 	
+	hasNoLabelInMainLanguage : function ( item ) {
+		var self = this ;
+		var ml = self.getMainLang() ;
+		if ( item.raw === undefined ) return true ;
+		if ( item.raw.labels === undefined ) return true ;
+		if ( item.raw.labels[ml] === undefined ) return true ;
+		return false ;
+	} ,
+	
 	addHoverboxes : function  ( selector ) {
 		if ( selector === undefined ) selector = '' ;
 		var self = this ;
@@ -1107,7 +1125,7 @@ var reasonator = {
 				h += "</div>" ;
 				
 				
-				if ( dl != pl ) {
+				if ( self.hasNoLabelInMainLanguage(i) ) {
 					h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
 					h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
 					h += "</i>" ;
@@ -1696,8 +1714,8 @@ var reasonator = {
 		
 			if ( self.mark_missing_labels ) {
 				var dl = item.getLabelDefaultLanguage() ;
-				var param_lang = (self.params.lang||'en').split(',')[0] ;
-				if ( dl != param_lang ) {
+				var param_lang = self.getMainLang() ;//(self.params.lang||'en').split(',')[0] ;
+				if ( self.hasNoLabelInMainLanguage ( item ) ) {
 					h += " style='border-bottom:1px dotted red'" ;
 				}
 			}
@@ -2184,7 +2202,7 @@ var reasonator = {
 	getLangParam : function ( l ) {
 		var self = this ;
 		if ( l == undefined ) l = self.wd.main_languages[0] ;
-		var m = ($.cookie('preferred_languages')||'').match ( /^([^,]+)/ ) ;
+		var m = self.preferred_languages.match ( /^([^,]+)/ ) ;
 		if ( m != null && l == m[1] ) return '' ;
 		if ( l == 'en' ) return '' ;
 		return '&lang=' + l ;
@@ -2239,10 +2257,11 @@ var reasonator = {
 		$('#main_content_sub').show() ;
 		$('#main_content').show() ;
 
-		var ymd = self.date.match ( /^(-\d{1,4})-(\d\d)-(\d\d)$/ ) ;
-		if ( ymd == null ) ymd = self.date.match ( /^(-\d{1,4})-(\d\d)$/ ) ;
-		if ( ymd == null ) ymd = self.date.match ( /^(-\d{1,4})$/ ) ;
+		var ymd = self.date.match ( /^(-{0,1}\d{1,4})-(\d\d)-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(-{0,1}\d{1,4})-(\d\d)$/ ) ;
+		if ( ymd == null ) ymd = self.date.match ( /^(-{0,1}\d{1,4})$/ ) ;
 		if ( ymd == null || ymd[1] < 0 ) { // TODO show error
+		console.log ( ymd ) ;
 			$('#main').html ( "Apologies, dates before year 1 C.E. do not work correctly yet." ) ;
 			return ;
 		}
@@ -2486,6 +2505,7 @@ var reasonator = {
 		
 		$('#btn_search').text(self.t('find')) ;
 		$('#edit_interface_link').text ( self.t('translate_interface') ) ;
+		$('#personal_settings').text ( self.t('ps_title') ) ;
 		$('#aux_dropdown_button_label').text ( 'Other' ) ;
 		$('#personal_settings').click ( reasonator.personalSettings ) ;
 		
@@ -3027,33 +3047,46 @@ var reasonator = {
 		} ) ;
 	} ,
 	
-	personalSettings : function () {
-		var self = reasonator ;
-		var diag_title = "Personal settings" ;
-		var diag_desc = "Here, you can import your Babel settings from Wikidata and use other settings.<br/>Data will be stored on this computer as cookies." ;
-
+	setupDialog : function ( o ) {
+		var self = this ;
+		$('#'+o.id).remove() ;
 		$('#personalSettingsDialog').remove() ;
-		
 		var h = '' ;
-		h += '<div id="personalSettingsDialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
+		h += '<div id="' + o.id + '" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="languageDialogLabel" aria-hidden="true">' ;
 		h += '<div class="modal-dialog"><div class="modal-content">' ;
 		h += '<div class="modal-header">' ;
 		h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
-		h += '<h3 id="languageDialogLabel">' + diag_title + '</h3>' ;
-		h += diag_desc ;
-		
-		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='Your Wikidata user name' style='width:300px' /> <button id='wdun_update'>Update languages from Babel template</button></form></div>" ;
-		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='Your preferred languages, e.g. en,de' style='width:300px' /> <button id='pl_update'>Update languages</button></form></div>" ;
-		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> Automatically search Flickr for images on items without image</label></form></div>" ;
-		
+		h += '<h3 id="languageDialogLabel">' + o.title + '</h3>' ;
+		h += '<div>' + o.desc + '</div>' ;
 		h += '</div>' ;
 		h += '<div class="modal-body" style="max-height:600px;overflow:auto">' ;
-		h += '</div></div></div></div>' ;
+		h += o.h ;
+		h += '</div>' ;
+		if ( o.footer !== undefined ) {
+			h += '<div class="modal-footer">' ;
+			h += o.footer ;
+			h += '</div>' ;
+		}
+		h += '</div></div></div>' ;
+		$('body').append ( h ) ;
+		if ( typeof $.modal === undefined ) jQuery.noConflict() ;
+		$('#'+o.id).modal ( { show:true } ) ;
+	} ,
+	
+	personalSettings : function () {
+		var self = reasonator ;
+		var h = '' ;
+		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='"+self.t('ps_un_placeholder')+"' style='width:300px' /> <button id='wdun_update'>"+self.t('ps_update_from_babel')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='"+self.t('ps_pl_placeholder')+"' style='width:300px' /> <button id='pl_update'>"+self.t('ps_update_languages')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> "+self.t('ps_flickr')+"</label></form></div>" ;
+		self.setupDialog ( { title:self.t('ps_title') , desc:self.t('ps_desc') , h:h , id:'personalSettingsDialog' } ) ;
+		
 		
 		function updatePreferredLanguages () {
 			var pl = ($('#preferred_languages').val()+'').replace(/\s/g,'').toLowerCase().replace(/\bauto[a-z]+/g,'').split(/,/g) ;
 			pl = pl.join(',') ;
 			$.cookie('preferred_languages',pl) ;
+			self.preferred_languages = ($.cookie('preferred_languages')||'') ;
 			$('#preferred_languages').val(pl) ;
 			return false ;
 		}
@@ -3074,7 +3107,7 @@ var reasonator = {
 				var text = d.parse.wikitext['*'].replace ( /\s/ , ' ' ) ; // Newlines, just in case...
 				var m = text.match ( /\{\{\#babel:(.+?)\}\}/i ) ;
 				if ( m == null ) {
-					alert ( "Could not seed your preferred language list from your Babel template" ) ;
+					alert ( self.t('ps_babel_warning') ) ;
 					return false ;
 				}
 				var babel = m[1].replace(/-\d+/g,'').split ( /\|/g ) ;
@@ -3084,7 +3117,9 @@ var reasonator = {
 			return false ;
 		}
 
-		$('body').append ( h ) ;
+		
+		jQuery.noConflict() ;
+		$ = jQuery ;
 		$('#wikidata_user_name').val ( $.cookie('wikidata_user_name')||'' ) .focus() ;
 		$('#preferred_languages').val ( $.cookie('preferred_languages')||'' ) ;
 		
@@ -3094,10 +3129,118 @@ var reasonator = {
 		
 		$('#wdun_update').click ( updateFromUserPage ) ;
 		$('#pl_update').click ( updatePreferredLanguages ) ;
-		if ( typeof $.modal === undefined ) jQuery.noConflict() ;
-		$('#personalSettingsDialog').modal ( { show:true } ) ;
 		return false ;
 	} ,
+
+	enterQ : function ( o ) {
+		var self = this ;
+		if ( o === undefined ) o = {} ;
+		
+		var h = "" ;
+		
+		h += "<div>" ;
+		h += "<form class='form-inline'><input id='eq_search' style='width:400px' /><button id='eq_on_find' class='btn btn-primary'>" + self.t('find') + "</button></form>" ;
+		h += "<div style='max-height:400px;overflow:auto' id='eq_search_results'></div>" ;
+		h += "</div>" ;
+		
+		
+
+		self.setupDialog ( { title:'Set claim' , desc:'Set a claim for property '+o.prop , h:h , id:'enterQDialog' , footer:'Click on a search result to set it as a claim for '+o.prop } ) ;
+		
+		$('#eq_on_find').click ( function () {
+			var query = $('#eq_search').val() ;
+			$('#eq_search_results').html('') ;
+			$.getJSON ( '//www.wikidata.org/w/api.php?callback=?' , {
+				action : 'query' ,
+				list : 'search' ,
+				sroffset : 0 ,
+				srsearch : query ,
+				srnamespace : 0 ,
+				srlimit : 50 ,
+				format : 'json'
+			} , function ( d ) {
+				var qs = [] ;
+				$.each ( ((d.query||{}).search||{}) , function ( k , v ) { qs.push ( v.title ) } ) ;
+				self.wd.getItemBatch ( qs , function () {
+					var h = "<table class='table-striped table-condensed'><tbody>" ;
+					$.each ( ((d.query||{}).search||{}) , function ( k , v ) {
+						var i = self.wd.items[v.title] ;
+						h += "<tr>" ;
+						h += "<td><a href='#' class='eq_result q_internal' q='"+v.title+"'>" + i.getLabel() + "</a></td>" ;
+						h += "<td>" + i.getDesc() + "</td>" ;
+						h += "</tr>" ;
+					} ) ;
+					h += "</tbody></table>" ;
+					$('#eq_search_results').html(h) ;
+					$('#eq_search_results a.eq_result').click ( function () {
+						var q = $(this).attr('q') ;
+						console.log ( q ) ;
+						self.addClaimItemOauth ( self.q , o.prop , q ) ;
+						$('#enterQDialog').modal('hide') ;
+						return false ;
+					} ) ;
+				} ) ;
+//				console.log ( d ) ;
+				self.addHoverboxes ( '#enterQDialog' ) ;
+			} ) ;
+			return false ;
+		} ) ;
+		
+		$('#eq_search').focus() ;
+		
+		return false ;
+	} ,
+
+	suggestProperties : function () {
+		var self = this ;
+		var i = self.wd.items[self.q] ;
+		if ( i === undefined || i.raw === undefined || i.raw.claims === undefined ) return ;
+		if ( i.raw.claims['P31'] === undefined ) return ;
+		var io = i.getClaimItemsForProperty ( 'P31' , true ) ;
+		var query = [] ;
+		$.each ( io , function ( k , v ) { query.push ( '31:'+v.replace(/\D/g,'') ) } ) ;
+		query = 'claim[' + query.join(',') + ']' ;
+		$.getJSON ( '//tools.wmflabs.org/wikidata-todo/related_properties.php?callback=?' , {
+			q:query,
+			botmode:1
+		} , function ( d ) {
+			var pc = [] ;
+			var total ;
+			$.each ( (d||[]) , function ( k , v ) { if ( v.property == 'P31' ) total = v.cnt } ) ;
+			if ( total == undefined ) return ; // Huh?
+			$.each ( (d||[]) , function ( k , v ) {
+				if ( v.cnt < 10 ) return ; // Minor
+				if ( v.cnt * 100 / total < 10 ) return ; // At least n% of items should have this
+				if ( -1 != $.inArray ( v.property , ['P143','P248','P577','P31'] ) ) return ; // Useless/qualifier/source property
+				if ( undefined !== i.raw.claims[v.property] ) return ; // Had that
+				pc.push ( v.property ) ;
+			} ) ;
+			if ( pc.length == 0 ) return ; // None found
+			
+//			pc = pc.sort ( function ( a , b ) { return a.replace(/\D/g,'')*1 < b.replace(/\D/g,'')*1 } ) ;
+			self.wd.getItemBatch ( pc , function ( d ) {
+			
+				var h = "<div id='suggested_properties'>" ;
+				h += "<h2>Suggested properties</h2>" ;
+				h += "Other items of this instance type also have there properties:" ;
+				h += "<ul>" ;
+				$.each ( pc , function ( k , v ) {
+					h += '<li>' + self.getQlink ( v ) + " (<a href='#' class='suggested_property' p='" + v + "'>add</a> using <a href='/widar' class='external'>WiDaR</a>)</li>" ;
+				} ) ;
+				h += "</ul>" ;
+				h += "</div>" ;
+			
+				$('div.backlinks').after ( h ) ;
+				$('#suggested_properties a.suggested_property').click ( function () {
+					var p = $(this).attr('p') ;
+					self.enterQ ( { action:'add' , prop:p } ) ;
+				} ) ;
+				
+			} ) ;
+			
+		} ) ;
+	} ,
+	
 
 
 	fin : false
