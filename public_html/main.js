@@ -160,7 +160,7 @@ var reasonator = {
 	/** Whether to offer, in a hoverbox, the setting a missing item label via OAuth (WiDaR). Waiting for Wikidata API bugfix.
 	 * @type {boolean}
 	 */
-	allowLabelOauthEdit : false ,
+	allowLabelOauthEdit : true ,
 
 	/** Whether to show infoboxes when hovering over an item link.
 	 * @type {boolean}
@@ -979,9 +979,41 @@ var reasonator = {
 			self.suggestProperties() ;
 		}
 		
+		if ( self.wd.items[self.q].hasClaims ( 'P360' ) ) {
+			self.showListOf() ;
+		}
+		
 		self.showQRcode() ;
 		self.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
+	} ,
+	
+	showListOf : function () {
+		var self = this ;
+return; // DEACTIVATED DUE TO WDQ BUG
+		$('div.list_of').html ( "<i>Loading list of items in the 'list of' subclass trees...</i>" ) ;
+
+		var parts = [] ;
+		$.each ( self.wd.items[self.q].getClaimItemsForProperty('P360',true) , function ( dummy , q ) {
+			var qn = q.replace(/\D/g,'') ;
+			parts.push ( "(claim[31:(claim[279:"+qn+"])] or claim[31:"+qn+"])" ) ;
+		} ) ;
+		var query = parts.join ( ' and ' ) ;
+		$.getJSON ( self.wdq_url , {
+			q : query
+		} , function ( d ) {
+			self.wd.getItemBatch ( (d.items||[]) , function () {
+				var h = "<h2>" + "The list" + "</h2>" ;
+				h += "<ol>" ;
+				$.each ( (d.items||[]) , function ( k , v ) {
+					var q = 'Q' + v ;
+					h += "<li>" + self.getQlink ( q ) + "</li>" ;
+				} ) ;
+				h += "</ol>" ;
+				$('div.list_of').html ( h ) ;
+				self.addHoverboxes ( 'div.list_of' ) ;
+			} ) ;
+		} ) ;
 	} ,
 	
 	showQRcode : function () {
@@ -1084,7 +1116,8 @@ var reasonator = {
 		if ( selector === undefined ) selector = '' ;
 		var self = this ;
 		if ( !self.use_hoverbox ) return ;
-		var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
+//		var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
+		var pl = self.getMainLang() ;
 		wd_auto_desc.lang = pl ;
 		var icons = {
 			wiki:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/18px-Wikipedia-logo-v2.svg.png' ,
@@ -1130,7 +1163,8 @@ var reasonator = {
 					h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
 					h += "</i>" ;
 					if ( self.allowLabelOauthEdit ) {
-						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>Add a label</b></a> (via <a target='_blank' href='/widar'>WiDaR</a>)" ;
+						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>" ;
+						h += self.t('add_a_label') + "</b></a> (" + self.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar'>WiDaR</a>") + ")" ;
 					}
 					h += "</div>" ;
 				}
@@ -2218,6 +2252,8 @@ var reasonator = {
 			rnnamespace:'0',
 			format:'json'
 		} , function ( d ) {
+//			if ( typeof $.cookie === undefined )
+//			jQuery.noConflict() ;
 			var filter = ($.cookie('random_page_language')||'all') ;
 			var qs = [] ;
 			$.each ( d.query.random , function ( k , v ) { qs.push ( v.title ) } ) ;
