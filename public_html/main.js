@@ -896,6 +896,27 @@ var reasonator = {
 		label += " <small>(<a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/"+self.q+"'>"+self.q+"</a>)</small>" ;
 		
 		$('h1.main_title').html ( label ) ;
+		
+		var i = self.wd.items[self.q] ;
+		if ( self.hasNoLabelInMainLanguage(i) ) {
+			var lang = self.getMainLang() ;
+			$('#main_title_label').addClass ( 'missing_label' ) ;
+			if ( self.allowLabelOauthEdit ) {
+				$('#main_title_label').dblclick ( function () {
+					var current_label = $('#main_title_label').text() ;
+					current_label = current_label.replace ( /\s*\(.+$/ , '' ) ;
+					self.addLabelOauth ( self.q , lang , current_label , function ( new_label ) {
+						$('#main_title_label').text ( new_label ) ;
+						$('#main_title_label').removeClass ( 'missing_label' ) ;
+						$('#main_title_label').unbind('dblclick');
+						self.setDocTitle ( new_label ) ;
+					} ) ;
+				} ) ;
+				$('#main_title_label').attr ( { title:self.t('edit_title').replace(/\$1/g,self.all_languages[lang]) } ) ;
+			}
+		}
+		
+		
 		self.setDocTitle ( self.wd.items[self.q].getLabel() ) ;
 	} ,
 	
@@ -1116,7 +1137,6 @@ return; // DEACTIVATED DUE TO WDQ BUG
 		if ( selector === undefined ) selector = '' ;
 		var self = this ;
 		if ( !self.use_hoverbox ) return ;
-//		var pl = (self.params.lang||'en').split(',')[0] ; // Main parameter language
 		var pl = self.getMainLang() ;
 		wd_auto_desc.lang = pl ;
 		var icons = {
@@ -1159,11 +1179,11 @@ return; // DEACTIVATED DUE TO WDQ BUG
 				
 				
 				if ( self.hasNoLabelInMainLanguage(i) ) {
-					h += "<div style='font-size:9pt;border-bottom:1px dotted red'><i>" ;
+					h += "<div class='internal missing_label'><i>" ;
 					h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
 					h += "</i>" ;
 					if ( self.allowLabelOauthEdit ) {
-						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\");return false'><b>" ;
+						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\",\""+escattr(i.getLabel())+"\");return false'><b>" ;
 						h += self.t('add_a_label') + "</b></a> (" + self.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar'>WiDaR</a>") + ")" ;
 					}
 					h += "</div>" ;
@@ -1219,12 +1239,16 @@ return; // DEACTIVATED DUE TO WDQ BUG
 	} ,
 		
 	
-	addLabelOauth : function ( q , lang ) {
+	addLabelOauth : function ( q , lang , basis , callback ) {
 		var a = $('a.q_internal[q="'+q.replace(/\D/g,'')+'"]') ;
 		var self = reasonator ;
-		var label = prompt ( "New label in " + self.all_languages[lang] , "" ) ;
+		var label = prompt ( "New label in " + self.all_languages[lang] , (basis||"") ) ;
 		
 		if(label == "" || label == null) return ;
+		
+		var oauth_wait_dialog = "<div id='oauth_wait_dialog' style='width: 200px; position: absolute; top: 200px; background-color: #99C7FF; color: white; text-align: center; left: 50%; margin-left: -100px; padding: 5px;'>Editing via WiDaR...</div>" ;
+		$('#oauth_wait_dialog').remove() ;
+		$('body').append ( oauth_wait_dialog ) ;
 
 		$.getJSON ( self.widar_url , {
 			action:'set_label',
@@ -1233,10 +1257,11 @@ return; // DEACTIVATED DUE TO WDQ BUG
 			label:label,
 			botmode:1
 		} , function ( d ) {
-			console.log ( d ) ;
+			$('#oauth_wait_dialog').remove() ;
 			if ( d.error == 'OK' ) {
-				a.css({border:'none'}).text ( label ) ;
+				a.removeClass ( 'missing_label' ) ; //.css({border:'none'}).text ( label ) ;
 				reasonator.wd.items[q].raw.labels[lang] = { language:lang , value:label } ;
+				if ( callback !== undefined ) callback ( label ) ;
 			} else alert ( d.error ) ;
 		} ) .fail(function( jqxhr, textStatus, error ) {
 			alert ( error ) ;
@@ -1438,6 +1463,14 @@ return; // DEACTIVATED DUE TO WDQ BUG
 		var sd_keys = [] ;
 		$.each ( sd , function ( k , v ) { sd_keys.push ( k ) } ) ;
 		sd_keys = sd_keys.sort () ;
+		
+		function getTimeFromQualifier ( i ) {
+			var qa = (((i||[])[0]||{}).qualifiers||{}) ;
+			var qta = ((qa.P585||{})[0]||{}).time ; // Point in time
+			if ( undefined === qta ) qta = ((qa.P580||{})[0]||{}).time ; // stat time
+			return qta||'' ;
+		}
+		
 		$.each ( sd_keys , function ( dummy , op ) {
 			var qs = sd[op] ;
 			var p = String(op).replace(/\D/g,'') ;
@@ -1455,6 +1488,15 @@ return; // DEACTIVATED DUE TO WDQ BUG
 			h += self.getItemLink ( { type:'item',q:'P'+p } , { desc:true } ) ;
 			h += "</th>" ;
 			var row = 0 ;
+			
+			if ( o.sort_by_qualifier_time ) {
+				ql = ql.sort ( function ( a , b ) {
+					var qta = getTimeFromQualifier ( a ) ;
+					var qtb = getTimeFromQualifier ( b ) ;
+					return (qta==qtb)?0:(qta<qtb?-1:1) ;
+				} ) ;
+			}
+			
 			$.each ( ql , function ( dummy , subrow ) {
 //				no.add_desc = true ;
 				$.each ( subrow , function ( dummy , cq ) {
@@ -1535,13 +1577,13 @@ return; // DEACTIVATED DUE TO WDQ BUG
 				$.each ( ci , function ( dummy2 , ti ) {
 					if ( ti.key != self.q ) return ;
 					if ( undefined === sd[p] ) sd[p] = {} ;
-					var o = {type:'item',mode:1,q:item.getID(),key:item.getID()} ; // ,qualifiers:ti.qualifiers
+					var o = {type:'item',mode:1,q:item.getID(),key:item.getID(),qualifiers:ti.qualifiers} ; // 
 					if ( sd[p][q] === undefined ) sd[p][q] = [] ;
 					sd[p][q].push ( o ) ;
 				} ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
 	} ,
 
 	showExternalIDs : function () {
@@ -1750,7 +1792,7 @@ return; // DEACTIVATED DUE TO WDQ BUG
 				var dl = item.getLabelDefaultLanguage() ;
 				var param_lang = self.getMainLang() ;//(self.params.lang||'en').split(',')[0] ;
 				if ( self.hasNoLabelInMainLanguage ( item ) ) {
-					h += " style='border-bottom:1px dotted red'" ;
+					classes.push ( 'missing_label' ) ;
 				}
 			}
 			if ( classes.length > 0 ) h += " class='" + classes.join ( ' ' ) + "'" ;
@@ -1952,7 +1994,7 @@ return; // DEACTIVATED DUE TO WDQ BUG
 							}
 						} else if ( o.type == 'image' ) {
 							h = "<img border=0 width='"+v.imageinfo[0].thumbwidth+"px' height='"+v.imageinfo[0].thumbheight+"px' src='" + v.imageinfo[0].thumburl + "' " ;
-							if ( o.title !== undefined ) h += "title='" + o.title + "' " ; 
+							if ( o.title !== undefined ) h += "title='" + escattr(o.title) + "' " ; 
 							h += "/>" ;
 							h = "<a target='_blank' href='" + v.imageinfo[0].descriptionurl + "'>" + h + "</a>" ;
 						}
@@ -2848,7 +2890,9 @@ return; // DEACTIVATED DUE TO WDQ BUG
 		var min_file_size = 80000 ; // Min bytes for a file to show; excludes many icons
 		var images = {} ; // This will become an array later!
 		
-		$('div.main_image').html ( "<div id='images_commons'></div><div id='images_flickr'></div>" ) ;
+		var h3 = "<div id='images_commons'></div><div id='images_flickr'></div>" ;
+		h3 += "<div id='images_google'><a target='_blank' class='external' href='https://www.google.com/search?q="+escape($('#main_title_label').text())+"&tbm=isch&tbs=sur:fmc'>Free images Google search</a></div>" ;
+		$('div.main_image').html ( h3 ) ;
 		$('#images_commons').html ( "<small><i>" + self.t('looking4images_wiki') + "</i></small>" ) ;
 		if ( self.flickr_key ) self.checkFlickr() ;
 		

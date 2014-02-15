@@ -176,3 +176,7 @@ table.person_relatives > tbody > tr > td {
 div.personal_relations {
 	display:none;
 }
+
+.missing_label {
+	border-bottom:1px dotted red;
+}
