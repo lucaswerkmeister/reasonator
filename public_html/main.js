@@ -1578,12 +1578,16 @@ return; // DEACTIVATED DUE TO WDQ BUG
 					if ( ti.key != self.q ) return ;
 					if ( undefined === sd[p] ) sd[p] = {} ;
 					var o = {type:'item',mode:1,q:item.getID(),key:item.getID(),qualifiers:ti.qualifiers} ; // 
+					self.addToLoadLater ( item.getID() , true ) ;
 					if ( sd[p][q] === undefined ) sd[p][q] = [] ;
 					sd[p][q].push ( o ) ;
 				} ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
+		self.wd.getItemBatch ( self.to_load , function () {
+			self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
+			self.addHoverboxes ( '.backlinks' ) ;
+		} ) ;
 	} ,
 
 	showExternalIDs : function () {
