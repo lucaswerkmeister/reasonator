@@ -81,12 +81,13 @@ reasonator_types.push ( {
 		reasonator.showExternalIDs() ; // Render external ID links
 		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
-		me.addSignature() ; // Render signature
-		reasonator.finishDisplay () ; // Finish
+		reasonator.addBacklinks ( function () {
+	//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+			reasonator.addOther() ; // Render other properties
+			reasonator.addMedia() ; // Render images
+			me.addSignature() ; // Render signature
+			reasonator.finishDisplay () ; // Finish
+		} ) ; // Render backlinks
 	} ,
 	
 	
@@ -321,40 +322,41 @@ reasonator_types.push ( {
 		reasonator.showExternalIDs() ; // Render external ID links
 //		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
+		reasonator.addBacklinks( function () {
+	//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+			reasonator.addOther() ; // Render other properties
+			reasonator.addMedia() ; // Render images
 
-    
-		// Render taxon chain
-		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.taxon_list } ) ;
-		h = "<h2>" + reasonator.t('taxonomy') + "</h2>" ;
-		h += reasonator.renderChain ( chain , [
-			{ title:reasonator.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
-			{ title:reasonator.t('name') , name:true } ,
-			{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
-		] ) ;
+	
+			// Render taxon chain
+			var chain = reasonator.findLongestPath ( { start:q , props:reasonator.taxon_list } ) ;
+			h = "<h2>" + reasonator.t('taxonomy') + "</h2>" ;
+			h += reasonator.renderChain ( chain , [
+				{ title:reasonator.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
+				{ title:reasonator.t('name') , name:true } ,
+				{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+			] ) ;
 
-		if ( reasonator.use_wdq ) {
-			h += reasonator.getWDQnotice() ;
-		}
+			if ( reasonator.use_wdq ) {
+				h += reasonator.getWDQnotice() ;
+			}
 		
-		// Render taxon properties
-		var taxon_props = [225,105,405,141,183,427,566] ;
-		reasonator.renderMainPropsTable ( taxon_props ) ;
+			// Render taxon properties
+			var taxon_props = [225,105,405,141,183,427,566] ;
+			reasonator.renderMainPropsTable ( taxon_props ) ;
 		
-		// Label in italics, if same as taxon name
-		var label = reasonator.wd.items[reasonator.q].getLabel() ;
-		$.each ( reasonator.wd.items[reasonator.q].getStringsForProperty('P225') , function ( k , v ) {
-			if ( v != label ) return ;
-			$('#main_title_label').css({'font-style':'italic'}) ;
-			return false ;
-		} ) ;
+			// Label in italics, if same as taxon name
+			var label = reasonator.wd.items[reasonator.q].getLabel() ;
+			$.each ( reasonator.wd.items[reasonator.q].getStringsForProperty('P225') , function ( k , v ) {
+				if ( v != label ) return ;
+				$('#main_title_label').css({'font-style':'italic'}) ;
+				return false ;
+			} ) ;
 
-		reasonator.finishDisplay ( h ) ; // Finish
+			reasonator.finishDisplay ( h ) ; // Finish
 		
-		me.suggestGenus ( q ) ;
+			me.suggestGenus ( q ) ;
+		}) ; // Render backlinks
 	} ,
 
 	
@@ -488,36 +490,37 @@ reasonator_types.push ( {
 		reasonator.showExternalIDs() ; // Render external ID links
 		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+		reasonator.addBacklinks( function () {
+			reasonator.addMiscData(reasonator.P_location) ; // Render misc data
 		
-//		var chain = reasonator.wd.getItem(q).followChain({props:reasonator.location_props}) ;
-		var chain = reasonator.findLongestPath ( { start:q , props:reasonator.location_props } ) ;
-		h = "<h2>" + reasonator.t('location') + "</h2>" ;
-		h += reasonator.renderChain ( chain , [
-			{ title:reasonator.t('name') , name:true } ,
-			{ title:reasonator.t('description') , desc:true } ,
-			{ title:reasonator.t('admin_division') , prop:132 } ,
-		] ) ;
+	//		var chain = reasonator.wd.getItem(q).followChain({props:reasonator.location_props}) ;
+			var chain = reasonator.findLongestPath ( { start:q , props:reasonator.location_props } ) ;
+			h = "<h2>" + reasonator.t('location') + "</h2>" ;
+			h += reasonator.renderChain ( chain , [
+				{ title:reasonator.t('name') , name:true } ,
+				{ title:reasonator.t('description') , desc:true } ,
+				{ title:reasonator.t('admin_division') , prop:132 } ,
+			] ) ;
 
-		if ( reasonator.use_wdq ) {
-			var url = reasonator.getCurrentUrl ( { live:true } ) ;
-			var line = reasonator.t('wdq_notice') ;
-			line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
-			line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-			h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
-		}
+			if ( reasonator.use_wdq ) {
+				var url = reasonator.getCurrentUrl ( { live:true } ) ;
+				var line = reasonator.t('wdq_notice') ;
+				line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+				line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
+				h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+			}
 
-		reasonator.P['type_of_administrative_division'] = 132 ;
-		$.each ( reasonator.location_props , function ( k , v ) {
-			reasonator.P['P'+v] = v ; // Prevent them showing in "other" list
-		} ) ;
+			reasonator.P['type_of_administrative_division'] = 132 ;
+			$.each ( reasonator.location_props , function ( k , v ) {
+				reasonator.P['P'+v] = v ; // Prevent them showing in "other" list
+			} ) ;
 
-		if ( reasonator.wd.items[reasonator.q].hasClaims('P625') ) $('div.maps').show() ;
-		reasonator.renderMainPropsTable ( show_location_props ) ; // Location properties section
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
-		reasonator.finishDisplay ( h ) ; // Finish
+			if ( reasonator.wd.items[reasonator.q].hasClaims('P625') ) $('div.maps').show() ;
+			reasonator.renderMainPropsTable ( show_location_props ) ; // Location properties section
+			reasonator.addOther() ; // Render other properties
+			reasonator.addMedia() ; // Render images
+			reasonator.finishDisplay ( h ) ; // Finish
+		} ) ; // Render backlinks
 	}
 	
 } ) ;
@@ -560,34 +563,35 @@ reasonator_types.push ( {
 		reasonator.showExternalIDs() ; // Render external ID links
 		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
-		reasonator.addBacklinks() ; // Render backlinks
-//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
+		reasonator.addBacklinks( function () {
+	//		reasonator.addMiscData(reasonator.P_location) ; // Render misc data
+			reasonator.addOther() ; // Render other properties
+			reasonator.addMedia() ; // Render images
 
-		reasonator.renderSubclassChain() ;
+			reasonator.renderSubclassChain() ;
 
-		reasonator.finishDisplay () ; // Finish
-		$('div.other h2').remove() ;
+			reasonator.finishDisplay () ; // Finish
+			$('div.other h2').remove() ;
 		
-		if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
-		if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
+			if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
+			if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
 		
-		var non_content_types = [ reasonator.Q.category_page , reasonator.Q.template_page , reasonator.Q.list_page , reasonator.Q.disambiguation_page ] ;
-		reasonator.wd.getItemBatch ( non_content_types , function () {
-			var h = "<div>" ;
-			h += "<h3>"+reasonator.t('non_content_widar_header')+"</h3>" ;
-			h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
-			h += "<ul>" ;
-			$.each ( non_content_types , function ( k , v ) {
-				h += "<li>" ;
-				h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P31\",\"Q"+v+"\");return false'>" + reasonator.wd.items['Q'+v].getLabel() + "</a>" ;
-				h += "</li>" ;
+			var non_content_types = [ reasonator.Q.category_page , reasonator.Q.template_page , reasonator.Q.list_page , reasonator.Q.disambiguation_page ] ;
+			reasonator.wd.getItemBatch ( non_content_types , function () {
+				var h = "<div>" ;
+				h += "<h3>"+reasonator.t('non_content_widar_header')+"</h3>" ;
+				h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
+				h += "<ul>" ;
+				$.each ( non_content_types , function ( k , v ) {
+					h += "<li>" ;
+					h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P31\",\"Q"+v+"\");return false'>" + reasonator.wd.items['Q'+v].getLabel() + "</a>" ;
+					h += "</li>" ;
+				} ) ;
+				h += "</ul>" ;
+				h += "</div>" ;
+				$('#actual_content div.other').html(h) ;
 			} ) ;
-			h += "</ul>" ;
-			h += "</div>" ;
-			$('#actual_content div.other').html(h) ;
-		} ) ;
+		} ) ; // Render backlinks
 		
 	} ,
 

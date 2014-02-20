@@ -15,6 +15,7 @@ var reasonator = {
 		video : 10 ,
 		maic : 301 , // Main article in category
 		flag_image : 41 ,
+		logo : 154 ,
 		wikivoyage_banner : 948 ,
 		pronunciation_audio : 443 ,
 		coa : 94 ,
@@ -198,6 +199,8 @@ var reasonator = {
 	use_flickr : true ,
 
 	use_property_suggest : false , // For now
+
+	max_list_items : 500 ,
 
 	thumbsize : 160 ,
 
@@ -1011,20 +1014,61 @@ var reasonator = {
 	
 	showListOf : function () {
 		var self = this ;
-return; // DEACTIVATED DUE TO WDQ BUG
+		var i = self.wd.items[self.q] ;
+
+		var search_main = [] ;
+		var search_qual = [] ;
+		var parts = [] ;
+		$.each ( i.getClaimsForProperty('P360') , function ( dummy , claim ) {
+			var q = i.getClaimTargetItemID ( claim ) ;
+			if ( q === undefined ) return ;
+
+			var p = "claim[31:"+q.replace(/\D/g,'')+"]" ; // WDQ bug : "(claim[31:(claim[279:"+qn+"])] or claim[31:"+qn+"])"
+			search_main.push ( self.wd.items[q].getLabel() ) ;
+			
+			// Add conditions for qualifiers
+			$.each ( (claim.qualifiers||{}) , function ( qual_prop , qual_list ) {
+				if ( self.wd.items[qual_prop]===undefined || self.wd.items[qual_prop].raw===undefined || self.wd.items[qual_prop].raw.datatype!='wikibase-item' ) return ; // Only qualifiers properties that point to an item
+				$.each ( qual_list , function ( dummy2 , qual ) {
+					var dummy_claim = { mainsnak:qual } ;
+					var qual_q = i.getClaimTargetItemID ( dummy_claim ) ;
+					search_qual.push ( self.wd.items[qual_q].getLabel() ) ;
+					p += " and claim[" + qual_prop.replace(/\D/g,'') + ":" + qual_q.replace(/\D/g,'') + "]" ;
+				} ) ;
+			} ) ;
+			parts.push ( p ) ;
+		} ) ;
+		
+		
+		if ( parts.length == 0 ) return ; // Paranoia
+		
 		$('div.list_of').html ( "<i>Loading list of items in the 'list of' subclass trees...</i>" ) ;
 
-		var parts = [] ;
-		$.each ( self.wd.items[self.q].getClaimItemsForProperty('P360',true) , function ( dummy , q ) {
-			var qn = q.replace(/\D/g,'') ;
-			parts.push ( "(claim[31:(claim[279:"+qn+"])] or claim[31:"+qn+"])" ) ;
-		} ) ;
 		var query = parts.join ( ' and ' ) ;
 		$.getJSON ( self.wdq_url , {
 			q : query
 		} , function ( d ) {
-			self.wd.getItemBatch ( (d.items||[]) , function () {
-				var h = "<h2>" + "The list" + "</h2>" ;
+			if ( d.items.length == 0 ) {
+				$('div.list_of').hide().html('') ;
+				return ;
+			}
+			var items = [] ;
+			$.each ( (d.items||[]) , function ( k , v ) {
+				if ( items.length == self.max_list_items ) return false ;
+				items.push ( d.items[items.length] ) ;
+			} ) ;
+			self.wd.getItemBatch ( items , function () {
+				var h = "<h2>" + self.t("list_of_matching_items") + "</h2>" ;
+				h += "<div>" ;
+				if ( items.length != d.items.length ) {
+					h += self.t('list_note').replace(/\$1/g,self.max_list_items).replace(/\$2/g,d.items.length) ;
+					h += self.t('list_browse1') ;
+				} else {
+					h += self.t('list_browse2') ;
+				}
+				h += " <a target='_blank' class='external' href='/wikidata-todo/autolist.html?q=" + escape(query) + "'>" + self.t('list_here') + "</a>. " ;
+				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' '))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' '))+"'>") ;
+				h += "</div>" ;
 				h += "<ol>" ;
 				$.each ( (d.items||[]) , function ( k , v ) {
 					var q = 'Q' + v ;
@@ -1379,7 +1423,7 @@ return; // DEACTIVATED DUE TO WDQ BUG
 		var main_media = ['image','video'] ;
 		var audio_files = ['audio','voice_recording','pronunciation_audio'] ;
 		var other_images = ['chemical_structure','astronomic_symbol'] ;
-		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map'] ;
+		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map','logo'] ;
 		var media =  main_media.concat(other_images).concat(special_images).concat(audio_files) ;
 		$.each ( media , function ( dummy1 , medium ) {
 			$.each ( self.wd.items , function ( k , v ) {
@@ -1561,7 +1605,7 @@ return; // DEACTIVATED DUE TO WDQ BUG
 	} ,
 	
 
-	addBacklinks : function () {
+	addBacklinks : function ( callback ) {
 		var self = this ;
 		var sd = {} ;
 		var ignore = {} ;
@@ -1586,7 +1630,8 @@ return; // DEACTIVATED DUE TO WDQ BUG
 		} ) ;
 		self.wd.getItemBatch ( self.to_load , function () {
 			self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
-			self.addHoverboxes ( '.backlinks' ) ;
+			if ( callback ) callback() ;
+//			self.addHoverboxes ( '.backlinks' ) ;
 		} ) ;
 	} ,
 
@@ -2599,7 +2644,7 @@ return; // DEACTIVATED DUE TO WDQ BUG
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		} else if ( undefined !== $.cookie('preferred_languages') ) {
 //			console.log ( $.cookie('preferred_languages') ) ;
-			var l = $.cookie('preferred_languages').split(',').reverse() ;
+			var l = ($.cookie('preferred_languages')||'').split(',').reverse() ;
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		
