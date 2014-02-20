@@ -1023,7 +1023,7 @@ var reasonator = {
 			var q = i.getClaimTargetItemID ( claim ) ;
 			if ( q === undefined ) return ;
 
-			var p = "claim[31:"+q.replace(/\D/g,'')+"]" ; // WDQ bug : "(claim[31:(claim[279:"+qn+"])] or claim[31:"+qn+"])"
+			var p = "claim[31:(tree["+q.replace(/\D/g,'')+"][][279])]" ;
 			search_main.push ( self.wd.items[q].getLabel() ) ;
 			
 			// Add conditions for qualifiers
