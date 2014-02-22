@@ -943,6 +943,7 @@ var reasonator = {
 	
 	finishDisplay : function ( h ) {
 		var self = this ;
+		var i = self.wd.items[self.q] ;
 		$.each ( self.mm_load , function ( k , v ) {
 			if ( k >= self.max_related_media && v.secondary_file ) {
 				$(v.id).remove() ;
@@ -1002,20 +1003,38 @@ var reasonator = {
 		if ( self.use_property_suggest ) {
 			self.suggestProperties() ;
 		}
-		
-		if ( self.wd.items[self.q].hasClaims ( 'P360' ) ) {
+
+		// All things list
+		if ( i.hasClaimItemLink('P31','Q13406463') && !i.hasClaims('P360') ) { // "instance of":"Wikimedia list article" / no "list of"
+			$('div.topnote').append ( "<div>" + self.t('add_listof_topnote') + "</div>" ) ;
+		} else if ( !i.hasClaims('P31') && i.hasClaims('P360') ) { // "list of" / no "instance of":"Wikimedia list article"
+			var h = self.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar' target='_blank' class='external'>WiDaR</a>") ;
+			h = h.replace ( /\$2/g , "<a href='#' onclick='reasonator.setAsInstanceOfList();return false'>" ) ;
+			$('div.topnote').append ( h ) ;
+		} else if ( i.hasClaims ( 'P360' ) && ( i.hasClaimItemLink('P31','Q13406463') || i.hasClaimItemLink('P31','Q4167836') ) ) {
 			self.showListOf() ;
 		}
+		
 		
 		self.showQRcode() ;
 		self.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
 	} ,
 	
+	setAsInstanceOfList : function () {
+		var self = this ;
+		self.addClaimItemOauth ( self.q , "P31" , "Q13406463" , {} ) ;
+	} ,
+	
 	showListOf : function () {
 		var self = this ;
 		var i = self.wd.items[self.q] ;
-
+		
+		function tree ( q ) {
+			if ( q == 'Q5' ) return '5' ;
+			return "(tree["+q.replace(/\D/g,'')+"][][279])" ;
+		}
+		
 		var search_main = [] ;
 		var search_qual = [] ;
 		var parts = [] ;
@@ -1023,7 +1042,7 @@ var reasonator = {
 			var q = i.getClaimTargetItemID ( claim ) ;
 			if ( q === undefined ) return ;
 
-			var p = "claim[31:(tree["+q.replace(/\D/g,'')+"][][279])]" ;
+			var p = "claim[31:" + tree(q) + "]" ;
 			search_main.push ( self.wd.items[q].getLabel() ) ;
 			
 			// Add conditions for qualifiers
@@ -1033,7 +1052,7 @@ var reasonator = {
 					var dummy_claim = { mainsnak:qual } ;
 					var qual_q = i.getClaimTargetItemID ( dummy_claim ) ;
 					search_qual.push ( self.wd.items[qual_q].getLabel() ) ;
-					p += " and claim[" + qual_prop.replace(/\D/g,'') + ":" + qual_q.replace(/\D/g,'') + "]" ;
+					p += " and claim[" + qual_prop.replace(/\D/g,'') + ":" + tree(qual_q) + "]" ; // ,131
 				} ) ;
 			} ) ;
 			parts.push ( p ) ;
@@ -1041,10 +1060,12 @@ var reasonator = {
 		
 		
 		if ( parts.length == 0 ) return ; // Paranoia
+
+		var query = parts.join ( ' and ' ) ;
+		if ( query == "claim[31:(tree[215627][][279])]" ) return ; // just "person"; too much to load
 		
 		$('div.list_of').html ( "<i>Loading list of items in the 'list of' subclass trees...</i>" ) ;
 
-		var query = parts.join ( ' and ' ) ;
 		$.getJSON ( self.wdq_url , {
 			q : query
 		} , function ( d ) {
@@ -1054,7 +1075,7 @@ var reasonator = {
 			}
 			var items = [] ;
 			$.each ( (d.items||[]) , function ( k , v ) {
-				if ( items.length == self.max_list_items ) return false ;
+				if ( items.length >= self.max_list_items ) return false ;
 				items.push ( d.items[items.length] ) ;
 			} ) ;
 			self.wd.getItemBatch ( items , function () {
@@ -1070,7 +1091,7 @@ var reasonator = {
 				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' '))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' '))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
-				$.each ( (d.items||[]) , function ( k , v ) {
+				$.each ( items , function ( k , v ) {
 					var q = 'Q' + v ;
 					h += "<li>" + self.getQlink ( q ) + "</li>" ;
 				} ) ;
@@ -3329,7 +3350,7 @@ var reasonator = {
 					$('#eq_search_results').html(h) ;
 					$('#eq_search_results a.eq_result').click ( function () {
 						var q = $(this).attr('q') ;
-						console.log ( q ) ;
+//						console.log ( q ) ;
 						self.addClaimItemOauth ( self.q , o.prop , q ) ;
 						$('#enterQDialog').modal('hide') ;
 						return false ;
