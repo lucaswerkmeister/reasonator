@@ -426,6 +426,9 @@ var reasonator = {
 	detectAndLoadQ : function ( q ) {
 		var self = this ;
 		if ( q === undefined ) return ; // TODO error "item not found"
+
+		$('head').append('<link href="https://www.wikidata.org/wiki/'+q+'" property="http://schema.org/sameAs" />');
+		$('head').append('<link href="https://www.wikidata.org/entity/'+q+'" rel="foaf:primaryTopic" />');
 		
 		$.each ( reasonator_types , function ( dummy , type ) {
 			if ( !type.detect() ) return ;
@@ -979,6 +982,22 @@ var reasonator = {
 					self.setMap ( v[0] , v[1] , v[2] ) ;
 				} ) ;
 			} , 100 ) ;
+
+			var lat , lon ;
+			$.each ( self.do_maps , function ( k , v ) {
+				lon = v[0].longitude ;
+				lat = v[0].latitude ;
+				return false ;
+			} ) ;
+			
+			var h = [] ;
+			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
+			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
+			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ; // 52.10_N_0.19_E
+			h = "<div>" + h.join(' | ') + "</div>" ;
+			
+			
+			$('div.maps').append ( h ) ;
 		}
 		
 		self.addHoverboxes () ;
@@ -1008,7 +1027,7 @@ var reasonator = {
 		if ( i.hasClaimItemLink('P31','Q13406463') && !i.hasClaims('P360') ) { // "instance of":"Wikimedia list article" / no "list of"
 			$('div.topnote').append ( "<div>" + self.t('add_listof_topnote') + "</div>" ) ;
 		} else if ( !i.hasClaims('P31') && i.hasClaims('P360') ) { // "list of" / no "instance of":"Wikimedia list article"
-			var h = self.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar' target='_blank' class='external'>WiDaR</a>") ;
+			var h = self.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar/' target='_blank' class='external'>WiDaR</a>") ;
 			h = h.replace ( /\$2/g , "<a href='#' onclick='reasonator.setAsInstanceOfList();return false'>" ) ;
 			$('div.topnote').append ( h ) ;
 		} else if ( i.hasClaims ( 'P360' ) && ( i.hasClaimItemLink('P31','Q13406463') || i.hasClaimItemLink('P31','Q4167836') ) ) {
@@ -1032,7 +1051,7 @@ var reasonator = {
 		
 		function tree ( q ) {
 			if ( q == 'Q5' ) return '5' ;
-			return "(tree["+q.replace(/\D/g,'')+"][][279])" ;
+			return "(tree["+q.replace(/\D/g,'')+"][][279,131])" ;
 		}
 		
 		var search_main = [] ;
@@ -1063,9 +1082,8 @@ var reasonator = {
 
 		var query = parts.join ( ' and ' ) ;
 		if ( query == "claim[31:(tree[215627][][279])]" ) return ; // just "person"; too much to load
-		
+//		console.log ( query ) ;
 		$('div.list_of').html ( "<i>Loading list of items in the 'list of' subclass trees...</i>" ) ;
-
 		$.getJSON ( self.wdq_url , {
 			q : query
 		} , function ( d ) {
@@ -1249,7 +1267,7 @@ var reasonator = {
 					h += "</i>" ;
 					if ( self.allowLabelOauthEdit ) {
 						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\",\""+escattr(i.getLabel())+"\");return false'><b>" ;
-						h += self.t('add_a_label') + "</b></a> (" + self.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar'>WiDaR</a>") + ")" ;
+						h += self.t('add_a_label') + "</b></a> (" + self.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar/'>WiDaR</a>") + ")" ;
 					}
 					h += "</div>" ;
 				}
@@ -2991,7 +3009,7 @@ var reasonator = {
 		function showImageCandidatesStage2 () {
 			var diag_title = self.t('add_image') ;
 			var diag_desc = self.t('has_no_image') ;
-			diag_desc = diag_desc.replace ( /\$1/ , images.length ) . replace ( /\$2/ , '<a target="_blank" href="/widar">' ) ;
+			diag_desc = diag_desc.replace ( /\$1/ , images.length ) . replace ( /\$2/ , '<a target="_blank" href="/widar/">' ) ;
 			
 			$('#addImagesDialog').remove() ;
 			
@@ -3401,7 +3419,7 @@ var reasonator = {
 				h += "Other items of this instance type also have there properties:" ;
 				h += "<ul>" ;
 				$.each ( pc , function ( k , v ) {
-					h += '<li>' + self.getQlink ( v ) + " (<a href='#' class='suggested_property' p='" + v + "'>add</a> using <a href='/widar' class='external'>WiDaR</a>)</li>" ;
+					h += '<li>' + self.getQlink ( v ) + " (<a href='#' class='suggested_property' p='" + v + "'>add</a> using <a href='/widar/' class='external'>WiDaR</a>)</li>" ;
 				} ) ;
 				h += "</ul>" ;
 				h += "</div>" ;
