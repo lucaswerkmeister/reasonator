@@ -197,12 +197,16 @@ var reasonator = {
 	 * @type {boolean}
 	 */
 	use_flickr : true ,
+	
+	showSearchMapLink : true ,
 
 	use_property_suggest : false , // For now
 
 	max_list_items : 500 ,
 
 	thumbsize : 160 ,
+
+	map_icon_url : 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Eckert4.jpg/32px-Eckert4.jpg' , // https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Earth_clip_art.svg/16px-Earth_clip_art.svg.png
 
 	autodesc_items : [] ,
 	imgcnt : 0 ,
@@ -1258,6 +1262,17 @@ var reasonator = {
 				if ( commons.length > 0 ) {
 					h += "<span style='margin-left:5px'><a title='"+self.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
 				}
+
+
+				if ( self.showSearchMapLink && self.wd.items[q].hasClaims('P625') ) {
+					var claims = self.wd.items[q].getClaimsForProperty ( 'P625' ) ;
+					var lat = claims[0].mainsnak.datavalue.value.latitude ;
+					var lon = claims[0].mainsnak.datavalue.value.longitude ;
+					var url = '/wikidata-todo/around.html?lat='+lat+'&lon='+lon+'&radius=15&lang=' + self.getMainLang() ;
+					h += "<span style='margin-left:5px'><a title='"+self.t('link_around_title')+"' href='"+url+"' target='_blank'><img border=0 src='"+self.map_icon_url+"'/></a></span>" ;
+					
+				}
+
 				h += "</div>" ;
 				
 				
