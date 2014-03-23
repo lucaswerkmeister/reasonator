@@ -204,6 +204,7 @@ var reasonator = {
 
 	max_list_items : 500 ,
 
+	square_thumb_size : 150 ,
 	thumbsize : 160 ,
 
 	map_icon_url : 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Eckert4.jpg/32px-Eckert4.jpg' , // https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Earth_clip_art.svg/16px-Earth_clip_art.svg.png
@@ -955,15 +956,18 @@ var reasonator = {
 			if ( k >= self.max_related_media && v.secondary_file ) {
 				$(v.id).remove() ;
 			} else {
-				self.multimediaLazyLoad ( v ) ;
+				if ( v.id === undefined ) return ;
+				$(v.id).html ( "<div class='unloaded_thumbnail' mmid='"+k+"'></div>" ) ;
 			}
 		} ) ;
-		self.mm_load = [] ;
-
+		var ts = self.square_thumb_size ;
+		$('div.all_images div.unloaded_thumbnail').parent().width(ts).height(ts).css({'text-align':'center'}) ;
+		
 		self.setRTL() ;
 
 		if ( undefined !== h ) $('.main').html ( h ) ;
 		$('#actual_content').show() ;
+		$(window).scroll(); // Force-show visible images
 		
 		if ( self.use_js_refresh ) {
 			$('#actual_content a').each ( function ( k , v ) {
@@ -2068,12 +2072,13 @@ var reasonator = {
 
 	multimediaLazyLoad : function ( o ) {
 		var self = this ;
+		$(o.id).html('') ;
 		$.getJSON ( '//commons.wikimedia.org/w/api.php?callback=?' , {
 			action : 'query' ,
 			titles : 'File:' + o.file ,
 			prop : 'imageinfo' ,
-			iiurlwidth : o.tw||120 ,
-			iiurlheight : o.th||120 ,
+			iiurlwidth : o.tw||self.square_thumb_size ,
+			iiurlheight : o.th||self.square_thumb_size ,
 			iiprop : 'url|size' ,
 			format : 'json'
 		} , function ( data ) {
@@ -3450,6 +3455,16 @@ var reasonator = {
 		} ) ;
 	} ,
 	
+	loadThumb : function ( thumb ) {
+		var self = this ;
+		if ( thumb.css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
+		if ( $('#actual_content').css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
+		
+		if ( !thumb.is_on_screen() ) return ;
+		var mmid = thumb.attr('mmid') ;
+		self.multimediaLazyLoad ( self.mm_load[mmid] ) ;
+	} ,
+	
 
 
 	fin : false
@@ -3460,6 +3475,29 @@ var reasonator = {
 
 $(document).ready ( function () {
 	$('#emergency').remove() ;
+
+	$.fn.is_on_screen = function(){
+		var win = $(window);
+		var viewport = {
+			top : win.scrollTop(),
+			left : win.scrollLeft()
+		};
+		viewport.right = viewport.left + win.width();
+		viewport.bottom = viewport.top + win.height();
+ 
+		var bounds = this.offset();
+		bounds.right = bounds.left + this.outerWidth();
+		bounds.bottom = bounds.top + this.outerHeight();
+ 
+		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+	};
+
+	// Load thumbnails on demand
+	$(window).scroll(function(){
+		$('div.unloaded_thumbnail').each ( function () {
+			reasonator.loadThumb ( $(this) ) ;
+		} ) ;
+	} ) ;
 	
 	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
 		window.location = window.location.href.replace(/^https:/,'http:/') ;
@@ -3475,6 +3513,3 @@ $(document).ready ( function () {
 } ) ;
 
 
-	/**
-	 * 
-	 */
