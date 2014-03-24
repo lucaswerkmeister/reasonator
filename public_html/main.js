@@ -282,6 +282,7 @@ var reasonator = {
 		var self = this ;
 		self.q = undefined ;
 		self.wd = new WikiData ;
+		self.wd.max_get_entities = 50 ;
 		self.do_maps = undefined ;
 		self.clear() ;
 		if ( '0' == $.cookie('use_flickr') ) self.use_flickr = false ;
@@ -699,12 +700,33 @@ var reasonator = {
 				if ( undefined !== tree[q] ) return ;
 				tree[q] = [] ;
 				$.each ( props , function ( dummy , p ) {
+					if ( 'undefined' == typeof self.wd.items[q] ) return ;
+					var by_rank = { normal:[] , preferred:[] , deprecated:[] } ;
+					var claims = self.wd.items[q].getClaimsForProperty ( p ) ;
+					$.each ( claims , function ( dummy , c ) {
+						var qx = self.wd.items[q].getClaimTargetItemID ( c ) ;
+						if ( qx === undefined ) return ;
+						by_rank[c.rank||'normal'].push ( qx ) ;
+					} ) ;
+					
+					var to_process = by_rank.preferred ;
+					if ( to_process.length == 0 ) to_process = by_rank.normal ;
+//					else console.log ( to_process ) ;
+					
+					$.each ( to_process , function ( dummy , qx ) {
+						if ( -1 != $.inArray ( qx , new_q ) ) return ;
+						new_q.push ( qx ) ;
+						tree[q].push ( qx ) ;
+					} ) ;
+
+				
+/*
 					var q2 = self.wd.items[q].getClaimItemsForProperty(p) ;
 					$.each ( q2 , function ( k , v ) {
 						if ( -1 != $.inArray ( v , new_q ) ) return ;
 						new_q.push ( v ) ;
 						tree[q].push ( v ) ;
-					} ) ;
+					} ) ;*/
 				} ) ;
 				preset ( new_q ) ;
 			} ) ;
@@ -875,10 +897,12 @@ var reasonator = {
 	} ,
 
 
-	showAliases : function ( q ) {
+	showAliases : function ( q , include_labels ) {
 		var self = this ;
 		var h = [] ;
-		$.each ( self.wd.items[q].getAliases() , function ( k , v ) {
+		var title = $('#main_title_label').text() ;
+		$.each ( self.wd.items[q].getAliases(include_labels) , function ( k , v ) {
+			if ( v == title ) return ;
 			h.push ( "<div class='alias'>" + v.replace(/\s/g,'&nbsp;') + "</div>" ) ;
 		} ) ;
 		h = h.join ( ' | ' ) ;

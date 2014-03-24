@@ -75,7 +75,7 @@ reasonator_types.push ( {
 		me.showPersonMain ( q ) ;
 		reasonator.setTopLink () ;
 		reasonator.renderName () ; // Render name
-		reasonator.showAliases ( q ) ; // Render aliases
+		reasonator.showAliases ( q , true ) ; // Render aliases
 		reasonator.showDescription () ; // Render manual description
 		me.showAutoDesc () ; // Render automatic description
 		reasonator.showExternalIDs() ; // Render external ID links
