@@ -3524,7 +3524,7 @@ $(document).ready ( function () {
 	} ) ;
 	
 	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
-		window.location = window.location.href.replace(/^https:/,'http:/') ;
+		window.location = window.location.href.replace(/^https:/,'http:') ;
 		return ;
 	}
 
