@@ -533,8 +533,8 @@ language_specs['nl'].alma = function ( d ) {
 	} ) ;
 }
 
-language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' werkveld '+(this.is_dead?'omvat':'omvatte')+' ' , '. ' ) ; }
-language_specs['nl'].cause_of_death = function ( d ) { this.simpleList ( d , 'van ' , ' ' ) ; }
+language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' werkveld '+(this.is_dead?'omvatte':'omvat')+' ' , '. ' ) ; }
+language_specs['nl'].cause_of_death = function ( d ) { this.simpleList ( d , 'ten gevolge van ' , ' ' ) ; }
 language_specs['nl'].killer = function ( d ) { this.simpleList ( d , 'door ' , ' ' ) ; }
 language_specs['nl'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' speelde een rol in ' , '.' ) ; }
 
@@ -589,7 +589,7 @@ language_specs['nl'].addBirthText = function () {
 		var father = me.getParent ( 22 ) ;
 		var mother = me.getParent ( 25 ) ;
 		if ( father !== undefined || mother !== undefined ) {
-			me.h.push ( { label:'to ' } ) ;
+			me.h.push ( { label:'als kind van ' } ) ;
 			if ( father !== undefined ) me.addPerson ( father , ' ' ) ;
 			if ( father !== undefined && mother !== undefined ) me.h.push ( { label:'en ' } ) ;
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
