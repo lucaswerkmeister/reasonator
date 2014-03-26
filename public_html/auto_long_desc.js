@@ -472,10 +472,10 @@ language_specs['nl'] = new lang_class ;
 
 language_specs['nl'].setup = function () {
 	this.init() ;
-	this.month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ; // First one needs to be empty!!
+	this.month_label = [ '' , 'januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december' ] ; // First one needs to be empty!!
 	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
-	this.s_he = (this.is_male?'He':'She') ;
-	this.his_er = (this.is_male?'His':'Her') ;
+	this.s_he = (this.is_male?'Hij':'Zij') ;
+	this.his_er = (this.is_male?'Zijn':'Haar') ;
 }
 
 language_specs['nl'].employers = function ( d ) {
@@ -533,10 +533,10 @@ language_specs['nl'].alma = function ( d ) {
 	} ) ;
 }
 
-language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' field of work include'+(this.is_dead?'d':'s')+' ' , '. ' ) ; }
-language_specs['nl'].cause_of_death = function ( d ) { this.simpleList ( d , 'of ' , ' ' ) ; }
-language_specs['nl'].killer = function ( d ) { this.simpleList ( d , 'by ' , ' ' ) ; }
-language_specs['nl'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' played a role in ' , '.' ) ; }
+language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' werkveld '+(this.is_dead?'omvat':'omvatte')+' ' , '. ' ) ; }
+language_specs['nl'].cause_of_death = function ( d ) { this.simpleList ( d , 'van ' , ' ' ) ; }
+language_specs['nl'].killer = function ( d ) { this.simpleList ( d , 'door ' , ' ' ) ; }
+language_specs['nl'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' speelde een rol in ' , '.' ) ; }
 
 language_specs['nl'].spouses = function ( d ) {
 	var me = this ;
@@ -566,7 +566,7 @@ language_specs['nl'].children = function ( d ) {
 language_specs['nl'].addFirstSentence = function () {
 	var me = this ;
 	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
-	me.h.push ( { label:(this.is_dead?'was':'is') , after:' a ' } ) ;
+	me.h.push ( { label:(this.is_dead?'was':'is') , after:' een ' } ) ;
 	this.listNationalities() ;
 	this.listOccupations() ;
 	me.h.push ( { label:'. ' } ) ;
@@ -582,7 +582,7 @@ language_specs['nl'].addBirthText = function () {
 	var birthplace = me.i.raw.claims['P19'] ;
 	var birthname = me.i.raw.claims['P513'] ;
 	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
-		me.h.push ( { label:me.s_he , after:' was born ' } ) ;
+		me.h.push ( { label:me.s_he , after:' werd geboren ' } ) ;
 		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
 		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
 		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'in ' , after:' ' } ) ;
@@ -591,7 +591,7 @@ language_specs['nl'].addBirthText = function () {
 		if ( father !== undefined || mother !== undefined ) {
 			me.h.push ( { label:'to ' } ) ;
 			if ( father !== undefined ) me.addPerson ( father , ' ' ) ;
-			if ( father !== undefined && mother !== undefined ) me.h.push ( { label:'and ' } ) ;
+			if ( father !== undefined && mother !== undefined ) me.h.push ( { label:'en ' } ) ;
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
 		}
 		me.h.push ( { label:'. ' } ) ;
@@ -607,7 +607,7 @@ language_specs['nl'].addDeathText = function () {
 	var deathcause = me.i.hasClaims('P509') ;
 	var killer = me.i.hasClaims('P157') ;
 	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
-		me.h.push ( { label:me.s_he , after:' died ' } ) ;
+		me.h.push ( { label:me.s_he , after:' stierf ' } ) ;
 		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
 		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
@@ -616,7 +616,7 @@ language_specs['nl'].addDeathText = function () {
 	}
 	var burialplace = me.i.raw.claims['P119'] ;
 	if ( burialplace !== undefined ) {
-		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+' was buried at ' , after:'. ' } ) ;
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+' werd begraven in ' , after:'. ' } ) ;
 	}
 }
 
