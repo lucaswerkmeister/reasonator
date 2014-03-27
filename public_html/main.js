@@ -131,7 +131,7 @@ var reasonator = {
 	/** WikiDataQuery URL.
 	 * @type {string}
 	 */
-	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
+	wdq_url : 'http://wdq.wmflabs.org/api?callback=?' ,
 	
 	/** WiDaR API URL.
 	 * @type {string}
@@ -659,7 +659,7 @@ var reasonator = {
 		var self = this ;
 		var url = self.getCurrentUrl ( { live:true } ) ;
 		var line = self.t('wdq_notice') ;
-		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
 		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
 		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
 	} ,
@@ -1026,6 +1026,7 @@ var reasonator = {
 			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
 			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
 			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ; // 52.10_N_0.19_E
+			h .push ( lat + " / " + lon ) ;
 			h = "<div>" + h.join(' | ') + "</div>" ;
 			
 			
