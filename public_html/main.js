@@ -3485,11 +3485,26 @@ var reasonator = {
 		if ( thumb.css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
 		if ( $('#actual_content').css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
 		
-		if ( !thumb.is_on_screen() ) return ;
+		if ( !self.isOnScreen(thumb) ) return ;
 		var mmid = thumb.attr('mmid') ;
 		self.multimediaLazyLoad ( self.mm_load[mmid] ) ;
 	} ,
-	
+
+	isOnScreen : function ( o ) {
+		var win = $(window);
+		var viewport = {
+			top : win.scrollTop(),
+			left : win.scrollLeft()
+		};
+		viewport.right = viewport.left + win.width();
+		viewport.bottom = viewport.top + win.height();
+ 
+		var bounds = o.offset();
+		bounds.right = bounds.left + o.outerWidth();
+		bounds.bottom = bounds.top + o.outerHeight();
+ 
+		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+	} ,	
 
 
 	fin : false
@@ -3500,7 +3515,7 @@ var reasonator = {
 
 $(document).ready ( function () {
 	$('#emergency').remove() ;
-
+/*
 	$.fn.is_on_screen = function(){
 		var win = $(window);
 		var viewport = {
@@ -3516,7 +3531,7 @@ $(document).ready ( function () {
  
 		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
 	};
-
+*/
 	// Load thumbnails on demand
 	$(window).scroll(function(){
 		$('div.unloaded_thumbnail').each ( function () {

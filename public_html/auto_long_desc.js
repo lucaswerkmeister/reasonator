@@ -24,7 +24,7 @@ function lang_class () {
 		this.addDeathText () ;
 		this.renderHTML ( callback ) ;
 	}
-
+	
 	this.renderDate = function ( claim , o ) {
 		var me = this ;
 		if ( o === undefined ) o = {} ;
@@ -33,31 +33,20 @@ function lang_class () {
 
 		var pre = d.time.substr(0,1) == '+' ? 1 : -1 ;
 		var dp = d.time.substr(1).split(/[-T:Z]/) ;
-
 		var year = dp[0]*1 ;
 		var month = reasonator.pad ( dp[1] , 2 ) ;
 		var day = reasonator.pad ( dp[2] , 2 ) ;
+		
+		var trans = me.renderDateByPrecision ( pre , year , month , day , d.precision , o.no_prefix ) ;
+		ret.label = trans.label ;
+		ret.before = trans.before ;
 	
 		if ( o.just_year ) return { label:year } ;
 
 		var iso = d.time ; // Fallback
 		var label = d.time ; // Fallback
-		if ( d.precision <= 9 ) {
-			iso = year*pre ;
-			ret.label = year ;
-			if ( !o.no_prefix ) ret.before = 'in ' ;
-		} else if ( d.precision == 10 ) {
-			iso = year*pre + '-' + month ;
-			ret.label = me.month_label[month*1] + ' ' + year ;
-			if ( !o.no_prefix ) ret.before = 'in ' ;
-		} else if ( d.precision == 11 ) {
-			iso = year*pre + '-' + month + '-' + day ;
-			ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
-			if ( !o.no_prefix ) ret.before = 'on ' ;
-		}
-		if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
 	
-		ret.url = reasonator.getSelfURL ( { date:iso } ) ;
+		ret.url = reasonator.getSelfURL ( { date:trans.iso } ) ;
 
 		return ret ;
 	}
@@ -322,6 +311,26 @@ language_specs['en'].setup = function () {
 	this.his_er = (this.is_male?'His':'Her') ;
 }
 
+language_specs['en'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
+	var me = this ;
+	var ret = {} ;
+	if ( precision <= 9 ) {
+		ret.iso = year*pre ;
+		ret.label = year ;
+		if ( !no_prefix ) ret.before = 'in ' ;
+	} else if ( precision == 10 ) {
+		ret.iso = year*pre + '-' + month ;
+		ret.label = me.month_label[month*1] + ' ' + year ;
+		if ( !no_prefix ) ret.before = 'in ' ;
+	} else if ( precision == 11 ) {
+		ret.iso = year*pre + '-' + month + '-' + day ;
+		ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+		if ( !no_prefix ) ret.before = 'on ' ;
+	}
+	if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
+	return ret ;
+}
+
 language_specs['en'].employers = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
@@ -476,6 +485,26 @@ language_specs['nl'].setup = function () {
 	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
 	this.s_he = (this.is_male?'Hij':'Zij') ;
 	this.his_er = (this.is_male?'Zijn':'Haar') ;
+}
+
+language_specs['nl'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
+	var me = this ;
+	var ret = {} ;
+	if ( precision <= 9 ) {
+		ret.iso = year*pre ;
+		ret.label = year ;
+		if ( !no_prefix ) ret.before = 'in ' ;
+	} else if ( precision == 10 ) {
+		ret.iso = year*pre + '-' + month ;
+		ret.label = me.month_label[month*1] + ' ' + year ;
+		if ( !no_prefix ) ret.before = 'in ' ;
+	} else if ( precision == 11 ) {
+		ret.iso = year*pre + '-' + month + '-' + day ;
+		ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+		if ( !no_prefix ) ret.before = 'on ' ;
+	}
+	if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
+	return ret ;
 }
 
 language_specs['nl'].employers = function ( d ) {
