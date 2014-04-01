@@ -1139,7 +1139,7 @@ var reasonator = {
 					h += self.t('list_browse2') ;
 				}
 				h += " <a target='_blank' class='external' href='/wikidata-todo/autolist.html?q=" + escape(query) + "'>" + self.t('list_here') + "</a>. " ;
-				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' '))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' '))+"'>") ;
+				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
 				$.each ( items , function ( k , v ) {
@@ -1594,7 +1594,7 @@ var reasonator = {
 		function getTimeFromQualifier ( i ) {
 			var qa = (((i||[])[0]||{}).qualifiers||{}) ;
 			var qta = ((qa.P585||{})[0]||{}).time ; // Point in time
-			if ( undefined === qta ) qta = ((qa.P580||{})[0]||{}).time ; // stat time
+			if ( undefined === qta ) qta = ((qa.P580||{})[0]||{}).time ; // start time
 			return qta||'' ;
 		}
 		
@@ -1602,7 +1602,11 @@ var reasonator = {
 			var qs = sd[op] ;
 			var p = String(op).replace(/\D/g,'') ;
 			var ql = [] ;
-			$.each ( qs , function ( k , v ) { ql.push ( v ) } ) ;
+			$.each ( qs , function ( k , v ) {
+				$.each ( v , function ( k2 , v2 ) {
+					ql.push ( [ v2 ] ) ;
+				} ) ;
+			} ) ;
 
 			var num_rows = 0 ;
 			$.each ( ql , function ( row , subrow ) { num_rows += subrow.length } ) ;
@@ -1620,6 +1624,10 @@ var reasonator = {
 				ql = ql.sort ( function ( a , b ) {
 					var qta = getTimeFromQualifier ( a ) ;
 					var qtb = getTimeFromQualifier ( b ) ;
+					if ( qta == '' && qtb == '' ) {
+						qta = a[0].q ;
+						qtb = b[0].q ;
+					}
 					return (qta==qtb)?0:(qta<qtb?-1:1) ;
 				} ) ;
 			}
