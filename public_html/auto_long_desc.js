@@ -495,15 +495,15 @@ language_specs['nl'].renderDateByPrecision = function ( pre , year , month , day
 		ret.label = year ;
 		if ( !no_prefix ) ret.before = 'in ' ;
 	} else if ( precision == 10 ) {
-		ret.iso = year*pre + '-' + month ;
+		ret.iso =  month + '-' + year*pre;
 		ret.label = me.month_label[month*1] + ' ' + year ;
 		if ( !no_prefix ) ret.before = 'in ' ;
 	} else if ( precision == 11 ) {
-		ret.iso = year*pre + '-' + month + '-' + day ;
-		ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
-		if ( !no_prefix ) ret.before = 'on ' ;
+		ret.iso = day + '-' + month + '-' + year*pre ;
+		ret.label = (day*1) + ' ' + me.month_label[month*1] + ' ' + year ;
+		if ( !no_prefix ) ret.before = 'op ' ;
 	}
-	if ( pre == -1 ) ret.after = " <small>B.C.E.</small>" + ret.after ;
+	if ( pre == -1 ) ret.after = " <small>v. Chr.</small>" + ret.after ;
 	return ret ;
 }
 
