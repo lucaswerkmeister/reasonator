@@ -131,7 +131,7 @@ var reasonator = {
 	/** WikiDataQuery URL.
 	 * @type {string}
 	 */
-	wdq_url : 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api?callback=?' ,
+	wdq_url : 'http://wdq.wmflabs.org/api?callback=?' ,
 	
 	/** WiDaR API URL.
 	 * @type {string}
@@ -659,7 +659,7 @@ var reasonator = {
 		var self = this ;
 		var url = self.getCurrentUrl ( { live:true } ) ;
 		var line = self.t('wdq_notice') ;
-		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
 		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
 		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
 	} ,
@@ -1026,6 +1026,7 @@ var reasonator = {
 			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
 			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
 			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ; // 52.10_N_0.19_E
+			h .push ( lat + " / " + lon ) ;
 			h = "<div>" + h.join(' | ') + "</div>" ;
 			
 			
@@ -1138,7 +1139,7 @@ var reasonator = {
 					h += self.t('list_browse2') ;
 				}
 				h += " <a target='_blank' class='external' href='/wikidata-todo/autolist.html?q=" + escape(query) + "'>" + self.t('list_here') + "</a>. " ;
-				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' '))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' '))+"'>") ;
+				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
 				$.each ( items , function ( k , v ) {
@@ -1593,7 +1594,7 @@ var reasonator = {
 		function getTimeFromQualifier ( i ) {
 			var qa = (((i||[])[0]||{}).qualifiers||{}) ;
 			var qta = ((qa.P585||{})[0]||{}).time ; // Point in time
-			if ( undefined === qta ) qta = ((qa.P580||{})[0]||{}).time ; // stat time
+			if ( undefined === qta ) qta = ((qa.P580||{})[0]||{}).time ; // start time
 			return qta||'' ;
 		}
 		
@@ -1601,7 +1602,11 @@ var reasonator = {
 			var qs = sd[op] ;
 			var p = String(op).replace(/\D/g,'') ;
 			var ql = [] ;
-			$.each ( qs , function ( k , v ) { ql.push ( v ) } ) ;
+			$.each ( qs , function ( k , v ) {
+				$.each ( v , function ( k2 , v2 ) {
+					ql.push ( [ v2 ] ) ;
+				} ) ;
+			} ) ;
 
 			var num_rows = 0 ;
 			$.each ( ql , function ( row , subrow ) { num_rows += subrow.length } ) ;
@@ -1619,6 +1624,10 @@ var reasonator = {
 				ql = ql.sort ( function ( a , b ) {
 					var qta = getTimeFromQualifier ( a ) ;
 					var qtb = getTimeFromQualifier ( b ) ;
+					if ( qta == '' && qtb == '' ) {
+						qta = a[0].q ;
+						qtb = b[0].q ;
+					}
 					return (qta==qtb)?0:(qta<qtb?-1:1) ;
 				} ) ;
 			}
@@ -3484,11 +3493,26 @@ var reasonator = {
 		if ( thumb.css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
 		if ( $('#actual_content').css('display') === 'none' ) return ; // Hacking around Chrome bug; should be: if ( !img.is(':visible') ) return ;
 		
-		if ( !thumb.is_on_screen() ) return ;
+		if ( !self.isOnScreen(thumb) ) return ;
 		var mmid = thumb.attr('mmid') ;
 		self.multimediaLazyLoad ( self.mm_load[mmid] ) ;
 	} ,
-	
+
+	isOnScreen : function ( o ) {
+		var win = $(window);
+		var viewport = {
+			top : win.scrollTop(),
+			left : win.scrollLeft()
+		};
+		viewport.right = viewport.left + win.width();
+		viewport.bottom = viewport.top + win.height();
+ 
+		var bounds = o.offset();
+		bounds.right = bounds.left + o.outerWidth();
+		bounds.bottom = bounds.top + o.outerHeight();
+ 
+		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+	} ,	
 
 
 	fin : false
@@ -3499,7 +3523,7 @@ var reasonator = {
 
 $(document).ready ( function () {
 	$('#emergency').remove() ;
-
+/*
 	$.fn.is_on_screen = function(){
 		var win = $(window);
 		var viewport = {
@@ -3515,7 +3539,7 @@ $(document).ready ( function () {
  
 		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
 	};
-
+*/
 	// Load thumbnails on demand
 	$(window).scroll(function(){
 		$('div.unloaded_thumbnail').each ( function () {
