@@ -22,7 +22,8 @@ var reasonator = {
 		seal : 158 ,
 		chemical_structure : 117 ,
 		astronomic_symbol : 367 ,
-		image : 18
+		image : 18 ,
+		sandbox_image : 368
 	} ,
 	P_websites : {
 		official_website : 856
@@ -1258,6 +1259,7 @@ var reasonator = {
 		var icons = {
 			wiki:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/18px-Wikipedia-logo-v2.svg.png' ,
 			wikivoyage:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Wikivoyage-logo.svg/18px-Wikivoyage-logo.svg.png' ,
+			wikiquote:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Wikiquote-logo.svg/18px-Wikiquote-logo.svg.png' ,
 			wikisource:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/18px-Wikisource-logo.svg.png'
 		} ;
 
@@ -1283,7 +1285,7 @@ var reasonator = {
 				h += "<div><span style='margin-right:10px;font-size:12pt'><a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/Q"+qnum+"'>Q"+qnum+"</a></span>" ;
 				
 				var sl = i.getWikiLinks() ;
-				$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' ] , function ( dummy , site ) {
+				$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' , 'wikiquote' ] , function ( dummy , site ) {
 					var s2 = site=='wiki'?'wikipedia':site ;
 					if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
 				} ) ;
@@ -1505,7 +1507,7 @@ var reasonator = {
 
 		var main_media = ['image','video'] ;
 		var audio_files = ['audio','voice_recording','pronunciation_audio'] ;
-		var other_images = ['chemical_structure','astronomic_symbol'] ;
+		var other_images = ['chemical_structure','astronomic_symbol','sandbox_image'] ;
 		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map','logo'] ;
 		var media =  main_media.concat(other_images).concat(special_images).concat(audio_files) ;
 		$.each ( media , function ( dummy1 , medium ) {
@@ -1797,13 +1799,14 @@ var reasonator = {
 		var links = i.getWikiLinks() ;
 		var hadthat = {} ;
 
-		var projects = [ 'current' , 'mainwp' , 'commons' , 'wikisource' , 'wikivoyage' , 'wiki' ] ;
+		var projects = [ 'current' , 'mainwp' , 'commons' , 'wikisource' , 'wikivoyage' , 'wikiquote' , 'wiki' ] ;
 		var groups = {
 			current : { title:self.t('sl_current') , server:'wikipedia.org' , sites:[] } ,
 			
 			mainwp : { title:self.t('sl_big_wp') , server:'wikipedia.org' , sites:[] } ,
 			commons : { title:self.t('sl_commons') , server:'wikimedia.org' , sites:[] } ,
 			wikisource : { title:self.t('sl_wikisource') , server:'wikisource.org' , sites:[] } ,
+			wikiquote : { title:self.t('sl_wikiquote') , server:'wikiquote.org' , sites:[] } ,
 			wikivoyage : { title:self.t('sl_wikivoyage') , server:'wikivoyage.org' , sites:[] } ,
 			wiki : { title:self.t('sl_other') , server:'wikipedia.org' , sites:[] } ,
 		} ;
