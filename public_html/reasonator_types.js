@@ -505,7 +505,7 @@ reasonator_types.push ( {
 			if ( reasonator.use_wdq ) {
 				var url = reasonator.getCurrentUrl ( { live:true } ) ;
 				var line = reasonator.t('wdq_notice') ;
-				line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wikidata-wdq-mm.instance-proxy.wmflabs.org/'>" ) ;
+				line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
 				line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
 				h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
 			}
