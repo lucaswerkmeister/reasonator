@@ -241,7 +241,7 @@ function lang_class () {
 	this.addWorkText = function () {
 		var alma = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P69'] } ) ;
 		var field = this.getRelatedItemsWithQualifiers ( { properties:['P136','P101'] } ) ;
-		var position = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P39'] } ) ;
+		var position = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P39'],qualifiers:{'of':['P642']} } ) ;
 		var member = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P463'] } ) ;
 		var employers = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P108'],qualifiers:{'job':['P794']} } ) ;
 		this.alma ( alma ) ;
@@ -353,7 +353,7 @@ language_specs['en'].position = function ( d ) {
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
-//					qualifiers : { job:function(qv){me.h.push ( { before:'as ' , q:qv[0] , after:' ' } )} } ,
+		qualifiers : { of:function(qv){me.h.push ( { before:'for ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
