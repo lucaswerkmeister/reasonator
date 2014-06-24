@@ -1438,12 +1438,12 @@ var reasonator = {
 			var s = i.getClaimTargetString ( claims[0] ) ;
 			delete self.wd.items[self.q].raw.claims['P242'] ; // Prevent showing up later
 
-			$('div.locator_map').html('<img/>') ;
+			$('div.locator_map').html('') ;
 			self.imgcnt++ ;
 			var io = { file:s , type:'image' , id:'#imgid'+self.imgcnt , title:self.wd.items['P242'].getLabel() } ;
 			io.tw = 220 ;
 			io.th = 220 ;
-			io.id = 'div.locator_map img' ;
+			io.id = 'div.locator_map' ;
 			io.append = true ;
 			self.mm_load.push ( io ) ;
 			uses_locator_map = true ;
