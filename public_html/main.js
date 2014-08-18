@@ -1027,7 +1027,9 @@ var reasonator = {
 			var h = [] ;
 			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
 			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
-			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ; // 52.10_N_0.19_E
+			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ;
+			h.push ( "<a target='_blank' class='external' href='http://taginfo.openstreetmap.org/tags/wikidata="+self.q+"'>TagInfo</a>" ) ;
+			h.push ( "<a target='_blank' class='external' href='http://overpass-turbo.eu/?w=%22wikidata%22%3D%22"+self.q+"%22+global&R'>Overpass</a>" ) ;
 			h .push ( lat + " / " + lon ) ;
 			h = "<div>" + h.join(' | ') + "</div>" ;
 			
