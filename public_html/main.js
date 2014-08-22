@@ -1028,13 +1028,31 @@ var reasonator = {
 			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
 			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
 			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ;
-			h.push ( "<a target='_blank' class='external' href='http://taginfo.openstreetmap.org/tags/wikidata="+self.q+"'>TagInfo</a>" ) ;
-			h.push ( "<a target='_blank' class='external' href='http://overpass-turbo.eu/?w=%22wikidata%22%3D%22"+self.q+"%22+global&R'>Overpass</a>" ) ;
+			h.push ( "<a target='_blank' class='external' id='taginfo' style='display:none' href='http://taginfo.openstreetmap.org/tags/wikidata="+self.q+"'>TagInfo</a>" ) ;
+			h.push ( "<a target='_blank' class='external' id='overpass' href='http://overpass-turbo.eu/?w=%22wikidata%22%3D%22"+self.q+"%22+global&R'>Overpass</a>" ) ;
 			h .push ( lat + " / " + lon ) ;
 			h = "<div>" + h.join(' | ') + "</div>" ;
 			
 			
 			$('div.maps').append ( h ) ;
+			
+			$.getJSON ( '//taginfo.openstreetmap.org/api/4/search/by_key_and_value?query=wikidata%3D'+self.q+'&page=1&rp=10&callback=?' , function ( d ) {
+//				console.log ( "taginfo" , d ) ;
+				if ( typeof d.data == 'undefined' || d.data.length == 0 ) {
+					$('#taginfo').replaceWith ( '<span>TagInfo</span>' ) ;
+				}
+				$('#taginfo').show() ;
+			} ) ;
+			
+			
+			$.get ( '//overpass.osm.rambler.ru/cgi/interpreter?data=[out:json];way[wikidata%3D'+self.q+']%3Bout%3B' , function ( d ) {
+//				console.log ( "overpass" , d ) ;
+				if ( typeof d.elements == 'undefined' || d.elements.length == 0 ) {
+					$('#overpass').replaceWith ( '<span>Overpass</span>' ) ;
+				}
+				$('#overpass').show() ;
+			} , 'json' ) ;
+			
 		}
 		
 		self.addHoverboxes () ;
