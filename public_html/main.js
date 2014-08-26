@@ -127,12 +127,12 @@ var reasonator = {
 	/** Use WikiDataQuery, unless page is "live".
 	 * @type {boolean}
 	 */
-	use_wdq : ( window.location.protocol == 'http:' ) , // use "false" to deactivate
+	use_wdq : true ,//( window.location.protocol == 'http:' ) , // use "false" to deactivate
 
 	/** WikiDataQuery URL.
 	 * @type {string}
 	 */
-	wdq_url : 'http://wdq.wmflabs.org/api?callback=?' ,
+	wdq_url : '//wdq.wmflabs.org/api?callback=?' ,
 	
 	/** WiDaR API URL.
 	 * @type {string}
@@ -661,7 +661,7 @@ var reasonator = {
 		var self = this ;
 		var url = self.getCurrentUrl ( { live:true } ) ;
 		var line = self.t('wdq_notice') ;
-		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
+		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='//wdq.wmflabs.org/'>" ) ;
 		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
 		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
 	} ,
@@ -1025,7 +1025,7 @@ var reasonator = {
 			} ) ;
 			
 			var h = [] ;
-			h.push ( "<a target='_blank' class='external' href='http://tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
+			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/wikidata-todo/around.html?lat="+lat+"&lon="+lon+"'>Other Wikidata items within 15km</a>" ) ;
 			var parts = (lat<0?-lat:lat)+' '+(lat<0?'S':'N')+' '+(lon<0?-lon:lon)+' '+(lon<0?'W':'E') ;
 			h.push ( "<a target='_blank' class='external' href='//tools.wmflabs.org/geohack/geohack.php?params="+parts+"'>Geohack</a>" ) ;
 			h.push ( "<a target='_blank' class='external' id='taginfo' style='display:none' href='http://taginfo.openstreetmap.org/tags/wikidata="+self.q+"'>TagInfo</a>" ) ;
@@ -1070,7 +1070,7 @@ var reasonator = {
 		}
 		
 		if ( self.showConceptCloudLink ) {
-			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='http://tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
+			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='//tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
 			$('#actual_content div.sidebar').append ( h ) ;
 		}
 		
@@ -2073,12 +2073,12 @@ var reasonator = {
 				var al = '' ;
 				if ( typeof o.main_prop != 'undefined' ) {
 					if ( typeof v.q != 'undefined' ) {
-						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='http://tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else if ( typeof v.time != 'undefined' ) {
 						var base = self.getFormatDate ( v ) ;
 						var from = base + '0000-00-00'.substr(base.length);
 						var to = base + '9999-13-32'.substr(base.length);
-						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='http://tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else {
 						console.log ( v ) ;
 					}
@@ -3585,10 +3585,10 @@ $(document).ready ( function () {
 		} ) ;
 	} ) ;
 	
-	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
-		window.location = window.location.href.replace(/^https:/,'http:') ;
-		return ;
-	}
+//	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
+//		window.location = window.location.href.replace(/^https:/,'http:') ;
+//		return ;
+//	}
 
 	$('#main_content').hide() ;
 	document.title = 'Reasonator' ;

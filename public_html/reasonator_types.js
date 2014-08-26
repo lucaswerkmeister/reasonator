@@ -458,7 +458,7 @@ reasonator_types.push ( {
 		var me = this ;
 		var q = reasonator.q ;
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_location, reasonator.P_websites);
-		$.getScript ( 'resources/js/map/OpenLayers.js' , function () { reasonator.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
+		$.getScript ( 'resources/js/openlayers/OpenLayers.js' , function () { reasonator.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
 		
 		reasonator.loadBacktrack ( {
 			follow : reasonator.location_props ,
