@@ -1198,7 +1198,7 @@ var reasonator = {
 		var l = m[1] ;
 		var url_title = escape(site.title.replace(/\s/g,'_')) ;
 		var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
-		var qrp_url = "//qrpedia.wikimedia.org.uk/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
+		var qrp_url = "//qrpedia.org/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
 		var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
 		var h = '<div style="text-align:center" class="qrcode"></div>' ;
 		$('div.sidebar').append ( h ) ;
