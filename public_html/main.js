@@ -1770,6 +1770,7 @@ var reasonator = {
 					var smtype = c.mainsnak.datavalue.value['numeric-id'] ;
 					id_type = self.wd.items['Q'+smtype].getLabel();
 					if ( smtype == 918 ) url = '//twitter.com/'+s ; // Twitter
+					else if ( smtype == 866 ) url = '//www.youtube.com/user/'+s ; // YouTube
 				} else {
 					s = i.getClaimTargetString ( c ) ;
 					url = v.replace(/!ID!/g,escattr(s)) ;
