@@ -273,7 +273,10 @@ function lang_class () {
 			$.each ( me.h , function ( k , v ) {
 				if ( v === undefined ) return ; // Paranoia
 				var main = v.label ;
-				if ( main === undefined ) main = me.wd.items[v.q].getLabel(me.lang) ;
+				if ( main === undefined ) {
+					if ( typeof me.wd.items[v.q] == 'undefined' ) main = v.q ;
+					else main = me.wd.items[v.q].getLabel(me.lang) ;
+				}
 				if ( v.url !== undefined ) {
 					main = "<a href='" + v.url + "'>" + main + "</a>" ;
 				} else {

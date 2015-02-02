@@ -80,7 +80,8 @@ var widee = {
 		if ( uniq == '' ) return callback() ;
 		
 		var langs = self.wd.main_languages.join(',') ;
-		if ( type == 'P' ) langs = self.wd.main_languages[0] ; // Property names should be available in any language, saves transfer volume!
+		//if ( type == 'P' ) 
+		langs = self.wd.main_languages[0] ; // Property names should be available in any language, saves transfer volume!
 		$.post ( './get_item_names.php' , {
 			type:type,
 			langs:langs,
