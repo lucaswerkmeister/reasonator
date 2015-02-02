@@ -653,3 +653,179 @@ language_specs['nl'].addDeathText = function () {
 }
 
 //________________________________________________________________________________________________________________________________________________________________
+
+// FRENCH
+language_specs['fr'] = new lang_class ;
+
+language_specs['fr'].setup = function () {
+	this.init() ;
+	this.month_label = [ '' , 'janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre' ] ; // First one needs to be empty!!
+	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
+	this.s_he = (this.is_male?'Il':'Elle') ;
+	this.his_er = (this.is_male?'Son':'Son') ;
+}
+
+language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
+	var me = this ;
+	var ret = {} ;
+	if ( precision <= 9 ) {
+		ret.iso = year*pre ;
+		ret.label = year ;
+		if ( !no_prefix ) ret.before = 'en ' ;
+	} else if ( precision == 10 ) {
+		ret.iso = year*pre + '-' + month ;
+		ret.label = me.month_label[month*1] + ' ' + year ;
+		if ( !no_prefix ) ret.before = 'en ' ;
+	} else if ( precision == 11 ) {
+		ret.iso = year*pre + '-' + month + '-' + day ;
+		ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+		if ( !no_prefix ) ret.before = 'le ' ;
+	}
+	if ( pre == -1 ) ret.after = " <small>av. J.-C.</small>" + ret.after ;
+	return ret ;
+}
+
+language_specs['fr'].employers = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { label:me.s_he+' a travaillé pour ' } ) } ,
+		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
+		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
+		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep+(num+1<d.length?'depuis ':'') } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+language_specs['fr'].position = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' ' } ) } ,
+		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
+		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
+		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		qualifiers : { of:function(qv){me.h.push ( { before:'pour ' , q:qv[0] , after:' ' } )} } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+language_specs['fr'].member = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' membre de ' } ) } ,
+		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
+		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
+		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+//					qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+language_specs['fr'].alma = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { label:me.s_he+' a étudié à ' } ) } ,
+		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
+		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
+		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+language_specs['fr'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' domaine de travail '+(me.is_dead?'comprend':'comprenait')+' ' , '. ' ) ; }
+language_specs['fr'].cause_of_death = function ( d ) { this.simpleList ( d , 'de ' , ' ' ) ; }
+language_specs['fr'].killer = function ( d ) { this.simpleList ( d , 'par ' , ' ' ) ; }
+language_specs['fr'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' a joué un rôle important dans ' , '.' ) ; }
+
+language_specs['fr'].spouses = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
+		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
+		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
+		date_to : function(cb) { me.h.push ( { label:'(mariés jusqu''en ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+language_specs['fr'].children = function ( d ) {
+	var me = this ;
+	this.listSentence ( {
+		data : d ,
+		start : function() { me.h.push ( { 'Ses enfants sont ' } ) } ,
+		item_start : function(cb) { cb() } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
+		end : function() { me.h.push ( { label:'. ' } ) }
+	} ) ;
+}
+
+
+language_specs['fr'].addFirstSentence = function () {
+	var me = this ;
+	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
+	me.h.push ( { label:(this.is_dead?'était':'est') , after:(this.is_male?' un ':' une ') } ) ;
+	this.listNationalities() ;
+	this.listOccupations() ;
+	me.h.push ( { label:'. ' } ) ;
+	if ( me.h.length == 3 ) me.h = [] ; // No information, skip it.
+	var sig_event = this.getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
+	me.sig_event ( sig_event ) ;
+	me.h.push ( { label:'<br/>' } ) ;
+}
+
+language_specs['fr'].addBirthText = function () {
+	var me = this ;
+	var birthdate = me.i.raw.claims['P569'] ;
+	var birthplace = me.i.raw.claims['P19'] ;
+	var birthname = me.i.raw.claims['P513'] ;
+	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
+		me.h.push ( { label:me.s_he , after:(this.is_male?' est né ':' est née ') } ) ;
+		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
+		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
+		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'à ' , after:' ' } ) ;
+		var father = me.getParent ( 22 ) ;
+		var mother = me.getParent ( 25 ) ;
+		if ( father !== undefined || mother !== undefined ) {
+			me.h.push ( { label:'de ' } ) ;
+			if ( father !== undefined ) me.addPerson ( father , ' ' ) ;
+			if ( father !== undefined && mother !== undefined ) me.h.push ( { label:'et ' } ) ;
+			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
+		}
+		me.h.push ( { label:'. ' } ) ;
+		me.h.push ( { label:'<br/>' } ) ;
+	}
+}
+
+
+language_specs['fr'].addDeathText = function () {
+	var me = this ;
+	var deathdate = me.i.raw.claims['P570'] ;
+	var deathplace = me.i.raw.claims['P20'] ;
+	var deathcause = me.i.hasClaims('P509') ;
+	var killer = me.i.hasClaims('P157') ;
+	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
+		me.h.push ( { label:me.s_he , after:(this.is_male?' est mort ':' est morte ') } ) ;
+		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
+		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
+		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
+		if ( deathplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(deathplace[0]) , before:'à ' , after:' ' } ) ;
+		me.h.push ( { label:'. ' } ) ;
+	}
+	var burialplace = me.i.raw.claims['P119'] ;
+	if ( burialplace !== undefined ) {
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+(this.is_male?' fut inhumé à ':' fut inhumée à ') , after:'. ' } ) ;
+	}
+}
+
+
+//________________________________________________________________________________________________________________________________________________________________
