@@ -247,7 +247,7 @@ reasonator_types.push ( {
 		var wd = reasonator.wd ;
 		var lang = reasonator.getMainLang() ;
 		
-		if ( reasonator.use_long_autodesc && -1 != $.inArray ( lang , ['en','nl'] ) ) {
+		if ( reasonator.use_long_autodesc && typeof language_specs[lang] != 'undefined' ) { //-1 != $.inArray ( lang , ['en','nl','fr'] ) ) {
 
 			// Setting current language
 			var lang_spec = language_specs[lang] ;

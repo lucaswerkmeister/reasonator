@@ -752,7 +752,7 @@ language_specs['fr'].spouses = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
-		date_to : function(cb) { me.h.push ( { label:'(mariés jusqu''en ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
+		date_to : function(cb) { me.h.push ( { label:'(mariés jusqu\'\'en ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
@@ -762,7 +762,7 @@ language_specs['fr'].children = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { 'Ses enfants sont ' } ) } ,
+		start : function() { me.h.push ( { label:'Ses enfants sont ' } ) } ,
 		item_start : function(cb) { cb() } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
