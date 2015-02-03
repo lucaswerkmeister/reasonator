@@ -678,7 +678,7 @@ language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day
 		if ( !no_prefix ) ret.before = 'en ' ;
 	} else if ( precision == 11 ) {
 		ret.iso = year*pre + '-' + month + '-' + day ;
-		ret.label = me.month_label[month*1] + ' ' + (day*1) + ', ' + year ;
+		ret.label = (day*1) + ' ' + me.month_label[month*1] + ' ' + year ;
 		if ( !no_prefix ) ret.before = 'le ' ;
 	}
 	if ( pre == -1 ) ret.after = " <small>av. J.-C.</small>" + ret.after ;
