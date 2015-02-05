@@ -84,6 +84,7 @@ function lang_class () {
 		if ( o.after !== undefined ) this.h.push ( { label:o.after } ) ;
 	}
 
+// TODO : make this function depend on language
 	this.getSepAfter = function ( arr , pos ) {
 		if ( pos+1 == arr.length ) return ' ' ;
 		if ( pos == 0 && arr.length == 2 ) return ' and ' ;
@@ -662,7 +663,7 @@ language_specs['fr'].setup = function () {
 	this.month_label = [ '' , 'janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre' ] ; // First one needs to be empty!!
 	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
 	this.s_he = (this.is_male?'Il':'Elle') ;
-	this.his_er = (this.is_male?'Son':'Son') ;
+	this.his_er = 'Son' ;
 }
 
 language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
@@ -694,7 +695,7 @@ language_specs['fr'].employers = function ( d ) {
 		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
 		qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
-		item_end : function(num,sep) { me.h.push ( { label:sep+(num+1<d.length?'depuis ':'') } ) } ,
+		item_end : function(num,sep) { me.h.push ( { label:sep+(num+1<d.length?'pour ':'') } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
 }
@@ -752,7 +753,7 @@ language_specs['fr'].spouses = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
-		date_to : function(cb) { me.h.push ( { label:'(mariés jusqu\'\'en ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
+		date_to : function(cb) { me.h.push ( { label:'(mariés jusque ' } ) ; cb() ; me.h.push ( { label:')' } ) } , //TODO : add contractions (jusque le => jusqu'au, jusque en => jusqu'en, etc.)
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
@@ -762,7 +763,7 @@ language_specs['fr'].children = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:'Ses enfants sont ' } ) } ,
+		start : function() { me.h.push ( { label:(me.is_male?'Il est le père de ':'Elle est la mère de ') } ) } ,
 		item_start : function(cb) { cb() } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -774,8 +775,8 @@ language_specs['fr'].addFirstSentence = function () {
 	var me = this ;
 	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
 	me.h.push ( { label:(this.is_dead?'était':'est') , after:(this.is_male?' un ':' une ') } ) ;
-	this.listNationalities() ;
 	this.listOccupations() ;
+	this.listNationalities() ;
 	me.h.push ( { label:'. ' } ) ;
 	if ( me.h.length == 3 ) me.h = [] ; // No information, skip it.
 	var sig_event = this.getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
@@ -789,14 +790,14 @@ language_specs['fr'].addBirthText = function () {
 	var birthplace = me.i.raw.claims['P19'] ;
 	var birthname = me.i.raw.claims['P513'] ;
 	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
-		me.h.push ( { label:me.s_he , after:(this.is_male?' est né ':' est née ') } ) ;
+		me.h.push ( { label:me.s_he , after:(me.is_male?' est né ':' est née ') } ) ;
 		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
 		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
 		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'à ' , after:' ' } ) ;
 		var father = me.getParent ( 22 ) ;
 		var mother = me.getParent ( 25 ) ;
 		if ( father !== undefined || mother !== undefined ) {
-			me.h.push ( { label:'de ' } ) ;
+			me.h.push ( { label:(me.is_male?'. Il est le fils de ':'. Elle est la fille de ') } ) ;
 			if ( father !== undefined ) me.addPerson ( father , ' ' ) ;
 			if ( father !== undefined && mother !== undefined ) me.h.push ( { label:'et ' } ) ;
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
@@ -806,7 +807,6 @@ language_specs['fr'].addBirthText = function () {
 	}
 }
 
-
 language_specs['fr'].addDeathText = function () {
 	var me = this ;
 	var deathdate = me.i.raw.claims['P570'] ;
@@ -814,7 +814,7 @@ language_specs['fr'].addDeathText = function () {
 	var deathcause = me.i.hasClaims('P509') ;
 	var killer = me.i.hasClaims('P157') ;
 	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
-		me.h.push ( { label:me.s_he , after:(this.is_male?' est mort ':' est morte ') } ) ;
+		me.h.push ( { label:me.s_he , after:(me.is_male?' est mort ':' est morte ') } ) ;
 		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
 		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
@@ -826,6 +826,5 @@ language_specs['fr'].addDeathText = function () {
 		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+(this.is_male?' fut inhumé à ':' fut inhumée à ') , after:'. ' } ) ;
 	}
 }
-
 
 //________________________________________________________________________________________________________________________________________________________________
