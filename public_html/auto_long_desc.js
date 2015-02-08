@@ -8,6 +8,7 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 	autodesc_short = require('./short_autodesc.js') ;
 	reasonator_base = require('./reasonator.js') ;
 	reasonator = reasonator_base.reasonator ;
+	autodesc_short.ad.wd = reasonator_base.wd ;
 }
 
 
@@ -26,6 +27,7 @@ function lang_class () {
 		if ( typeof options == 'undefined' ) options = {} ;
 		if ( typeof this.render_mode != 'undefined' ) options.render_mode = this.render_mode ;
 		if ( typeof this.lang != 'undefined' ) options.lang = this.lang ;
+		if ( typeof this.redlinks != 'undefined' ) options.redlinks = this.redlinks ;
 		return reasonator.getQlink ( q , options ) ;
 	}
 	
@@ -95,8 +97,10 @@ function lang_class () {
 	}
 
 	this.getNationalityFromCountry = function ( country , claims , hints ) {
-		if ( typeof wd_auto_desc != 'undefined' ) return wd_auto_desc.getNationalityFromCountry ( country , claims , hints ) ;
-		else return autodesc_short.ad.getNationalityFromCountry ( country , claims , hints ) ;
+		if ( typeof wd_auto_desc != 'undefined' ) return wd_auto_desc.getNationalityFromCountry ( country , claims , hints ) ; // Real Reasonator
+		if ( typeof hints == 'undefined' ) hints = {} ;
+		hints.lang = this.getMainLang() ;
+		return autodesc_short.ad.getNationalityFromCountry ( country , claims , hints ) ;
 	}
 
 
@@ -990,6 +994,7 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 			ret.wd = self.wd ;
 			ret.q = o.q ;
 			ret.lang = o.lang ;
+			ret.redlinks = o.redlinks ;
 		
 			if ( typeof o.links == 'undefined' ) {
 				ret.render_mode = 'text' ;
