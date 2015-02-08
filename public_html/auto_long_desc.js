@@ -2,21 +2,119 @@
  * @author Magnus Manske
  */
 
+if ( typeof exports != 'undefined' ) { // Running in node.js
+	jsdom = require("jsdom"); 
+	$ = require("jquery")(jsdom.jsdom().defaultView); 
+	autodesc_short = require('./short_autodesc.js') ;
+	reasonator_base = require('./reasonator.js') ;
+	reasonator = reasonator_base.reasonator ;
+}
 
+
+//________________________________________________________________________________________________________________________________________________________________
 // BASE CLASS FOR LANGUAGE RENDERING
 function lang_class () {
 
-	this.init = function () {
-		this.show_people_dates = false ;
-		this.lang = reasonator.getMainLang() ;
-		this.wd = reasonator.wd ;
-		this.h = [] ;
-		this.i = this.wd.items[reasonator.q] ;
-		this.is_dead = this.i.hasClaims ( 'P570' ) ;
+	var q ;
+	var main_title_label ;
+	var relations ;
+	var render_mode ;
+	var lang ;
+
+	// REASONATOR-SPECIFIC WRAPPER FUNCTIONS
+	this.getQlink = function ( q , options ) {
+		if ( typeof options == 'undefined' ) options = {} ;
+		if ( typeof this.render_mode != 'undefined' ) options.render_mode = this.render_mode ;
+		if ( typeof this.lang != 'undefined' ) options.lang = this.lang ;
+		return reasonator.getQlink ( q , options ) ;
+	}
+	
+	this.getMainLang = function () {
+		if ( typeof this.lang != 'undefined' ) return this.lang ;
+		return reasonator.getMainLang() ;
+	}
+	
+	this.getWD = function () {
+		return reasonator.wd ;
+	}
+	
+	this.getMainQ = function () {
+		if ( typeof this.q != 'undefined' ) return this.q ;
+		return reasonator.q ;
 	}
 
+	this.getRelations = function () {
+		return this.relations || reasonator.main_type_object.relations ;
+	}
+	
+	this.getParent = function ( p ) {
+		var rel = this.getRelations() ;
+		if ( rel === undefined ) return ;
+		if ( rel.parents === undefined ) return ;
+		if ( rel.parents[p] === undefined ) return ;
+		var ret ;
+		$.each ( rel.parents[p] , function ( k , v ) { ret = k ; return false } ) ;
+		return ret ;
+	}
+	
+	this.pad = function ( a , b ) {
+		return reasonator.pad ( a , b ) ;
+	}
+	
+	this.getSelfURL = function ( o ) {
+		return reasonator.getSelfURL ( o ) ;
+	}
+	
+	this.mainTitleLabel = function () {
+		if ( typeof this.main_title_label != 'undefined' ) return this.main_title_label ;
+		return $('#main_title_label').text() ;
+	}
+	
+	this.generateRelations = function () {
+		if ( typeof reasonator.generateRelations == 'undefined' ) return ;
+		this.relations = reasonator.generateRelations(this.getMainQ()) ;
+	}
+	
+	this.getNewline = function () {
+		if ( this.render_mode == 'text' ) return "\n" ;
+		if ( this.render_mode == 'wiki' ) return "\n\n" ;
+		return '<br/>' ; // Default
+	}
+
+	this.getBold = function ( o ) {
+		if ( this.render_mode == 'text' ) {
+			o.after = ' ' + (o.after||'') ;
+		} else if ( this.render_mode == 'wiki' ) {
+			o.before = (o.before||'') + "'''" ;
+			o.after = "''' " + (o.after||'') ;
+		} else { // Default
+			o.before = (o.before||'') + '<b>' ;
+			o.after = '</b> ' + (o.after||'') ;
+		}
+		return o ;
+	}
+
+	this.getNationalityFromCountry = function ( country , claims , hints ) {
+		if ( typeof wd_auto_desc != 'undefined' ) return wd_auto_desc.getNationalityFromCountry ( country , claims , hints ) ;
+		else return autodesc_short.ad.getNationalityFromCountry ( country , claims , hints ) ;
+	}
+
+
+
+
+	// INITIALISE
+	this.init = function () {
+		this.show_people_dates = false ;
+		this.lang = this.getMainLang() ;
+		this.wd = this.getWD() ;
+		this.h = [] ;
+		this.i = this.wd.items[this.getMainQ()] ;
+		this.is_dead = this.i.hasClaims ( 'P570' ) ;
+	}
+	
 	this.run_person = function ( callback ) {
 		this.setup() ;
+		this.generateRelations() ;
 		this.addFirstSentence () ;
 		this.addBirthText () ;
 		this.addWorkText () ;
@@ -34,8 +132,8 @@ function lang_class () {
 		var pre = d.time.substr(0,1) == '+' ? 1 : -1 ;
 		var dp = d.time.substr(1).split(/[-T:Z]/) ;
 		var year = dp[0]*1 ;
-		var month = reasonator.pad ( dp[1] , 2 ) ;
-		var day = reasonator.pad ( dp[2] , 2 ) ;
+		var month = this.pad ( dp[1] , 2 ) ;
+		var day = this.pad ( dp[2] , 2 ) ;
 		
 		var trans = me.renderDateByPrecision ( pre , year , month , day , d.precision , o.no_prefix ) ;
 		ret.label = trans.label ;
@@ -46,17 +144,8 @@ function lang_class () {
 		var iso = d.time ; // Fallback
 		var label = d.time ; // Fallback
 	
-		ret.url = reasonator.getSelfURL ( { date:trans.iso } ) ;
+		ret.url = me.getSelfURL ( { date:trans.iso } ) ;
 
-		return ret ;
-	}
-
-	this.getParent = function ( p ) {
-		if ( reasonator.main_type_object.relations === undefined ) return ;
-		if ( reasonator.main_type_object.relations.parents === undefined ) return ;
-		if ( reasonator.main_type_object.relations.parents[p] === undefined ) return ;
-		var ret ;
-		$.each ( reasonator.main_type_object.relations.parents[p] , function ( k , v ) { ret = k ; return false } ) ;
 		return ret ;
 	}
 
@@ -156,7 +245,7 @@ function lang_class () {
 		var me = this ;
 		var ret = [] ;
 		$.each ( props , function ( dummy0 , prop ) {
-			$.each ( (((reasonator.main_type_object.relations||{})[k1]||{})[prop]||[]) , function ( q2 , v ) {
+			$.each ( (((me.getRelations()||{})[k1]||{})[prop]||[]) , function ( q2 , v ) {
 				$.each ( v , function ( dummy , v2 ) {
 					if ( me.wd.items[q2] === undefined ) return ;
 					var sp = { q:q2 , dates:{} } ;
@@ -182,7 +271,7 @@ function lang_class () {
 			if ( undefined === country ) return ;
 			var country_name = me.wd.items[country].getLabel(me.lang) ;
 			var not_last = k+1 != countries.length ;
-			var s = wd_auto_desc.getNationalityFromCountry ( country_name , me.wd.items[reasonator.q].raw.claims , {not_last:not_last} ) ;
+			var s = me.getNationalityFromCountry ( country_name , me.wd.items[me.getMainQ()].raw.claims , {not_last:not_last} ) ;
 			me.h.push ( { label:s , q:country , after:(not_last?'-':' ') } ) ;
 		} ) ;
 	}
@@ -240,6 +329,7 @@ function lang_class () {
 
 
 	this.addWorkText = function () {
+		var me = this ;
 		var alma = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P69'] } ) ;
 		var field = this.getRelatedItemsWithQualifiers ( { properties:['P136','P101'] } ) ;
 		var position = this.getRelatedItemsWithQualifiers ( { dates:true,sort:'date',properties:['P39'],qualifiers:{'of':['P642']} } ) ;
@@ -250,15 +340,16 @@ function lang_class () {
 		this.position ( position ) ;
 		this.member ( member ) ;
 		this.employers ( employers ) ;
-		this.h.push ( { label:'<br/>' } ) ;
+		this.h.push ( { label:me.getNewline() } ) ;
 	}
 
 	this.addFamilyText = function () {
+		var me = this ;
 		var spouses = this.getRelationsList ( 'other' , [26] , false ) ;
 		var children = this.getRelationsList ( 'children' , [40] , true ) ;
 		this.spouses ( spouses ) ;
 		this.children ( children ) ;
-		this.h.push ( { label:'<br/>' } ) ;
+		this.h.push ( { label:me.getNewline() } ) ;
 	}
 
 
@@ -270,7 +361,7 @@ function lang_class () {
 		} ) ;
 		me.wd.getItemBatch ( qs , function () {
 			var h2 = '' ;
-	
+
 			$.each ( me.h , function ( k , v ) {
 				if ( v === undefined ) return ; // Paranoia
 				var main = v.label ;
@@ -281,17 +372,19 @@ function lang_class () {
 				if ( v.url !== undefined ) {
 					main = "<a href='" + v.url + "'>" + main + "</a>" ;
 				} else {
-					if ( v.q !== undefined ) main = reasonator.getQlink ( v.q , { label:v.label } ) ;
+					if ( v.q !== undefined ) main = me.getQlink ( v.q , { label:v.label } ) ;
 				}
 				h2 += (v.before||'') ;
 				h2 += main ;
 				h2 += (v.after||'') ;
 			} ) ;
-			h2 = h2.replace ( /\s+/g , ' ' ) ; // Excessive spaces
+
+			h2 = h2.replace ( / +/g , ' ' ) ; // Excessive spaces
+			h2 = h2.replace ( / \n/g , '\n' ) ; // Space before newline
 			h2 = h2.replace ( /\s([.])/g , '.' ) ; // Space before punctuation
 			h2 = h2.replace ( /\s([,])/g , ',' ) ; // Space before punctuation
 			h2 = h2.replace ( /\.+/g , '.' ) ; // Multiple end dots
-			h2 = h2.replace ( /(<br\/>\s*)+/g , '<br/>' ) ; // Multiple new lines
+			h2 = h2.replace ( /(<br\/>\s*)+/g , '<br/>\n' ) ; // Multiple new lines
 			callback ( h2 ) ;
 		} ) ;
 	}
@@ -422,7 +515,7 @@ language_specs['en'].children = function ( d ) {
 
 language_specs['en'].addFirstSentence = function () {
 	var me = this ;
-	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
+	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
 	me.h.push ( { label:(this.is_dead?'was':'is') , after:' a ' } ) ;
 	this.listNationalities() ;
 	this.listOccupations() ;
@@ -430,7 +523,7 @@ language_specs['en'].addFirstSentence = function () {
 	if ( me.h.length == 3 ) me.h = [] ; // No information, skip it.
 	var sig_event = this.getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
 	me.sig_event ( sig_event ) ;
-	me.h.push ( { label:'<br/>' } ) ;
+	me.h.push ( { label:me.getNewline() } ) ;
 }
 
 language_specs['en'].addBirthText = function () {
@@ -452,7 +545,7 @@ language_specs['en'].addBirthText = function () {
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
 		}
 		me.h.push ( { label:'. ' } ) ;
-		me.h.push ( { label:'<br/>' } ) ;
+		me.h.push ( { label:me.getNewline() } ) ;
 	}
 }
 
@@ -598,7 +691,7 @@ language_specs['nl'].children = function ( d ) {
 
 language_specs['nl'].addFirstSentence = function () {
 	var me = this ;
-	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
+	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
 	me.h.push ( { label:(this.is_dead?'was':'is') , after:' een ' } ) ;
 	this.listNationalities() ;
 	this.listOccupations() ;
@@ -606,7 +699,7 @@ language_specs['nl'].addFirstSentence = function () {
 	if ( me.h.length == 3 ) me.h = [] ; // No information, skip it.
 	var sig_event = this.getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
 	me.sig_event ( sig_event ) ;
-	me.h.push ( { label:'<br/>' } ) ;
+	me.h.push ( { label:me.getNewline() } ) ;
 }
 
 language_specs['nl'].addBirthText = function () {
@@ -628,7 +721,7 @@ language_specs['nl'].addBirthText = function () {
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
 		}
 		me.h.push ( { label:'. ' } ) ;
-		me.h.push ( { label:'<br/>' } ) ;
+		me.h.push ( { label:me.getNewline() } ) ;
 	}
 }
 
@@ -665,6 +758,14 @@ language_specs['fr'].setup = function () {
 	this.s_he = (this.is_male?'Il':'Elle') ;
 	this.his_er = 'Son' ;
 }
+
+language_specs['fr'].getSepAfter = function ( arr , pos ) {
+	if ( pos+1 == arr.length ) return ' ' ;
+	if ( pos == 0 && arr.length == 2 ) return ' et ' ;
+	if ( arr.length == pos+2 ) return ', et ' ;
+	return ', ' ;
+}
+
 
 language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
 	var me = this ;
@@ -773,7 +874,7 @@ language_specs['fr'].children = function ( d ) {
 
 language_specs['fr'].addFirstSentence = function () {
 	var me = this ;
-	me.h.push ( { label:$('#main_title_label').text() , before:'<b>' , after:'</b> ' } ) ;
+	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
 	me.h.push ( { label:(this.is_dead?'était':'est') , after:(this.is_male?' un ':' une ') } ) ;
 	this.listOccupations() ;
 	this.listNationalities() ;
@@ -781,7 +882,7 @@ language_specs['fr'].addFirstSentence = function () {
 	if ( me.h.length == 3 ) me.h = [] ; // No information, skip it.
 	var sig_event = this.getRelatedItemsWithQualifiers ( { properties:['P793'] } ) ;
 	me.sig_event ( sig_event ) ;
-	me.h.push ( { label:'<br/>' } ) ;
+	me.h.push ( { label:me.getNewline() } ) ;
 }
 
 language_specs['fr'].addBirthText = function () {
@@ -803,7 +904,7 @@ language_specs['fr'].addBirthText = function () {
 			if ( mother !== undefined ) me.addPerson ( mother , ' ' ) ;
 		}
 		me.h.push ( { label:'. ' } ) ;
-		me.h.push ( { label:'<br/>' } ) ;
+		me.h.push ( { label:me.getNewline() } ) ;
 	}
 }
 
@@ -828,3 +929,81 @@ language_specs['fr'].addDeathText = function () {
 }
 
 //________________________________________________________________________________________________________________________________________________________________
+// IGNORE THE REST OF THIS FILE FOR REASONATOR WEB TOOL!
+
+if ( typeof exports != 'undefined' ) { // Running in node.js
+
+	function toObject(_Array){
+		   var _Object = new Object();
+		   for(var key in _Array){
+				  _Object[key] = _Array[key];
+		   }
+		   return _Object;
+	}
+
+
+	exports.al = toObject(language_specs) ;
+	exports.wd = reasonator_base.wd ;
+	exports.defaults = {
+		language : 'en'
+	} ;
+
+	exports.getShortDesc = function ( o , callback ) {
+		var self = this ;
+		var params = {
+			q : 'Q'+(''+o.q).replace(/\D/g,'') ,
+			links : o.links ,
+			linktarget : o.linktarget ,
+			lang : o.lang||self.defaults.language ,
+			callback : function ( q , html , opt ) {
+				callback ( html ) ;
+			}
+		} ;
+		autodesc_short.ad.loadItem ( o.q , params ) ;
+	}
+
+	exports.getDescription = function ( o , callback ) {
+		var self = this ;
+		if ( typeof o.lang == 'undefined' ) o.lang = self.defaults.language ;
+		if ( o.mode != 'long' ) {
+			return self.getShortDesc ( o , callback ) ;
+		}
+		if ( typeof self.al[o.lang] == 'undefined' ) {
+	//		console.log ( "Language " + o.lang + " not available for long description, using short description instead" ) ;
+			return self.getShortDesc ( o , callback ) ;
+		}
+		self.wd.getItemBatch ( [o.q] , function () {
+	
+			var call_function = reasonator.getFunctionName ( o.q ) ;
+			if ( typeof call_function == 'undefined' ) {
+	//			console.log ( "No long description function available for " + o.q + ", using short description instead" ) ;
+				return self.getShortDesc ( o , callback ) ;
+			}
+	
+			var ret = $.extend ( true , {} , self.al[o.lang] ) ;
+			ret.wd = self.wd ;
+			ret.q = o.q ;
+			ret.lang = o.lang ;
+		
+			if ( typeof o.links == 'undefined' ) {
+				ret.render_mode = 'text' ;
+			} else if ( o.links == 'wiki' ) {
+				ret.render_mode = 'wiki' ;
+			} else if ( o.links == 'wikidata' ) {
+				// Default
+			} else if ( o.links == 'wikipedia' ) {
+				ret.render_mode = 'wikipedia' ;
+			}
+		
+		
+			var to_load = reasonator.addToLoadLater ( o.q ) ;
+			ret.wd.getItemBatch ( to_load , function () {
+				ret.init() ;
+				ret.main_title_label = ret.wd.items[o.q].getLabel() ;
+				ret[call_function] ( function ( html ) {
+					callback ( html ) ;
+				} ) ;
+			} ) ;
+		} ) ;
+	}
+}
