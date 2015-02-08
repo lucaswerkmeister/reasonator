@@ -584,6 +584,13 @@ language_specs['nl'].setup = function () {
 	this.his_er = (this.is_male?'Zijn':'Haar') ;
 }
 
+language_specs['nl'].getSepAfter = function ( arr , pos ) {
+	if ( pos+1 == arr.length ) return ' ' ;
+	if ( pos == 0 && arr.length == 2 ) return ' en ' ;
+	if ( arr.length == pos+2 ) return ', en ' ;
+	return ', ' ;
+}
+
 language_specs['nl'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
 	var me = this ;
 	var ret = {} ;
@@ -765,7 +772,6 @@ language_specs['fr'].getSepAfter = function ( arr , pos ) {
 	if ( arr.length == pos+2 ) return ', et ' ;
 	return ', ' ;
 }
-
 
 language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
 	var me = this ;
