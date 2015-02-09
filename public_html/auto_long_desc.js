@@ -132,6 +132,8 @@ function lang_class () {
 		if ( o === undefined ) o = {} ;
 		var ret = { after:' ' } ;
 		var d = (claim.time===undefined) ? (claim.datavalue===undefined?this.i.getClaimDate(claim):claim.datavalue.value) : claim ;
+		
+		if ( typeof d == 'undefined' ) return '???' ;
 
 		var pre = d.time.substr(0,1) == '+' ? 1 : -1 ;
 		var dp = d.time.substr(1).split(/[-T:Z]/) ;
