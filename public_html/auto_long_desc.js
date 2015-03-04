@@ -808,7 +808,7 @@ language_specs['fr'].employers = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a travaillé pour ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
-		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
 		qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep+(num+1<d.length?'pour ':'') } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -822,7 +822,7 @@ language_specs['fr'].position = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
-		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
 		qualifiers : { of:function(qv){me.h.push ( { before:'pour ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -836,7 +836,7 @@ language_specs['fr'].member = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' membre de ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
-		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
 //					qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -850,7 +850,7 @@ language_specs['fr'].alma = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a étudié à ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
-		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
@@ -868,7 +868,7 @@ language_specs['fr'].spouses = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
-		date_to : function(cb) { me.h.push ( { label:'(mariés ' } ) ; cb(jusque:true) ; me.h.push ( { label:')' } ) } ,
+		date_to : function(cb) { me.h.push ( { label:'(mariés ' } ) ; cb({jusque:true}) ; me.h.push ( { label:')' } ) } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
