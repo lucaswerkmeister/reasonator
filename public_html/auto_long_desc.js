@@ -179,7 +179,6 @@ function lang_class () {
 		if ( o.after !== undefined ) this.h.push ( { label:o.after } ) ;
 	}
 
-// TODO : make this function depend on language
 	this.getSepAfter = function ( arr , pos ) {
 		if ( pos+1 == arr.length ) return ' ' ;
 		if ( pos == 0 && arr.length == 2 ) return ' and ' ;
@@ -774,26 +773,29 @@ language_specs['fr'].setup = function () {
 
 language_specs['fr'].getSepAfter = function ( arr , pos ) {
 	if ( pos+1 == arr.length ) return ' ' ;
-	if ( pos == 0 && arr.length == 2 ) return ' et ' ;
-	if ( arr.length == pos+2 ) return ', et ' ;
+	if ( pos == 0 && arr.length == 2 ) return ' et ' ; // 2 items
+	if ( arr.length == pos+2 ) return ' et ' ; //3+ items
 	return ', ' ;
 }
 
-language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
+language_specs['fr'].renderDateByPrecision = function ( pre , year , month , day , precision , jusque ) {
 	var me = this ;
 	var ret = {} ;
 	if ( precision <= 9 ) {
 		ret.iso = year*pre ;
 		ret.label = year ;
-		if ( !no_prefix ) ret.before = 'en ' ;
+		ret.before = 'en '
+		if ( jusque ) ret.before = 'jusqu\'en ' ;
 	} else if ( precision == 10 ) {
 		ret.iso = year*pre + '-' + month ;
 		ret.label = me.month_label[month*1] + ' ' + year ;
-		if ( !no_prefix ) ret.before = 'en ' ;
+		ret.before = 'en ' ;
+		if ( jusque ) ret.before = 'jusqu\'en ' ;
 	} else if ( precision == 11 ) {
 		ret.iso = year*pre + '-' + month + '-' + day ;
 		ret.label = (day*1) + ' ' + me.month_label[month*1] + ' ' + year ;
-		if ( !no_prefix ) ret.before = 'le ' ;
+		ret.before = 'le ' ;
+		if ( jusque ) ret.before = 'jusqu\'au ' ;
 	}
 	if ( pre == -1 ) ret.after = " <small>av. J.-C.</small>" + ret.after ;
 	return ret ;
@@ -805,8 +807,8 @@ language_specs['fr'].employers = function ( d ) {
 		data : d ,
 		start : function() { me.h.push ( { label:me.s_he+' a travaillé pour ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
-		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
-		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
 		qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep+(num+1<d.length?'pour ':'') } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -819,8 +821,8 @@ language_specs['fr'].position = function ( d ) {
 		data : d ,
 		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
-		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
-		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
 		qualifiers : { of:function(qv){me.h.push ( { before:'pour ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -833,8 +835,8 @@ language_specs['fr'].member = function ( d ) {
 		data : d ,
 		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' membre de ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
-		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
-		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
 //					qualifiers : { job:function(qv){me.h.push ( { before:'en tant que ' , q:qv[0] , after:' ' } )} } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -847,8 +849,8 @@ language_specs['fr'].alma = function ( d ) {
 		data : d ,
 		start : function() { me.h.push ( { label:me.s_he+' a étudié à ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
-		date_from : function(cb) { me.h.push ( { label:'de ' } ) ; cb({no_prefix:true}) } ,
-		date_to : function(cb) { me.h.push ( { label:'à ' } ) ; cb({no_prefix:true}) } ,
+		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
+		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb(jusque:true) } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
@@ -866,7 +868,7 @@ language_specs['fr'].spouses = function ( d ) {
 		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
-		date_to : function(cb) { me.h.push ( { label:'(mariés jusque ' } ) ; cb() ; me.h.push ( { label:')' } ) } , //TODO : add contractions (jusque le => jusqu'au, jusque en => jusqu'en, etc.)
+		date_to : function(cb) { me.h.push ( { label:'(mariés ' } ) ; cb(jusque:true) ; me.h.push ( { label:')' } ) } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
 	} ) ;
