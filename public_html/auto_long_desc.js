@@ -7,6 +7,7 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 	$ = require("jquery")(jsdom.jsdom().defaultView); 
 	autodesc_short = require('./short_autodesc.js') ;
 	reasonator_base = require('./reasonator.js') ;
+	infobox_generator = require('./infobox_generator.js') ;
 	reasonator = reasonator_base.reasonator ;
 	autodesc_short.ad.wd = reasonator_base.wd ;
 }
@@ -961,6 +962,16 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 	exports.defaults = {
 		language : 'en'
 	} ;
+	
+	infobox_generator.ig.wd = reasonator_base.wd ;
+	infobox_generator.ig.init() ;
+	exports.infobox_generator = infobox_generator.ig ;
+	
+	exports.addInfobox = function ( text , o ) {
+		var self = this ;
+		if ( o.links == 'wiki' && typeof o.infobox_text != 'undefined' ) text = o.infobox_text + text ;
+		return text ;
+	}
 
 	exports.getShortDesc = function ( o , callback ) {
 		var self = this ;
@@ -970,7 +981,7 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 			linktarget : o.linktarget ,
 			lang : o.lang||self.defaults.language ,
 			callback : function ( q , html , opt ) {
-				callback ( html ) ;
+				callback ( self.addInfobox(html,o) ) ;
 			}
 		} ;
 		autodesc_short.ad.loadItem ( o.q , params ) ;
@@ -979,6 +990,17 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 	exports.getDescription = function ( o , callback ) {
 		var self = this ;
 		if ( typeof o.lang == 'undefined' ) o.lang = self.defaults.language ;
+
+		if ( o.links == 'wiki' && (o.get_infobox||'') != '' && typeof o.infobox_done == 'undefined' ) {
+			var o2 = $.extend ( true , {} , o ) ;
+			o2.infobox_done = true ;
+			infobox_generator.ig.getFilledInfobox ( { q:o2.q , template:o2.infobox_template , lang:o2.lang , callback:function (s) {
+				o2.infobox_text = s ;
+				return self.getDescription ( o2 , callback ) ;
+			} } ) ;
+			return ;
+		}
+
 		if ( o.mode != 'long' ) {
 			return self.getShortDesc ( o , callback ) ;
 		}
@@ -1016,7 +1038,7 @@ if ( typeof exports != 'undefined' ) { // Running in node.js
 				ret.init() ;
 				ret.main_title_label = ret.wd.items[o.q].getLabel() ;
 				ret[call_function] ( function ( html ) {
-					callback ( html ) ;
+					callback ( self.addInfobox(html,o) ) ;
 				} ) ;
 			} ) ;
 		} ) ;
