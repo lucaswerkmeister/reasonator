@@ -205,7 +205,7 @@ var reasonator = {
 
 	max_list_items : 500 ,
 
-	square_thumb_size : 150 ,
+	square_thumb_size : 130 ,
 	thumbsize : 160 ,
 
 	map_icon_url : 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Eckert4.jpg/32px-Eckert4.jpg' , // https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Earth_clip_art.svg/16px-Earth_clip_art.svg.png
@@ -600,6 +600,33 @@ var reasonator = {
 
 
 
+
+	wrapPanel : function ( h , panel ) {
+		var self = this ;
+		if ( $.trim(h||'') == '' ) return '' ;
+		if ( typeof panel.type == 'undefined' ) panel.type = 'info' ;
+		var ret = "<div class='panel panel-" + panel.type + "'>" ;
+		var title = panel.title ;
+		if ( typeof title == 'undefined' ) title = '' ;
+		
+		if ( typeof panel.id == 'undefined' ) {
+			panel.id = 'auto_panel_' + self.table_block_counter ;
+			self.table_block_counter++ ;
+		}
+		
+		if ( panel.collapsible ) {
+			title = '<a data-toggle="collapse" data-target="#'+panel.id+'" style="cursor:pointer;cursor:hand">' + title + "</a>" ;
+		}
+		
+		if ( title != '' ) ret += "<div class='panel-heading'><h2 class='panel-title'>" + title + "</h2></div>" ;
+		ret += '<div id="'+panel.id+'" class="panel-collapse collapse in" style="overflow:auto">' ;
+		ret += h ;
+		if ( typeof panel.footer != 'undefined' ) ret += "<div class='panel-footer'>" + panel.footer + "</div>" ;
+		ret += "</div>" ;
+		ret += "</div>" ;
+		return ret ;
+	} ,
+
 	
 	/**
 	 * Follows "subclass of" property to the source, and shows that list.
@@ -611,14 +638,16 @@ var reasonator = {
 		var h = '' ;
 		if ( self.wd.items[q].hasClaims('P279') ) {
 			var chain = self.findLongestPath ( { start:q , props:[279] } ) ;
-			h = "<h2>" + self.t('subclass_of') + "</h2>" ;
+			var panel = { title:self.t('subclass_of') , collapsible:true } ;
+			var h = '' ;
 			h += self.renderChain ( chain , [
 //				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
 				{ title:self.t('name') , name:true } ,
 				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
-			if ( self.use_wdq ) h += self.getWDQnotice() ;
+			if ( self.use_wdq ) panel.footer = self.getWDQnotice() ;
+			h = reasonator.wrapPanel ( h , panel ) ;
 		}
 		$('div.classification').html ( h ) ;
 	} ,
@@ -662,8 +691,10 @@ var reasonator = {
 		var url = self.getCurrentUrl ( { live:true } ) ;
 		var line = self.t('wdq_notice') ;
 		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='//wdq.wmflabs.org/'>" ) ;
+//		line = line.replace(/\$1(.+?)<\/a>/,"<a target='_blank' href='//wdq.wmflabs.org/'><mark>$1</mark></a>" ) ;
 		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+//		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+		return "<div>" + line + "</div>" ;
 	} ,
 	
 	renderMainPropsTable : function ( props ) {
@@ -1034,7 +1065,7 @@ var reasonator = {
 			h = "<div>" + h.join(' | ') + "</div>" ;
 			
 			
-			$('div.maps').append ( h ) ;
+			$('div.maps div.panel-footer').append ( h ) ;
 			
 			$.getJSON ( '//taginfo.openstreetmap.org/api/4/search/by_key_and_value?query=wikidata%3D'+self.q+'&page=1&rp=10&callback=?' , function ( d ) {
 //				console.log ( "taginfo" , d ) ;
@@ -1093,6 +1124,8 @@ var reasonator = {
 		self.showQRcode() ;
 		self.generateTimelineData() ;
 		self.adjustSitelinksHeight() ;
+		
+		if ( $('div.all_images').html() == '' ) $('#other_media_container').hide() ;
 	} ,
 	
 	setAsInstanceOfList : function () {
@@ -1439,9 +1472,9 @@ var reasonator = {
 		
 		var id = '.misc_data' ;
 		self.renderPropertyTable ( sd , { id:id , striped:true } ) ;
-		id += " table" ;
-		$(id).removeClass('table').removeClass('table-condensed').addClass('sidebar-table') ;
-		$(id).prepend("<thead><th colspan=2>"+self.t('external_ids')+"</th></thead>") ;
+		var h = $(id+" table tbody").html() ;
+		h = self.renderSidebarTable ( h , self.t('external_ids') ) ;
+		$(id).html ( h ) ;
 		$(id+' th').css({'min-width':''}) ;
 		$(id+' td').css({'width':''}) ;
 	} ,
@@ -1557,10 +1590,14 @@ var reasonator = {
 						io.id = 'div.'+medium_sidebar_div ;
 						io.append = true ;
 						if ( -1 != $.inArray ( medium , special_images ) ) io.type = 'image' ;
-						if ( medium == 'wikivoyage_banner' ) io.tw = self.banner_width ;
+						if ( medium == 'wikivoyage_banner' ) {
+							io.tw = self.banner_width ;
+//							io.classes = [ 'img-responsive' ] ;
+						}
 					} else {
 						if ( !has_header ) {
-							$('div.all_images').append ( "<div id='related_media_container'><h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div></div>" ) ;
+							$('#other_media_container h2.panel-title').html ( self.t('related_media') ) ;
+							$('div.all_images').append ( "<div id='related_media_meta'></div>" ) ;
 							has_header = true ;
 						}
 						var h3 = "<div class='mythumb' id='imgid" + self.imgcnt + "'>...</div>" ;
@@ -1580,7 +1617,8 @@ var reasonator = {
 				if ( self.wd.items['P'+prop] === undefined ) return ;
 				var ct = self.wd.items['P'+prop].getLabel()  ;
 				if ( !has_header ) {
-					$('div.all_images').append ( "<h2>"+self.t('related_media')+"</h2><div id='related_media_meta'></div>" ) ;
+					$('#other_media_container h2.panel-title').html ( self.t('related_media') ) ;
+					$('div.all_images').append ( "<div id='related_media_meta'></div>" ) ;
 					has_header = true ;
 				}
 				var c = self.wd.items[self.q].getClaimsForProperty ( prop ) ;
@@ -1685,9 +1723,13 @@ var reasonator = {
 			h2 += ">" + h + "</table>" ;
 			h = h2 ;
 		}
-		if ( o.title !== undefined && h != '' ) h = "<h2>" + o.title + "</h2>" + h ;
+
+		if ( typeof o.title != 'undefined' && h != '' ) {
+			var panel = { title:o.title , collapsible:true } ;
+			h = reasonator.wrapPanel ( h , panel ) ;
+//			h = "<h2>" + o.title + "</h2>" + h ;
+		}
 		$(o.id).html(h) ;
-//		if ( !o.striped ) $(o.id+' table').removeClass('table').removeClass('table-condensed') ;
 	} ,
 	
 	toggleItems : function ( block_id ) {
@@ -1715,7 +1757,6 @@ var reasonator = {
 			} ) ;
 		} ) ;
 		self.renderPropertyTable ( sd , { id:'.other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
-
 	} ,
 	
 
@@ -1789,8 +1830,18 @@ var reasonator = {
 		} ) ;
 
 		if ( h.length == 0 ) return ;
-		h = "<table class='sidebar-table table-striped'><thead><th colspan=2>"+self.t('external_sources')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
+		
+		h = self.renderSidebarTable ( h.join('') , self.t('external_sources') ) ;
+//		h = "<table class='sidebar-table table-striped'><thead><th colspan=2>"+self.t('external_sources')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
 		$('.external_ids').html ( h ) ;
+	} ,
+	
+	renderSidebarTable : function ( h , title ) {
+		var self = this ;
+		if ( typeof h == 'undefined' ) h = '' ;
+		var ret = "<table class='sidebar-table table-striped'><tbody>" + h + "</tbody></table>" ;
+		ret = self.wrapPanel ( ret , { title:title , collapsible:true } ) ;
+		return ret ;
 	} ,
 
 
@@ -1811,7 +1862,8 @@ var reasonator = {
 		
 		if ( h.length == 0 ) return ;
 
-		h = "<table class='sidebar-table table-striped'><thead><th>"+self.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
+		h = self.renderSidebarTable ( h.join('') , self.t('external_sites') ) ;
+//		h = "<table class='sidebar-table table-striped'><thead><th>"+self.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
 		$('.websites').html ( h ) ;
 	} ,
 	
@@ -1869,8 +1921,10 @@ var reasonator = {
 			} ) ;
 		} ) ;
 		
-		var h = "<table class='sidebar-table table-striped'>" ; // style='width:100%' border=0 cellspacing=0 cellpadding=1 
-		h += "<thead><th colspan=2>"+self.t('wikimedia_projects')+"</th></thead><tbody>" ;
+//		var h = "<table class='sidebar-table table-striped'>" ; // style='width:100%' border=0 cellspacing=0 cellpadding=1 
+//		h += "<thead><th colspan=2>"+self.t('wikimedia_projects')+"</th></thead><tbody>" ;
+		
+		var h = '' ;
 		
 		$.each ( projects , function ( dummy , project ) {
 			if ( groups[project].sites.length == 0 ) return ;
@@ -1886,7 +1940,8 @@ var reasonator = {
 			} ) ;
 		} ) ;
 
-		h += "</tbody></table>" ;
+//		h += "</tbody></table>" ;
+		h = self.renderSidebarTable ( h , self.t('wikimedia_projects') ) ;
 		$('div.sitelinks').html ( h ) ;
 	} ,
 
@@ -2173,6 +2228,7 @@ var reasonator = {
 							}
 						} else if ( o.type == 'image' ) {
 							h = "<img border=0 width='"+v.imageinfo[0].thumbwidth+"px' height='"+v.imageinfo[0].thumbheight+"px' src='" + v.imageinfo[0].thumburl + "' " ;
+							if ( typeof o.classes != 'undefined' ) h += "classes='" + o.classes.join(' ') + "' " ;
 							if ( o.title !== undefined ) h += "title='" + escattr(o.title) + "' " ; 
 							h += "/>" ;
 							h = "<a target='_blank' href='" + v.imageinfo[0].descriptionurl + "'>" + h + "</a>" ;
@@ -2987,7 +3043,7 @@ var reasonator = {
 			tl.timeline.date.push ( d ) ;
 		} ) ;
 
-		
+		$('div.timeline').show() ;
 
 		var years = max.substr(0,4) - min.substr(0,4) ;
 

@@ -330,16 +330,16 @@ reasonator_types.push ( {
 	
 			// Render taxon chain
 			var chain = reasonator.findLongestPath ( { start:q , props:reasonator.taxon_list } ) ;
-			h = "<h2>" + reasonator.t('taxonomy') + "</h2>" ;
+			var panel = { title:reasonator.t('taxonomy') , collapsible:true } ;
+			var h = '' ;
 			h += reasonator.renderChain ( chain , [
 				{ title:reasonator.t('rank') , prop:105 , default:'<i>(unranked)</i>' } ,
 				{ title:reasonator.t('name') , name:true } ,
 				{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
 
-			if ( reasonator.use_wdq ) {
-				h += reasonator.getWDQnotice() ;
-			}
+			if ( reasonator.use_wdq ) panel.footer = reasonator.getWDQnotice() ;
+			h = reasonator.wrapPanel ( h , panel ) ;
 		
 			// Render taxon properties
 			var taxon_props = [225,105,405,141,183,427,566] ;
@@ -495,20 +495,23 @@ reasonator_types.push ( {
 		
 	//		var chain = reasonator.wd.getItem(q).followChain({props:reasonator.location_props}) ;
 			var chain = reasonator.findLongestPath ( { start:q , props:reasonator.location_props } ) ;
-			h = "<h2>" + reasonator.t('location') + "</h2>" ;
+			var panel = { title:reasonator.t('location') , collapsible:true } ;
+			var h = '' ;
 			h += reasonator.renderChain ( chain , [
 				{ title:reasonator.t('name') , name:true } ,
-				{ title:reasonator.t('description') , desc:true } ,
-				{ title:reasonator.t('admin_division') , prop:132 } ,
+				{ title:reasonator.t('description') , desc:true }
 			] ) ;
 
 			if ( reasonator.use_wdq ) {
 				var url = reasonator.getCurrentUrl ( { live:true } ) ;
 				var line = reasonator.t('wdq_notice') ;
-				line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
+//				line = line.replace(/\$1(.+?)<\/a>/,"<a target='_blank' href='//wdq.wmflabs.org/'><mark>$1</mark></a>" ) ;
+				line = line.replace(/\$1/,"<a class='external' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
 				line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-				h += "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
+				panel.footer = line ;
 			}
+			
+			h = reasonator.wrapPanel ( h , panel ) ;
 
 			reasonator.P['type_of_administrative_division'] = 132 ;
 			$.each ( reasonator.location_props , function ( k , v ) {
@@ -517,6 +520,7 @@ reasonator_types.push ( {
 
 			if ( reasonator.wd.items[reasonator.q].hasClaims('P625') ) $('div.maps').show() ;
 			reasonator.renderMainPropsTable ( show_location_props ) ; // Location properties section
+			reasonator.P['P625'] = 625 ; // Don't show in "Other"
 			reasonator.addOther() ; // Render other properties
 			reasonator.addMedia() ; // Render images
 			reasonator.finishDisplay ( h ) ; // Finish
@@ -569,9 +573,8 @@ reasonator_types.push ( {
 			reasonator.addMedia() ; // Render images
 
 			reasonator.renderSubclassChain() ;
-
 			reasonator.finishDisplay () ; // Finish
-			$('div.other h2').remove() ;
+//			$('div.other h2').remove() ;
 		
 			if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
 			if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;

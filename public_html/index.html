@@ -5,22 +5,39 @@
 <title>Reasonator</title>
 <meta name="robots" content="nofollow" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
 
 <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/16px-Reasonator_logo_proposal.png">
+
+<!--
 <link href="/magnustools/resources/dist3/css/bootstrap.min.css" rel="stylesheet">
 <link href="/magnustools/resources/dist3/css/bootstrap-theme.min.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="/magnustools/resources/css/common.css">
+-->
+<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/normalize/3.0.3/normalize.min.css" rel="stylesheet">
+
 <link rel="stylesheet" type="text/css" href="resources/js/map/theme/default/style.css" />
 <link rel="stylesheet" type="text/css" href="resources/js/jquery/jquery.cluetip.css" />
 <link rel="stylesheet" type="text/css" href="./main.css" />
 
+<!--
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery-1.11.0.min.js"></script>
+-->
+<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cookie.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cluetip.min.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.ba-hashchange.min.js"></script>
 <script type="text/javascript" src="/magnustools/resources/TimelineJS/build/js/storyjs-embed.js"></script>
+
+<!--
 <script type="text/javascript" src="/magnustools/resources/dist3/js/bootstrap.min.js"></script>
+-->
+<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+
 <script type="text/javascript" src="/magnustools/resources/js/common.js"></script>
 <script type="text/javascript" src="/magnustools/resources/js/wikidata.js"></script>
 <!--<script type="text/javascript" src="/wikidata-todo/autodesc.js"></script>-->
@@ -32,161 +49,228 @@
 
 <body>
 
-<div class="container">
-      <div class="header">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <span style='white-space:nowrap'>
+      <a class="navbar-brand" href="?"><img style='display:inline-block' src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' />&nbsp;Reasonator</a>
+      </span>
+    </div>
 
-			<ul id="toolbar-right" class="nav nav-pills pull-right">
-				<li><a href='#' id='random_item' accesskey="x"></a></li>
-				<li><a href='#' id='language_select'></a></li>
-				<li><form class="form-search form-inline inline-form" style="margin-bottom:0px"><input id="find" name="find" type="text" accesskey="f" value="" class="input-medium search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">&nbsp;</button></form></li>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
-				<li>
-				<div class="btn-group">
-				  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span id='aux_dropdown_button_label'></span> <span class="caret"></span></button>
-				  <ul class="dropdown-menu" role="menu">
-					<li><a target='_blank' href="#" id='personal_settings' style='font-weight:bold'></a></li>
-					<li><a target='_blank' id='about_link' href='//meta.wikimedia.org/wiki/Reasonator'></a></li>
-					<li><a target='_blank' id='discuss_link' href='//meta.wikimedia.org/wiki/Talk:Reasonator'></a></li>
-					<li><a target='_blank' id='edit_interface_link' href='//meta.wikimedia.org/wiki/Reasonator/interface'></a></li>
-					<li><a target='_blank' id='stringprops_link' href='//meta.wikimedia.org/wiki/Reasonator/stringprops'></a></li>
-					<li><a target='_blank' href="//bitbucket.org/magnusmanske/reasonator">Git</a></li>
-					<li><a target='_blank' href="./doc/index.html">Code documentation</a></li>
-					<li><a target='_blank' href="/reasonator/stats.php">Page views</a></li>
-					<li class="divider"></li>
-					<li><a href='/magnustools'>Other tools</a></li>
-				  </ul>
-				</div>
-				</li>
+      <ul class="nav navbar-nav navbar-right">
+		<li><a href='#' id='random_item' accesskey="x"></a></li>
+		<li><a href='#' id='language_select'></a></li>
+		<li>
+			<form class="navbar-form" role="search">
+			<input id="find" name="find" type="text" accesskey="f" value="" class="input-medium search-query">&nbsp;<button id="btn_search" type="submit" class="btn btn-primary">&nbsp;</button>
+			</form>
+		</li>
 
-				<li><a style='margin:0px;padding:0px;margin-top:4px' href="/"><img src='//upload.wikimedia.org/wikipedia/commons/thumb/6/60/Wikimedia_labs_logo.svg/32px-Wikimedia_labs_logo.svg.png' title='Powered by Wikimedia Labs' border=0 width='32px' /></a></li>
-			</ul>
+		<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Other <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+			<li><a target='_blank' href="#" id='personal_settings'></a></li>
+			<li><a target='_blank' id='about_link' href='//meta.wikimedia.org/wiki/Reasonator'></a></li>
+			<li><a target='_blank' id='discuss_link' href='//meta.wikimedia.org/wiki/Talk:Reasonator'></a></li>
+			<li><a target='_blank' id='edit_interface_link' href='//meta.wikimedia.org/wiki/Reasonator/interface'></a></li>
+			<li><a target='_blank' id='stringprops_link' href='//meta.wikimedia.org/wiki/Reasonator/stringprops'></a></li>
+			<li><a target='_blank' href="//bitbucket.org/magnusmanske/reasonator">Git</a></li>
+			<li><a target='_blank' href="./doc/index.html">Code documentation</a></li>
+			<li><a target='_blank' href="/reasonator/stats.php">Page views</a></li>
+			<li class="divider"></li>
+			<li><a href='/magnustools'>Other tools</a></li>
+		  </ul>
+		</li>
 
-			<a id='toolname' href="?">
-				 <h3 class="text-muted">
-					<img src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' /> Reasonator
-				</h3>
-			</a>
-
-      </div>
-
-
-
-	<div id="main_content" class="row col-md-16">
-
-			<div class="" style="margin-bottom:20px;margin-top:10px;">
-
-				<div id='emergency' style='display:none'>
-					<big>IF YOU SEE THIS, THINGS HAVE GONE VERY WRONG!</big><br/>
-					Wait half an hour, then complain to <a href='mailto:magnusmanske@gmail.com'>management</a>.
-					<script>
-						setTimeout ( function(){$('#emergency').show();} , 2000 ) ; // Show after 2 sec
-					</script>
-				</div>
+		<li><a style='margin:0px;padding:0px;margin-top:4px' href="/"><img src='//upload.wikimedia.org/wikipedia/commons/thumb/6/60/Wikimedia_labs_logo.svg/32px-Wikimedia_labs_logo.svg.png' title='Powered by Wikimedia Labs' border=0 width='32px' /></a></li>
+		
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
 
 
-				<div id='intro' style='display:none'>
-					<h1>Wikidata - in pretty!</h1>
-					<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change during the year, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
-					<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
-					<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
-					<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
-					<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>
-					<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), so it can easily be ported to other locations. As always, code under GPL.</p>
-					<div class="panel panel-default">
-						<div class="panel-heading"><h3>Showcase items</h3></div>
-						<div class="panel-body">
-							<ul>
-								<li><a href='?q=Q42'>Douglas Adams</a></li>
-								<li><a href='?q=Q76'>Barack Obama</a></li>
-								<li><a href='?q=Q153'>ethanol</a></li>
-								<li><a href='?q=Q2513'>Hubble Space Telescope</a></li>
-								<li><a href='?q=Q14560'>Cactaceae</a></li>
-								<li><a href='?q=Q3030'>Vesta</a></li>
+<div class='container'>
 
-								<li><a href='?q=Q8023'>Nelson Mandela</a></li>
-								<li><a href='?q=Q1001'>Mahatma Gandhi</a></li>
+<div id="main_content" class='row'> <!--  class="row col-md-16" -->
 
-								<li><a href='?q=Q350'>Cambridge</a></li>
-								<li><a href='?q=Q4504'>Komodo dragon</a></li>
-								<li><a href='?q=Q7066'>Atheism</a></li>
-							</ul>
-						</div>
+		<div class="" style="margin-bottom:20px;margin-top:10px;">
+
+			<div id='emergency' style='display:none'>
+				<big>IF YOU SEE THIS, THINGS HAVE GONE VERY WRONG!</big><br/>
+				Wait half an hour, then complain to <a href='mailto:magnusmanske@gmail.com'>management</a>.
+				<script>
+					setTimeout ( function(){$('#emergency').show();} , 2000 ) ; // Show after 2 sec
+				</script>
+			</div>
+
+
+			<div id='intro' style='display:none'>
+				<h1>Wikidata - in pretty!</h1>
+				<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change during the year, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
+				<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
+				<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
+				<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
+				<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>
+				<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), so it can easily be ported to other locations. As always, code under GPL.</p>
+				<div class="panel panel-default">
+					<div class="panel-heading"><h3>Showcase items</h3></div>
+					<div class="panel-body">
+						<ul>
+							<li><a href='?q=Q42'>Douglas Adams</a></li>
+							<li><a href='?q=Q76'>Barack Obama</a></li>
+							<li><a href='?q=Q153'>ethanol</a></li>
+							<li><a href='?q=Q2513'>Hubble Space Telescope</a></li>
+							<li><a href='?q=Q14560'>Cactaceae</a></li>
+							<li><a href='?q=Q3030'>Vesta</a></li>
+
+							<li><a href='?q=Q8023'>Nelson Mandela</a></li>
+							<li><a href='?q=Q1001'>Mahatma Gandhi</a></li>
+
+							<li><a href='?q=Q350'>Cambridge</a></li>
+							<li><a href='?q=Q4504'>Komodo dragon</a></li>
+							<li><a href='?q=Q7066'>Atheism</a></li>
+						</ul>
 					</div>
 				</div>
-			
-			
-				<div id='main_content_sub' style='display:none'>
-					<div id='top'></div>
-					<div id='main'>
+			</div>
+		
+		
+			<div id='main_content_sub' style='display:none'>
+				<div id='top'></div>
+				<div id='main'>
 
-						<div id='actual_content' class='entity'>
-							<div class='col-md-3 sidebar'>
-								<div class='main_flag_image'></div>
-								<div class='main_coa'></div>
-								<div class='main_logo'></div>
-								<div class='main_image'></div>
-								<div class='main_seal'></div>
-								<div class='main_video'></div>
-								<div class='main_audio'></div>
-								<div class='other_sidebar_images'></div>
-								<div class='main_range_map'></div>
-								<div class='websites'></div>
-								<div class='signature'></div>
-								<div class='external_ids'></div>
-								<div class='misc_data'></div>
-								<div class='sitelinks'></div>
+					<div id='actual_content' class='entity'>
+						<div class='mainbar col-lg-9 col-md-12 col-sm-12'>
+							<div class='main_wikivoyage_banner'></div>
+							<div class='main_image mobile_header_image hidden-lg hidden-md'></div>
+							<h1 class='heading1 main_title'></h1>
+							<div class='aliases'></div>
+							<div class='manual_description lead'></div>
+							<div class='autodesc'></div>
+							<div class='topnote lead'></div>
+							<div class='personal_relations'>
+
+								<div class="panel panel-info">
+									<div class="panel-heading"><h2 class="panel-title">
+									<a data-toggle="collapse" data-target="#relatives_panel" style="cursor:pointer;cursor:hand" id='person_relatives'></a>
+									</h2></div>
+
+									<div id='relatives_panel' class='collapse in'>
+
+<!--									<h3 id='person_relatives'></h3>-->
+								
+										<div class='row'>
+											<div class='col-lg-6 col-md-6 col-sm-12'>
+												<h4 class='hidden-xs hidden-sm' id='person_parents'></h4>
+												<div id='pr_parents'></div>
+											</div>
+											<div class='col-lg-6 col-md-6 col-sm-12'>
+												<h4 class='hidden-xs hidden-sm' id='person_siblings'></h4>
+												<div id='pr_siblings'></div>
+											</div>
+											<div class="clearfix"></div>
+											<div class='col-lg-6 col-md-6 col-sm-12'>
+												<h4 class='hidden-xs hidden-sm' id='person_children'></h4>
+												<div id='pr_children'></div>
+											</div>
+											<div class='col-lg-6 col-md-6 col-sm-12'>
+												<h4 class='hidden-xs hidden-sm' id='person_other'></h4>
+												<div id='pr_other'></div>
+											</div>
+										</div>
+
+										<div id='geneawiki' style='overflow:auto;border:1px solid #DDDDDD;height:200px;width:690px;display:none'></div>
+										<div id='geneawiki_status' style='display:none'></div>
+
+										<div class="panel-footer">
+											<div style='' id='pr_full_tree'></div>
+										</div>
+									</div>
+
+								</div>
+
+
 							</div>
-							<div class='mainbar col-md-9'>
-								<div class='main_wikivoyage_banner'></div>
-								<h1 class='heading1 main_title'></h1>
-								<div class='aliases'></div>
-								<div class='manual_description lead'></div>
-								<div class='autodesc'></div>
-								<div class='topnote lead'></div>
-								<div class='personal_relations'>
-									<div style='float:right' id='pr_full_tree'></div>
-									<h3 id='person_relatives'></h3>
-									<div id='geneawiki' style='overflow:auto;border:1px solid #DDDDDD;height:200px;width:690px;display:none'></div>
-									<div id='geneawiki_status' style='display:none'></div>
-									<table class='table table-condensed person_relatives'>
-									<tbody>
-									<tr>
-										<td><h4 id='person_parents'></h4><div id='pr_parents'></div></td>
-										<td><h4 id='person_siblings'></h4><div id='pr_siblings'></div></td>
-									</tr>
-									<tr>
-										<td><h4 id='person_children'></h4><div id='pr_children'></div></td>
-										<td><h4 id='person_other'></h4><div id='pr_other'></div></td>
-									</tr>
-									</tbody>
-									</table>
+							<div class='props'></div>
+							<div class='maps'>
+								<div class="panel panel-info">
+									<div class="panel-heading"><h2 class="panel-title">
+									<a data-toggle="collapse" data-target="#maps_panel" style="cursor:pointer;cursor:hand">Maps</a>
+									</h2></div>
+									<div id='maps_panel' class='collapse in'>
+										<table><tbody><tr>
+										<td><div id='location_map1' class='map map1'></div></td>
+										<td><div id='location_map2' class='map map2'></div></td>
+										<td><div class='map locator_map'></div></td>
+										</tr></tbody></table>
+										<div class="panel-footer"></div>
+									</div>
 								</div>
-								<div class='props'></div>
-								<div class='maps'>
-									<table><tbody><tr>
-									<td><div id='location_map1' class='map map1'></div></td>
-									<td><div id='location_map2' class='map map2'></div></td>
-									<td><div class='map locator_map'></div></td>
-									</tr></tbody></table>
+							</div>
+							<div class='main'></div>
+							<div class='other'></div>
+							<div class='classification'></div>
+							<div class='backlinks'></div>
+							<div class='timeline'>
+								<div class="panel panel-info">
+									<div class="panel-heading"><h2 class="panel-title">
+									<a data-toggle="collapse" data-target="#timeline_panel_container" style="cursor:pointer;cursor:hand">Timeline</a>
+									</h2></div>
+									<div id='timeline_panel_container' class='collapse in'>
+										<div id='timeline'></div>
+									</div>
 								</div>
-								<div class='main'></div>
-								<div class='other'></div>
-								<div class='classification'></div>
-								<div class='backlinks'></div>
-								<div class='timeline' id='timeline'></div>
-								<div class='list_of'></div>
-								<div class='all_images'></div>
+							</div>
+							<div class='list_of'></div>
+						</div>
+
+						<div class='sidebar col-md-3 col-md-12 col-sm-12'>
+							<div class='main_flag_image'></div>
+							<div class='main_coa'></div>
+							<div class='main_logo'></div>
+							<div class='main_image hidden-sm hidden-xs'></div>
+							<div class='main_seal'></div>
+							<div class='main_video'></div>
+							<div class='main_audio'></div>
+							<div class='other_sidebar_images'></div>
+							<div class='main_range_map'></div>
+							<div class='websites'></div>
+							<div class='signature'></div>
+							<div class='external_ids'></div>
+							<div class='misc_data'></div>
+							<div class='sitelinks'></div>
+						</div>
+						
+						<div class='col-lg-12 col-md-12 col-sm-12' id='other_media_container'>
+							<div class="panel panel-info">
+								<div class="panel-heading"><h2 class="panel-title"></h2></div>
+								<div class="panel-body all_images"></div>
 							</div>
 						</div>
 
 
 					</div>
+
+
 				</div>
+			</div>
 
 
 
-		</div>
 	</div>
+</div>
+</div>
 </div>
 
 </body>

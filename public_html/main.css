@@ -5,7 +5,7 @@
 .rank_preferred { font-size: 150%; font-weight: bold; }
 a.wikidata { color: #0A4273; } /* #2DC800 */
 a.wikipedia { color: #3F7EA6; } /* #9669FE */
-a.external { color: #7AD95F; font-size: 1em; } /* #2DC800 */
+a.external { color: #5cb85c; font-size: 1em; } /* #2DC800  / #7AD95F */
 .sitelinks tbody { font-size: 0.9em; }
 div.sitelinks { min-height: 200px; overflow: auto; }
 
@@ -15,6 +15,7 @@ body {
 
 div.maps {
 	display: none;
+	overflow:auto;
 }
 
 table.sidebar-table {
@@ -59,6 +60,10 @@ small.qnumber { color: #999999; }
 .mythumb {
 	margin: 5px;
 	display: inline-block;
+}
+
+div.timeline {
+	display:none;
 }
 
 div.map {
@@ -112,7 +117,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar {
-	float: right;
 	margin-bottom: 10px;
 	border-left: 1px solid #DDD;
 	padding-left: 5px;
@@ -178,4 +182,20 @@ div.personal_relations {
 
 .missing_label {
 	border-bottom: 1px dotted red;
+}
+
+.main_wikivoyage_banner {
+	overflow:hidden;
+}
+
+
+/* Collapsible panels */
+.panel-heading a:after {
+    font-family: 'Glyphicons Halflings';
+    content: "\e114";    
+    float: right; 
+    color: grey; 
+}
+.panel-heading a.collapsed:after {
+    content: "\e080";
 }
