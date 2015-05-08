@@ -22,6 +22,10 @@ var reasonator = {
 		seal : 158 ,
 		chemical_structure : 117 ,
 		astronomic_symbol : 367 ,
+		distribution_map : 1846 ,
+		commemorative_plaque : 1801 ,
+		place_name_sign : 1766 ,
+		grave : 1442 ,
 		image : 18 ,
 		sandbox_image : 368
 	} ,
@@ -1562,7 +1566,7 @@ var reasonator = {
 
 		var main_media = ['image','video'] ;
 		var audio_files = ['audio','voice_recording','pronunciation_audio'] ;
-		var other_images = ['chemical_structure','astronomic_symbol','sandbox_image'] ;
+		var other_images = ['chemical_structure','astronomic_symbol','sandbox_image','distribution_map','commemorative_plaque','place_name_sign','grave'] ;
 		var special_images = ['coa','seal','wikivoyage_banner','flag_image','range_map','logo'] ;
 		var media =  main_media.concat(other_images).concat(special_images).concat(audio_files) ;
 		$.each ( media , function ( dummy1 , medium ) {
