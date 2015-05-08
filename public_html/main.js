@@ -314,6 +314,7 @@ var reasonator = {
 			loadcnt += 2 ;
 			self.wd.getItemBatch ( [self.q] , function ( d1 ) {
 				self.addToLoadLater ( self.q ) ;
+//				self.wd.restrict_to_langs = true ;
 				loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 			} ) ;
 			self.getRelatedEntities ( self.q , function () {
@@ -875,7 +876,7 @@ var reasonator = {
 									h2.push ( '???' ) ; // Unknown value
 									return ;
 								}
-								var m = date.time.match ( /^([+-])0+(\d{4,})-(\d\d)-(\d\d)T/ ) ;
+								var m = date.time.match ( /^([+-])0*(\d{4})-(\d\d)-(\d\d)T/ ) ;
 								if ( m == null ) {
 									h2.push ( "MALFORMED DATE: " + date.time ) ;
 								} else {
@@ -2646,24 +2647,25 @@ var reasonator = {
 		function showResults () {
 			var h = '<div id="date">' ;
 			
+			h += "<div class='row'>" ;
 			h += "<div><ul>" ;
 			$.each ( sections , function ( k , v ) {
 				h += "<li><a href='#cal_" + v.key + "'>" + v.title + "</a></li>" ;
 			} ) ;
 			h += "</ul></div>" ;
+			h += "</div>" ;
 			
 			$.each ( sections , function ( dummy , o ) {
 				if ( o.data === undefined || o.data.items === undefined || o.data.items.length == 0 ) return ;
 				
-				if ( !more_dates && ( o.key == 'born' || o.key == 'died' ) ) {
-					var w = parseInt(self.banner_width/2-10) ;
-					var style = "display:inline-block;max-width:"+w+"px;width:"+w+"px"+(o.key=='died'?';margin-left:12px':'') ;
-					h += '<div style="'+style+'" class="panel panel-default">' ;
-				} else {
-					h += '<div class="panel panel-default">' ;
-				}
+				if ( o.key != 'died' ) h += "<div class='row'>" ;
 				
-				h += '<div class="panel-heading"><h4 style="margin:0px"><a name="cal_'+o.key+'"></a>'+o.title+'</h4></div><div class="panel-body">' ;
+				if ( !more_dates && ( o.key == 'born' || o.key == 'died' ) ) {
+					h += '<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">' ;
+				} else {
+					h += '<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">' ;
+				}
+				h += '<a name="cal_' + o.key + '"></a>' ;
 				
 				var items = [] ;
 				$.each ( o.data.items , function ( k , v ) {
@@ -2684,14 +2686,19 @@ var reasonator = {
 				var style = [ { title:self.t('item') , name:true } ] ;
 				style = style.concat ( o.cols ) ;
 				
-				h += self.renderChain ( items , style ) . replace ( /\bnowrap\b/g , '' ) ;
-				h += "</div></div>" ;
+				var h2 = self.renderChain ( items , style ) . replace ( /\bnowrap\b/g , '' ) ;
+				h += self.wrapPanel ( h2 , { title:o.title , collapsible:true } ) ;
+				
+				h += "</div>" ;
+				if ( o.key != 'born' ) h += "</div>" ;
 			} ) ;
+
 			h += "</div>" ;
 			
 			
 			$('#actual_content div.main').html ( h ) ;
 			self.addHoverboxes ( '#date' ) ;
+			$('#other_media_container').hide() ;
 		}
 		
 		var running = sections.length ;

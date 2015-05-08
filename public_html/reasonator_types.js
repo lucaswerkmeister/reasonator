@@ -536,6 +536,133 @@ reasonator_types.push ( {
 
 reasonator_types.push ( {
 
+	type : 'given_name' ,
+	given_name_instances : [202444,11879590,12308941,3409032] ,
+
+	detect : function () {
+		var self = this ;
+		var q = reasonator.q ;
+		var found = false ;
+		$.each ( self.given_name_instances , function ( k , v ) {
+			if ( !reasonator.wd.items[q].hasClaimItemLink ( 31 , v ) ) return ;
+			found = true ;
+			return true ;
+		} ) ;
+		return found ;
+	} ,
+
+	load : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_websites, { said_to_be_the_same_as:460 } );
+		
+		if ( reasonator.wd.items[q].hasClaims('P460') ) {
+			var a = reasonator.wd.items[q].getClaimItemsForProperty ( 460 , true ) ;
+			reasonator.wd.getItemBatch ( a , function () {
+				var b = [] ;
+				$.each ( a , function ( k , v ) {
+					var c = reasonator.wd.items[v].getClaimItemsForProperty ( 407 , true ) ;
+					$.each ( c , function ( k2 , v2 ) { b.push ( v2 ) } ) ;
+				} ) ;
+				reasonator.wd.getItemBatch ( b , function () {
+					reasonator.loadRest ( function () { me.show() } ) ;
+				} ) ;
+			} ) ;
+		} else {
+			reasonator.loadRest ( function () { me.show() } ) ;
+		}
+		
+/*
+		if ( reasonator.wd.items[q].hasClaims('P279') ) {
+			reasonator.loadBacktrack ( {
+				follow : [279] ,
+				wdq : 'tree['+(reasonator.q+'').replace(/\D/g,'')+'][279]' ,
+				callback : function () {me.show() }
+			} ) ;
+		} else {
+			reasonator.loadRest ( function () { me.show() } ) ;
+		}*/
+	} ,
+	
+	show : function () {
+		var me = this ;
+		var q = reasonator.q ;
+		delete reasonator.P.instance_of ; // So it will show, if set
+		reasonator.setTopLink () ;
+		reasonator.renderName () ; // Render name
+		reasonator.showAliases ( q ) ; // Render aliases
+		reasonator.showDescription () ; // Render manual description
+		reasonator.showExternalIDs() ; // Render external ID links
+		reasonator.showWebsites() ; // Render websites
+		reasonator.addSitelinks() ; // Render sitelinks
+
+		reasonator.addOther() ; // Render other properties
+		reasonator.addMedia() ; // Render images
+
+
+		// Main
+		var h = '' ;
+		h += "<table class='table table-condensed table-striped'>" ;
+		h += "<thead>" ;
+		h += "<th>" + reasonator.t('name_variant') + "</th>" ;
+		h += "<th>" + reasonator.t('languages') + "</th>" ;
+		h += "</thead><tbody>" ;
+		var a = reasonator.wd.items[q].getClaimItemsForProperty ( 460 , true ) ;
+		$.each ( a , function ( k , v ) {
+			var b = [] ;
+			var c = reasonator.wd.getItem(v).getClaimItemsForProperty ( 407 , true ) ;
+			$.each ( c , function ( k2 , v2 ) {
+				b.push ( reasonator.getQlink ( v2 , {} ) ) ;
+			} ) ;
+			h += "<tr><th style='min-width:50%' valign='top'>" ;
+			h += reasonator.getQlink ( v , {} ) ;
+			h += "</th><td style='width:100%'>" ;
+			h += b.join(', ') ;
+			h += "</td></tr>" ;
+		} ) ;
+		h += "</tbody></table>" ;
+		h = reasonator.wrapPanel ( h , {title:reasonator.t('lang_variants')} ) ;
+		
+		h = "<div class='lead'><a href='/autolist/?language="+reasonator.getMainLang()+"&wdq=claim%5B735%3A14941830%5D&run=Run' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
+		
+		$('#actual_content div.other').html(h) ;
+		
+		
+		reasonator.renderSubclassChain() ;
+		reasonator.finishDisplay () ; // Finish
+
+		// Leftovers
+		if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
+		if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
+	
+		var non_content_types = [ reasonator.Q.category_page , reasonator.Q.template_page , reasonator.Q.list_page , reasonator.Q.disambiguation_page ] ;
+		reasonator.wd.getItemBatch ( non_content_types , function () {
+			var h = "<div>" ;
+			h += "<h3>"+reasonator.t('non_content_widar_header')+"</h3>" ;
+			h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
+			h += "<ul>" ;
+			$.each ( non_content_types , function ( k , v ) {
+				h += "<li>" ;
+				h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P31\",\"Q"+v+"\");return false'>" + reasonator.wd.items['Q'+v].getLabel() + "</a>" ;
+				h += "</li>" ;
+			} ) ;
+			h += "</ul>" ;
+			h += "</div>" ;
+			$('#actual_content div.other').html(h) ;
+		} ) ;
+		
+	} ,
+
+
+} ) ;
+
+
+// #########################################################################################################
+// REASONATOR TYPE
+// #########################################################################################################
+
+reasonator_types.push ( {
+
 	type : 'generic' ,
 
 	detect : function () { return true ; } , // Fallback
