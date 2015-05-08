@@ -2955,9 +2955,10 @@ var reasonator = {
 
 	getFormatDate : function ( d ) {
 		if ( d === undefined || d.time === undefined || d.precision === undefined ) return '' ;
-		if ( d.precision >= 11 ) return d.time.substr ( 8 , 10 ) ;
-		if ( d.precision == 10 ) return d.time.substr ( 8 , 7 ) ;
-		if ( d.precision <=  9 ) return d.time.substr ( 8 , 4 ) ;
+//		console.log ( d.time.match(/^.(\d+)-(\d+)-(\d+)/) [1] ) ;
+		if ( d.precision >= 11 ) return d.time.match(/^.(\d+-\d+-\d+)/) [1] ; //d.time.substr ( 8 , 10 ) ;
+		if ( d.precision == 10 ) return d.time.match(/^.(\d+-\d+)/) [1] ; //d.time.substr ( 8 , 7 ) ;
+		if ( d.precision <=  9 ) return d.time.match(/^.(\d+)/) [1] ; //d.time.substr ( 8 , 4 ) ;
 	} ,
 	
 	
