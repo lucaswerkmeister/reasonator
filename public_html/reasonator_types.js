@@ -595,60 +595,63 @@ reasonator_types.push ( {
 		reasonator.showExternalIDs() ; // Render external ID links
 		reasonator.showWebsites() ; // Render websites
 		reasonator.addSitelinks() ; // Render sitelinks
+		reasonator.addBacklinks( function () {
 
-		reasonator.addOther() ; // Render other properties
-		reasonator.addMedia() ; // Render images
+			reasonator.addOther() ; // Render other properties
+			reasonator.addMedia() ; // Render images
 
 
-		// Main
-		var h = '' ;
-		h += "<table class='table table-condensed table-striped'>" ;
-		h += "<thead>" ;
-		h += "<th>" + reasonator.t('name_variant') + "</th>" ;
-		h += "<th>" + reasonator.t('languages') + "</th>" ;
-		h += "</thead><tbody>" ;
-		var a = reasonator.wd.items[q].getClaimItemsForProperty ( 460 , true ) ;
-		$.each ( a , function ( k , v ) {
-			var b = [] ;
-			var c = reasonator.wd.getItem(v).getClaimItemsForProperty ( 407 , true ) ;
-			$.each ( c , function ( k2 , v2 ) {
-				b.push ( reasonator.getQlink ( v2 , {} ) ) ;
+			// Main
+			var h = '' ;
+			h += "<table class='table table-condensed table-striped'>" ;
+			h += "<thead>" ;
+			h += "<th>" + reasonator.t('name_variant') + "</th>" ;
+			h += "<th>" + reasonator.t('languages') + "</th>" ;
+			h += "</thead><tbody>" ;
+			var a = reasonator.wd.items[q].getClaimItemsForProperty ( 460 , true ) ;
+			$.each ( a , function ( k , v ) {
+				var b = [] ;
+				var c = reasonator.wd.getItem(v).getClaimItemsForProperty ( 407 , true ) ;
+				$.each ( c , function ( k2 , v2 ) {
+					b.push ( reasonator.getQlink ( v2 , {} ) ) ;
+				} ) ;
+				h += "<tr><th style='min-width:50%' valign='top'>" ;
+				h += reasonator.getQlink ( v , {} ) ;
+				h += "</th><td style='width:100%'>" ;
+				h += b.join(', ') ;
+				h += "</td></tr>" ;
 			} ) ;
-			h += "<tr><th style='min-width:50%' valign='top'>" ;
-			h += reasonator.getQlink ( v , {} ) ;
-			h += "</th><td style='width:100%'>" ;
-			h += b.join(', ') ;
-			h += "</td></tr>" ;
-		} ) ;
-		h += "</tbody></table>" ;
-		h = reasonator.wrapPanel ( h , {title:reasonator.t('lang_variants')} ) ;
+			h += "</tbody></table>" ;
+			h = reasonator.wrapPanel ( h , {title:reasonator.t('lang_variants')} ) ;
 		
-		h = "<div class='lead'><a href='/autolist/?language="+reasonator.getMainLang()+"&wdq=claim%5B735%3A14941830%5D&run=Run' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
+			h = "<div class='lead'><a href='/autolist/?language="+reasonator.getMainLang()+"&wdq=claim%5B735%3A"+q.replace(/\D/g,'')+"%5D&run=Run' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
 		
-		$('#actual_content div.other').html(h) ;
+			$('#actual_content div.main').html(h) ;
 		
 		
-		reasonator.renderSubclassChain() ;
-		reasonator.finishDisplay () ; // Finish
+			reasonator.renderSubclassChain() ;
+			reasonator.finishDisplay () ; // Finish
 
-		// Leftovers
-		if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
-		if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
+			// Leftovers
+			if ( undefined !== reasonator.wd.items[q].raw.claims ) return ;
+			if ( ! /:/.test ( $('#main_title_label').text() ) ) return ;
 	
-		var non_content_types = [ reasonator.Q.category_page , reasonator.Q.template_page , reasonator.Q.list_page , reasonator.Q.disambiguation_page ] ;
-		reasonator.wd.getItemBatch ( non_content_types , function () {
-			var h = "<div>" ;
-			h += "<h3>"+reasonator.t('non_content_widar_header')+"</h3>" ;
-			h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
-			h += "<ul>" ;
-			$.each ( non_content_types , function ( k , v ) {
-				h += "<li>" ;
-				h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P31\",\"Q"+v+"\");return false'>" + reasonator.wd.items['Q'+v].getLabel() + "</a>" ;
-				h += "</li>" ;
+			var non_content_types = [ reasonator.Q.category_page , reasonator.Q.template_page , reasonator.Q.list_page , reasonator.Q.disambiguation_page ] ;
+			reasonator.wd.getItemBatch ( non_content_types , function () {
+				var h = "<div>" ;
+				h += "<h3>"+reasonator.t('non_content_widar_header')+"</h3>" ;
+				h += "<div style='margin-bottom:10px'>"+reasonator.t('non_content_widar_text').replace(/\$1/,"<a href='/widar' target='_blank'>")+"</div>" ;
+				h += "<ul>" ;
+				$.each ( non_content_types , function ( k , v ) {
+					h += "<li>" ;
+					h += "<a href='#' onclick='reasonator.addClaimItemOauth(\""+reasonator.q+"\",\"P31\",\"Q"+v+"\");return false'>" + reasonator.wd.items['Q'+v].getLabel() + "</a>" ;
+					h += "</li>" ;
+				} ) ;
+				h += "</ul>" ;
+				h += "</div>" ;
+				$('#actual_content div.other').html(h) ;
 			} ) ;
-			h += "</ul>" ;
-			h += "</div>" ;
-			$('#actual_content div.other').html(h) ;
+		
 		} ) ;
 		
 	} ,
