@@ -103,6 +103,15 @@ var reasonator = {
 	taxon_list : [ 171 , 273 , 75 , 76 , 77 , 70 , 71 , 74 , 89 ] ,
 	location_props : [30,17,131,376,501] ,
 	ofen_used_items_with_media : ['Q5','Q2','Q36180'] ,
+	sm_url : {
+		'918' : '//twitter.com/$1' , // Twitter
+		'866' : '//www.youtube.com/user/$1' , // YouTube
+		'213660' : '//www.linkedin.com/profile/view?id=$1' , // LinkedIn
+		'103204' : '//www.flickr.com/photos/$1' , // Flickr
+		'2013' : '//www.wikidata.org/wiki/User:$1' , // Wikidata
+		'754454' : '//www.researchgate.net/profile/$1' , // ResearchGate
+		'364' : '//github.com/$1' , // GitHub
+	} ,
 	
 	// http://208.80.153.172/api?q=claim[279:56061]
 	location_list : [ 515,6256,1763527,
@@ -310,13 +319,17 @@ var reasonator = {
 		
 		self.preferred_languages = ($.cookie('preferred_languages')||'') ;
 
-		var loadcnt = 3 ;
+		var loadcnt = 2 ;
 		if ( self.use_flickr ) loadcnt++ ;
 		if ( self.params.live !== undefined ) self.use_wdq = false ;
 		if ( self.params.q !== undefined ) {
 			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
-			loadcnt += 2 ;
+			loadcnt += 3 ;
 			self.wd.getItemBatch ( [self.q] , function ( d1 ) {
+				self.loadExternalIDs ( function () {
+					loadcnt-- ; if ( loadcnt == 0 ) callback() ;
+				} ) ;
+		
 				self.addToLoadLater ( self.q ) ;
 //				self.wd.restrict_to_langs = true ;
 				loadcnt-- ; if ( loadcnt == 0 ) callback() ;
@@ -326,30 +339,9 @@ var reasonator = {
 			} ) ;
 		}
 		
-		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , { // Get string props
-			action:'parse',
-			page:'Reasonator/stringprops',
-			format:'json',
-			prop:'wikitext'
-		} , function ( d ) {
-			var text = d.parse.wikitext['*'] ;
-			$.each ( text.split("\n") , function ( k , v ) {
-				if ( v[0] != '|' ) return ; // Require table cell
-				if ( v[1] == '}' || v[1] == '-' ) return ; // Table or row end
-				var parts = v.substr(1).split('||') ;
-				if ( parts.length != 3 ) return ; // ID , prop number, URL pattern
-				var id = $.trim(parts[0]) ;
-				var prop = $.trim(parts[1]) ;
-				var urlp = $.trim(parts[2]) ;
-				self.extURLs[id] = urlp ;
-				prop *= 1 ;
-				self.urlid2prop[id] = prop ;
-				self.P_url[prop] = id ;
-				self.P_person[id] = prop ;
-				self.P_location[id] = prop ;
-			} ) ;
-			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
-		} ) ;
+
+		
+		
 		self.loadInterfaceText ( function () { // Get interface translations
 			loadcnt-- ; if ( loadcnt == 0 ) callback() ;
 		} ) ;
@@ -372,6 +364,49 @@ var reasonator = {
 		}
 		
 	} ,
+	
+	loadExternalIDs : function ( callback ) {
+		var self = this ;
+		var skip_props = [] ; // Commons images etc.
+		$.each ( self.P_all , function ( k , v ) { skip_props.push(v) } ) ;
+		var i = self.wd.items[self.q] ;
+		var tmp = [] ;
+		$.each ( i.raw.claims , function ( p , dummy ) {
+			tmp.push ( p ) ;
+		} ) ;
+		self.wd.getItemBatch ( tmp , function () {
+			$.each ( tmp , function ( dummy , p ) {
+				var i2 = self.wd.items[p] ;
+				if ( typeof i2 == 'undefined' ) return ;
+				if ( typeof i2.raw.claims == 'undefined' ) return ;
+				if ( -1 != $.inArray ( p.replace(/\D/g,'')*1 , skip_props ) ) return ; // Hard-blocked
+				var urls = i2.getMultimediaFilesForProperty ( 'P1630' ) ;
+				var prop ;
+				var urlp ;
+
+				var id = i2.getLabel() ; // Label, needs to be "prettier" through regexp for small columns
+				id = id.replace( / (identifier|id|number)+$/i , '' ) ;
+				id = id.replace( / (online|index)+$/i , '' ) ;
+				id = id.replace ( / \(.+\)/ , '' ) ;
+			
+				prop = p.replace(/\D/g,'') * 1 ;
+				
+				if ( urls.length > 0 ) {
+					urlp = urls[0] ;
+				} else if ( i2.hasClaimItemLink ( 31 , 18614948 ) ) {
+					urlp = '' ;
+				} else return ;
+
+				self.extURLs[id] = urlp ;
+				self.urlid2prop[id] = prop ;
+				self.P_url[prop] = id ;
+				self.P_person[id] = prop ;
+				self.P_location[id] = prop ;
+				
+			} ) ;
+			callback() ;
+		} ) ;
+	} ,
 
 	addToLoadLater : function ( the_q , qualifiers_only ) {
 		var self = this ;
@@ -379,7 +414,8 @@ var reasonator = {
 		var i = self.wd.items[the_q] ;
 		if ( typeof i == 'undefined' ) return ;
 		$.each ( i.getPropertyList() , function ( k1 , p ) {
-			self.to_load.push ( 'P'+(p+'').replace(/\D/g,'') ) ;
+			var proper_p = 'P'+(p+'').replace(/\D/g,'') ;
+			self.to_load.push ( proper_p ) ;
 			if ( !qualifiers_only ) {
 				var qs = i.getClaimItemsForProperty(p,true) ;
 				$.each ( qs , function ( k2 , q2 ) {
@@ -524,7 +560,8 @@ var reasonator = {
 					self.to_load.push ( 'Q'+v ) ;
 					items.push ( 'Q'+v ) ;
 				} ) ;
-				self.wd.getItemBatch ( self.to_load , function () {
+				var tmp = self.to_load ;
+				self.wd.getItemBatch ( tmp , function () {
 					self.to_load = [] ;
 					self.addPropTargetsToLoad ( items , o.preload ) ;
 					self.loadRest ( o.callback ) ;
@@ -1237,7 +1274,7 @@ var reasonator = {
 		var url_title = escape(site.title.replace(/\s/g,'_')) ;
 		var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
 		var qrp_url = "//qrpedia.org/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
-		var qr_img = "<a title='"+self.t('qrpedia')+"' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
+		var qr_img = "<a title='"+self.t('qrpedia')+"; if no QR code shows here, the QRpedia https certificate is broken' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
 		var h = '<div style="text-align:center" class="qrcode"></div>' ;
 		$('div.sidebar').append ( h ) ;
 		if ( true ) { // Direct QR code show
@@ -1463,7 +1500,7 @@ var reasonator = {
 		var q = self.q ;
 		
 		var sd = {} ;
-		$.each ( props , function ( dummy , p ) {
+		$.each ( props , function ( p , dummy ) {
 			if ( self.P_url[p] !== undefined ) return ;
 			p = 'P' + p ;
 			var items = self.wd.items[q].getClaimObjectsForProperty(p) ;
@@ -1794,14 +1831,68 @@ var reasonator = {
 //			self.addHoverboxes ( '.backlinks' ) ;
 		} ) ;
 	} ,
+	
+	// Sorts an array of binary arrays, and returns an array of only the second elements
+	sort12collapse : function ( arr ) {
+		function mysort ( a , b ) {
+			if ( a[0].toLowerCase() < b[0].toLowerCase() ) return -1 ;
+			if ( a[0].toLowerCase() > b[0].toLowerCase() ) return 1 ;
+			if ( a[1].toLowerCase() < b[1].toLowerCase() ) return -1 ;
+			if ( a[1].toLowerCase() > b[1].toLowerCase() ) return 1 ;
+			return 0 ;
+		}
+		var arr2 = arr.sort ( mysort ) ;
+		var ret = [] ;
+		$.each ( arr2 , function ( k , v ) { ret.push ( v[1] ) } ) ;
+		return ret ;
+	} ,
 
+	showSocialMedia : function () {
+		var self = this ;
+		var h = [] ;
+		var i = self.wd.items[self.q] ;
+		var p = 553 ;
+		if ( !i.hasClaims(p) ) return ;
+
+		var claims = i.getClaimsForProperty ( p ) ;
+		self.P.social_media = p ;
+		$.each ( claims , function ( dummy , c ) {
+			var s ;
+			var url = '' ;
+			if ( c.qualifiers === undefined || c.qualifiers['P554'] === undefined ) return ;
+			s = c.qualifiers['P554'][0].datavalue.value ;
+			var smtype = c.mainsnak.datavalue.value['numeric-id'] ;
+			var id_type = self.wd.items['Q'+smtype].getLabel();
+			
+			if ( typeof self.sm_url[smtype] != 'undefined' ) {
+				url = self.sm_url[smtype].replace ( /\$1/ , s ) ;
+			}
+			
+			if ( undefined === s ) return ;
+			
+			s = s.replace ( /-/g , '-&#8203;' ) ;
+			
+			var h2 = "<tr><td><a target='_blank' class='wikidata' href='//www.wikidata.org/wiki/Q"+smtype+"'>" + id_type + "</a>&nbsp;</td><td>" ;
+			if ( url == '' ) h2 += s ;
+			else h2 += "<a target='_blank' href='" + url + "' class='external'>" + s + "</a>" ;
+			h2 += "</td></tr>" ;
+			h.push ( [ id_type , h2 ] ) ;
+		} ) ;
+
+		if ( h.length > 0 ) {
+			h = self.sort12collapse ( h ) ;
+			h = self.renderSidebarTable ( h.join('') , self.t('social_media') ) ;
+			$('.social_media').html ( h ) ;
+		}
+	} ,
+	
+	
 	showExternalIDs : function () {
 		var self = this ;
 		var h = [] ;
 		var i = self.wd.items[self.q] ;
 		$.each ( self.extURLs , function ( k , v ) {
 			var p = self.urlid2prop[k] ;
-//			var p = self.P[k] ;
 			if ( p === undefined ) return ;
 
 			var claims = i.getClaimsForProperty ( p ) ;
@@ -1810,35 +1901,27 @@ var reasonator = {
 				var id_type = k ;
 				var s ;
 				var url = '' ;
-				if ( p == 553 ) { // Social media
-					if ( c.qualifiers === undefined || c.qualifiers['P554'] === undefined ) return ;
-					s = c.qualifiers['P554'][0].datavalue.value ;
-					var smtype = c.mainsnak.datavalue.value['numeric-id'] ;
-					id_type = self.wd.items['Q'+smtype].getLabel();
-					if ( smtype == 918 ) url = '//twitter.com/'+s ; // Twitter
-					else if ( smtype == 866 ) url = '//www.youtube.com/user/'+s ; // YouTube
-				} else {
-					s = i.getClaimTargetString ( c ) ;
-					url = v.replace(/!ID!/g,escattr(s)) ;
-				}
+				s = i.getClaimTargetString ( c ) ;
+				url = v.replace(/\$1/g,escattr(s)) ;
 				if ( undefined === s ) return ;
 				
 				s = s.replace ( /-/g , '-&#8203;' ) ;
 				
 				
-				var h2 = "<tr><td>" + id_type + "&nbsp;</td><td>" ;
+				var h2 = "<tr><td><a target='_blank' class='wikidata' href='//www.wikidata.org/wiki/Property:P"+p+"'>" + id_type + "</a>&nbsp;</td><td>" ;
 				if ( url == '' ) h2 += s ;
 				else h2 += "<a target='_blank' href='" + url + "' class='external'>" + s + "</a>" ;
 				h2 += "</td></tr>" ;
-				h.push ( h2 ) ;
+				h.push ( [ id_type , h2 ] ) ;
 			} ) ;
 		} ) ;
-
-		if ( h.length == 0 ) return ;
+		if ( h.length > 0 ) {
+			h = self.sort12collapse ( h ) ;
+			h = self.renderSidebarTable ( h.join('') , self.t('external_sources') ) ;
+			$('.external_ids').html ( h ) ;
+		}
 		
-		h = self.renderSidebarTable ( h.join('') , self.t('external_sources') ) ;
-//		h = "<table class='sidebar-table table-striped'><thead><th colspan=2>"+self.t('external_sources')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
-		$('.external_ids').html ( h ) ;
+		self.showSocialMedia() ;
 	} ,
 	
 	renderSidebarTable : function ( h , title ) {
