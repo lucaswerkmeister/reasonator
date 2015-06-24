@@ -111,6 +111,10 @@ var reasonator = {
 		'2013' : '//www.wikidata.org/wiki/User:$1' , // Wikidata
 		'754454' : '//www.researchgate.net/profile/$1' , // ResearchGate
 		'364' : '//github.com/$1' , // GitHub
+		'209330' : '//instagram.com/$1' , // Instagram
+		'355' : '//facebook.com/$1' , // Facebook
+		'219523' : '//$1.livejournal.com' , // LiveJournal
+		'116933' : '//vk.com/$1' , // VK
 	} ,
 	
 	// http://208.80.153.172/api?q=claim[279:56061]
