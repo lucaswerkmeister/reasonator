@@ -941,8 +941,10 @@ var reasonator = {
 							if ( h2 == '' ) h2 = v.default || '' ;
 							
 						} else if ( v.type == 'quantity' ) {
-		
 							h2 = self.renderQuantity ( v ) ;
+
+						} else if ( v.type == 'monolingualtext' ) {
+							h2 = self.renderMonolingualText ( v ) ;
 							
 						} else {
 							h2 = [] ;
@@ -1797,7 +1799,6 @@ var reasonator = {
 			var ci = item.getClaimObjectsForProperty ( p ) ;
 			$.each ( (ci||[]) , function ( dummy2 , ti ) {
 				if ( undefined === sd[p] ) sd[p] = {} ;
-//				console.log ( ti ) ;
 				if ( sd[p][ti.key] === undefined ) sd[p][ti.key] = [] ;
 				sd[p][ti.key].push ( $.extend(true,{p:p,mode:1},ti) ) ;
 			} ) ;
@@ -2206,9 +2207,15 @@ var reasonator = {
 			var h2 = self.renderQuantity ( i ) ;
 			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
+
+		} else if ( i.type == 'monolingualtext' ) {
+			var h2 = self.renderMonolingualText ( i ) ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
+			ret += h2 ;
+
 		} else { // also add in wikidata.js getObject ... something...
-//			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
-//			console.log ( i ) ;
+			console.log ( "UNKNOWN : " + i.type + ' / ' ) ;
+			console.log ( i ) ;
 			ret += "<i>unknown/no value</i>" ;
 		}
 		
@@ -2238,6 +2245,10 @@ var reasonator = {
 		
 		ret += "</div>" ;
 		return ret ;
+	} ,
+	
+	renderMonolingualText : function ( i ) {
+		return i.text + "&nbsp;<small>[" + i.language + "]</small>" ;
 	} ,
 	
 	renderQuantity : function ( i ) {
