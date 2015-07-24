@@ -1870,7 +1870,7 @@ var reasonator = {
 			var id_type = self.wd.items['Q'+smtype].getLabel();
 			
 			if ( typeof self.sm_url[smtype] != 'undefined' ) {
-				url = self.sm_url[smtype].replace ( /\$1/ , s ) ;
+				url = self.sm_url[smtype].replace ( /\$1/g , encodeURIComponent(s) ) ;
 			}
 			
 			if ( undefined === s ) return ;
@@ -1907,8 +1907,19 @@ var reasonator = {
 				var s ;
 				var url = '' ;
 				s = i.getClaimTargetString ( c ) ;
-				url = v.replace(/\$1/g,escattr(s)) ;
+				url = v.replace(/\$1/g,encodeURIComponent(s)) ;
 				if ( undefined === s ) return ;
+				
+				if ( p == 1651 ) {
+					var key = encodeURIComponent(s) ;
+					var src = 'https://i.ytimg.com/vi/'+key+'/sddefault.jpg' ;
+//					var h2 = "<img src='" + src + "' />" ;
+					var h2 = "<div class='youtube' style='background-image: url(\"https://i.ytimg.com/vi/"+key+"/sddefault.jpg\");' key='"+key+"' title='" + self.t('play_youtube') + "'>" ;
+					h2 += "<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Logo_Youtube.svg/50px-Logo_Youtube.svg.png' class='proprietary_logo' />" ;
+					h2 += "</div>" ;
+					$('div.main_video').append ( h2 ) ;
+					return ;
+				}
 				
 				s = s.replace ( /-/g , '-&#8203;' ) ;
 				
@@ -1920,6 +1931,15 @@ var reasonator = {
 				h.push ( [ id_type , h2 ] ) ;
 			} ) ;
 		} ) ;
+
+		$('div.youtube').click ( function () {
+			var o = $(this) ;
+			var key = o.attr('key') ;
+			var url = "https://www.youtube.com/watch?v="+key ;
+			window.open(url, '_blank');
+			return false ;
+		} ) ;
+
 		if ( h.length > 0 ) {
 			h = self.sort12collapse ( h ) ;
 			h = self.renderSidebarTable ( h.join('') , self.t('external_sources') ) ;
