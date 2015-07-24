@@ -2749,7 +2749,7 @@ var reasonator = {
 
 		var sections = [
 			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+dmin+','+dmax+']' , cols:[] , props:[585] } ,
-			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+dmin+','+dmax+'] OR BETWEEN[575,'+dmin+','+dmax+']' , cols:[] , props:[571,575] } ,
+			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+dmin+','+dmax+'] OR BETWEEN[575,'+dmin+','+dmax+'] OR BETWEEN[577,'+dmin+','+dmax+']' , cols:[] , props:[571,575,577] } ,
 			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+dmax+'] AND BETWEEN[582,'+dmin+','+ongoing.to+']' , props:[580,582] , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
 			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+dmin+','+dmax+']' , cols:[{title:self.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
 			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+dmin+','+dmax+']' , cols:[{title:self.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
