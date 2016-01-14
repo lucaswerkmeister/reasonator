@@ -1055,7 +1055,7 @@ var widee = {
 	renderTime : function ( date ) {
 		var self = this ;
 		var h = '' ;
-		var m = date.time.match ( /^([+-])0+(\d{4,})-(\d\d)-(\d\d)T/ ) ;
+		var m = date.time.match ( /^([+-])0*(\d{4,})-(\d\d)-(\d\d)T/ ) ;
 		if ( m == null ) {
 			h = "MALFORMED DATE: " + date.time ;
 		} else {

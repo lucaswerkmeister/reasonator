@@ -710,6 +710,7 @@ var reasonator = {
 
 		$.getJSON ( self.widar_url , {
 			action:'set_claims',
+			tool_hashtag:'reasonator',
 			ids:q,
 			prop:prop,
 			target:target,
@@ -1483,6 +1484,7 @@ var reasonator = {
 
 		$.getJSON ( self.widar_url , {
 			action:'set_label',
+			tool_hashtag:'reasonator',
 			q:q,
 			lang:lang,
 			label:label,
@@ -3269,6 +3271,7 @@ var reasonator = {
 
 			$.getJSON ( self.widar_url , {
 				action:'set_string',
+				tool_hashtag:'reasonator',
 				id:self.q,
 				prop:prop,
 				text:images[iid].title,
