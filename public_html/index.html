@@ -117,30 +117,33 @@
 
 			<div id='intro' style='display:none'>
 				<h1>Wikidata - in pretty!</h1>
-				<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change during the year, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
+				<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change over time, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
 				<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
 				<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
 				<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
-				<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>
-				<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), so it can easily be ported to other locations. As always, code under GPL.</p>
+<!--				<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>-->
+				<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), using the
+				<a href='https://www.wikidata.org/w/api.php' class='external' target='_blank'>Wikidata API</a> and
+				<a href='https://query.wikidata.org/' class='external' target='_blank'>SPAQRL</a> queries so it can easily be ported to other locations. As always, code under GPL.</p>
 				<div class="panel panel-default">
-					<div class="panel-heading"><h3>Showcase items</h3></div>
+					<div class="panel-heading"><h3>Example items</h3></div>
 					<div class="panel-body">
 						<ul>
-							<li><a href='?q=Q42'>Douglas Adams</a></li>
+							<li><a href='?q=Q42'>Douglas Adams</a> (a biographical item)</li>
+							<li><a href='?q=Q350'>Cambridge</a> (a location)</li>
+							<li><a href='?q=Q4504'>Komodo dragon</a> (a species)</li>
+							<li><a href='?q=Q2041'>Bridges of Lyon</a> (an auto-generated list based on "list of" property and qualifiers)</li>
+							<li><a href='?date=1685'>Calendar for 1685</a> (a yearly calendar; also for a specific <a href='?date=1685-03-31'>day</a> or <a href='?date=1939-05'>month</a>)</li>
+
 							<li><a href='?q=Q76'>Barack Obama</a></li>
+							<li><a href='?q=Q8023'>Nelson Mandela</a></li>
+							<li><a href='?q=Q1001'>Mahatma Gandhi</a></li>
 							<li><a href='?q=Q153'>ethanol</a></li>
+							<li><a href='?q=Q332'>Neptune</a></li>
 							<li><a href='?q=Q2513'>Hubble Space Telescope</a></li>
 							<li><a href='?q=Q14560'>Cactaceae</a></li>
 							<li><a href='?q=Q3030'>Vesta</a></li>
 
-							<li><a href='?q=Q8023'>Nelson Mandela</a></li>
-							<li><a href='?q=Q1001'>Mahatma Gandhi</a></li>
-
-							<li><a href='?q=Q350'>Cambridge</a></li>
-							<li><a href='?q=Q4504'>Komodo dragon</a></li>
-							<li><a href='?q=Q2041'>Bridges of Lyon</a> (example for an auto-generated list based on "list of" property and qualifiers)</li>
-							<li><a href='?q=Q7066'>Atheism</a></li>
 						</ul>
 					</div>
 				</div>

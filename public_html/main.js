@@ -136,11 +136,6 @@ var reasonator = {
 	 */
 	use_js_refresh : false ,
 
-	/** WikiDataQuery URL.
-	 * @type {string}
-	 */
-	wdq_url : '//wdq.wmflabs.org/api?callback=?' ,
-	
 	/** WiDaR API URL.
 	 * @type {string}
 	 */
@@ -2758,13 +2753,39 @@ var reasonator = {
 		
 		var dmin = [ ymd[1]*1 , (ymd[2]||'01') , (ymd[3]||'01') ].join('-') ;
 		var dmax = [ ymd[1]*1 , (ymd[2]||'12') , (ymd[3]||'31') ].join('-') ;
+		
+		function sparql_or ( props , min , max ) {
+			return 'SELECT DISTINCT ?item { ?item (wdt:P'+props.join('|wdt:P')+') ?time0 . FILTER ( ?time0 >= "'+min+'T00:00:00Z"^^xsd:dateTime && ?time0 <= "'+max+'T23:59:59Z"^^xsd:dateTime ) }' ;
+		}
 
 		var sections = [
-			{ title:self.t('event_on') , key:'event' , wdq:'BETWEEN[585,'+dmin+','+dmax+']' , cols:[] , props:[585] } ,
-			{ title:self.t('foundation_or_discovery') , key:'found_disc' , wdq:'BETWEEN[571,'+dmin+','+dmax+'] OR BETWEEN[575,'+dmin+','+dmax+'] OR BETWEEN[577,'+dmin+','+dmax+']' , cols:[] , props:[571,575,577] } ,
-			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , wdq:'BETWEEN[580,'+ongoing.from+','+dmax+'] AND BETWEEN[582,'+dmin+','+ongoing.to+']' , props:[580,582] , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
-			{ title:self.t('born_on') , key:'born' , wdq:'BETWEEN[569,'+dmin+','+dmax+']' , cols:[{title:self.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
-			{ title:self.t('died_on') , key:'died' , wdq:'BETWEEN[570,'+dmin+','+dmax+']' , cols:[{title:self.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
+			{ title:self.t('event_on') , key:'event' , 
+				sparql:'SELECT DISTINCT ?item { ?item wdt:P585 ?time0 . FILTER ( ?time0 >= "'+dmin+'T00:00:00Z"^^xsd:dateTime && ?time0 <= "'+dmax+'T00:00:00Z"^^xsd:dateTime ) }' ,
+				sparql:sparql_or([585,606,619,620,621,622,729,1191],dmin,dmax),
+				cols:[] , props:[585,606,619,620,621,622,729,1191] } ,
+				
+			{ title:self.t('foundation_or_discovery') , key:'found_disc' , 
+				sparql:sparql_or([571,575,577,1619],dmin,dmax),
+				cols:[] , props:[571,575,577,1619] } ,
+
+			{ title:self.t('end_of') , key:'end_of' , 
+				sparql:sparql_or([730,746],dmin,dmax),
+				cols:[] , props:[730,746] } ,
+				
+			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , 
+				sparql:'SELECT DISTINCT ?item { ?item (wdt:P580) ?time0 . ?item (wdt:P582) ?time1 '
+					+ '. FILTER ( ?time0 >= "'+ongoing.from+'T00:00:00Z"^^xsd:dateTime && ?time0 <= "'+dmax+'T23:59:59Z"^^xsd:dateTime ) '
+					+ '. FILTER ( ?time1 >= "'+dmin+'T00:00:00Z"^^xsd:dateTime && ?time1 <= "'+ongoing.to+'T23:59:59Z"^^xsd:dateTime ) }'
+					,
+				props:[580,582] , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
+				
+			{ title:self.t('born_on') , key:'born' , 
+				sparql:sparql_or([569],dmin,dmax),
+				cols:[{title:self.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
+				
+			{ title:self.t('died_on') , key:'died' , 
+				sparql:sparql_or([570],dmin,dmax),
+				cols:[{title:self.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
 		] ;
 		
 		var more_dates = precision < 11 ;
@@ -2837,8 +2858,7 @@ var reasonator = {
 		
 		var running = sections.length ;
 		$.each ( sections , function ( dummy , o ) {
-//			console.log ( o.wdq ) ;
-			$.getJSON ( self.wdq_url , { q:o.wdq } , function ( d ) { // ,props:(o.wdq_props||'')
+			self.loadSPARQL ( o.sparql , function ( d ) {
 				o.data = d ;
 				$.each ( (d.items||[]) , function ( k , v ) { to_load.push ( 'Q'+v ) } ) ;
 				running-- ;
