@@ -135,16 +135,6 @@ var reasonator = {
 	 * @type {boolean}
 	 */
 	use_js_refresh : false ,
-	
-	/** Make sure WikiDataQuery is available; force http over https, as wdq VM does not do https.
-	 * @type {boolean}
-	 */
-	force_wdq : true ,
-
-	/** Use WikiDataQuery, unless page is "live".
-	 * @type {boolean}
-	 */
-	use_wdq : true ,//( window.location.protocol == 'http:' ) , // use "false" to deactivate
 
 	/** WikiDataQuery URL.
 	 * @type {string}
@@ -325,7 +315,6 @@ var reasonator = {
 
 		var loadcnt = 2 ;
 		if ( self.use_flickr ) loadcnt++ ;
-		if ( self.params.live !== undefined ) self.use_wdq = false ;
 		if ( self.params.q !== undefined ) {
 			self.q = 'Q'+self.params.q.replace(/\D/g,'') ;
 			loadcnt += 3 ;
@@ -600,12 +589,6 @@ var reasonator = {
 			self.loadSPARQL ( o.sparql , function ( d ) {
 				runWithItems ( d ) ;
 			} ) ;
-		} else if ( self.use_wdq ) {
-			$.getJSON ( self.wdq_url , {
-				q:o.wdq
-			} , function ( d ) {
-				runWithItems ( d ) ;
-			} ) ;
 		} else {
 			var wd2 = new WikiData() ;
 			wd2.loadItems ( self.q , {
@@ -727,7 +710,6 @@ var reasonator = {
 				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
-//			if ( self.use_wdq ) panel.footer = self.getWDQnotice() ;
 			h = reasonator.wrapPanel ( h , panel ) ;
 		}
 		$('div.classification').html ( h ) ;
@@ -765,20 +747,6 @@ var reasonator = {
 
 	
 
-	/**
-	 * Returns a HTML text with a note that the above section uses WDQ as a data source, and a link to the "live" version of this page.
-	 */
-	getWDQnotice : function () {
-		var self = this ;
-		var url = self.getCurrentUrl ( { live:true } ) ;
-		var line = self.t('wdq_notice') ;
-		line = line.replace(/\$1/,"<a class='external' style='font-size:8pt' target='_blank' href='//wdq.wmflabs.org/'>" ) ;
-//		line = line.replace(/\$1(.+?)<\/a>/,"<a target='_blank' href='//wdq.wmflabs.org/'><mark>$1</mark></a>" ) ;
-		line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-//		return "<div style='color:#DDDDDD;font-size:8pt'>" + line + "</div>" ;
-		return "<div>" + line + "</div>" ;
-	} ,
-	
 	renderMainPropsTable : function ( props ) {
 		var self = this ;
 		var q = self.q ;
@@ -886,7 +854,7 @@ var reasonator = {
 
 	/**
 	 * Returns the current URL, with modifications is set.
-	 * @param {hash} o - Can have keys "hash" (bool: use hash or "?" to separate parameters), "lang" (string: language), "live" (bool: use API instead of WDQ)
+	 * @param {hash} o - Can have keys "hash" (bool: use hash or "?" to separate parameters), "lang" (string: language)
 	 * @returns {string} URL.
 	 */
 	getCurrentUrl : function ( o ) {
@@ -1225,15 +1193,24 @@ var reasonator = {
 			if ( q == 'Q5' ) return '5' ;
 			return "(tree["+q.replace(/\D/g,'')+"][][279,131])" ;
 		}
+
+		var sparql_count = 0 ;
+		function sparql_tree ( prop , q ) {
+			var _q = (q+'').replace(/\D/g,'') ;
+			var _prop = (prop+'').replace(/\D/g,'') ;
+			if ( _q == '5' ) return "?item wdt:P"+_prop+" wd:Q"+_q ;
+			sparql_count++ ;
+			return "?item wdt:P"+_prop+" ?sub"+sparql_count+" . ?sub"+sparql_count+" (wdt:P279|wdt:P131)* wd:Q"+_q ;
+		}
 		
 		var search_main = [] ;
 		var search_qual = [] ;
-		var parts = [] ;
+		var sparql_parts = [] ;
 		$.each ( i.getClaimsForProperty('P360') , function ( dummy , claim ) {
 			var q = i.getClaimTargetItemID ( claim ) ;
 			if ( q === undefined ) return ;
 
-			var p = "claim[31:" + tree(q) + "]" ;
+			var sparql_part = sparql_tree ( 31 , q ) ;
 			search_main.push ( self.wd.items[q].getLabel() ) ;
 			
 			// Add conditions for qualifiers
@@ -1243,22 +1220,20 @@ var reasonator = {
 					var dummy_claim = { mainsnak:qual } ;
 					var qual_q = i.getClaimTargetItemID ( dummy_claim ) ;
 					search_qual.push ( self.wd.items[qual_q].getLabel() ) ;
-					p += " and claim[" + qual_prop.replace(/\D/g,'') + ":" + tree(qual_q) + "]" ; // ,131
+					sparql_part += " . " + sparql_tree ( qual_prop , qual_q ) ;
 				} ) ;
 			} ) ;
-			parts.push ( p ) ;
+			sparql_parts.push ( sparql_part ) ;
 		} ) ;
 		
-		
-		if ( parts.length == 0 ) return ; // Paranoia
+		if ( sparql_parts.length == 0 ) return ; // Paranoia
 
-		var query = parts.join ( ' and ' ) ;
-		if ( query == "claim[31:(tree[215627][][279])]" ) return ; // just "person"; too much to load
-//		console.log ( query ) ;
+		var sparql_query = 'SELECT DISTINCT ?item WHERE {' + sparql_parts.join ( ' . ' ) + '}' ;
+
 		$('div.list_of').html ( "<i>Loading list of items in the 'list of' subclass trees...</i>" ) ;
-		$.getJSON ( self.wdq_url , {
-			q : query
-		} , function ( d ) {
+		
+		self.loadSPARQL ( sparql_query+" LIMIT "+self.max_list_items , 
+		function ( d ) {
 			if ( d.items.length == 0 ) {
 				$('div.list_of').hide().html('') ;
 				return ;
@@ -1277,7 +1252,7 @@ var reasonator = {
 				} else {
 					h += self.t('list_browse2') ;
 				}
-				h += " <a target='_blank' class='external' href='/wikidata-todo/autolist.html?q=" + escape(query) + "'>" + self.t('list_here') + "</a>. " ;
+				h += " <a target='_blank' class='external' href='/autolist/index.php?run=Run&wdqs=" + escape(sparql_query) + "'>" + self.t('list_here') + "</a>. " ;
 				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
@@ -3810,11 +3785,6 @@ $(document).ready ( function () {
 		} ) ;
 	} ) ;
 	
-//	if ( reasonator.force_wdq && window.location.protocol == 'https:' ) { // Force-redirect to http, to use WDQ
-//		window.location = window.location.href.replace(/^https:/,'http:') ;
-//		return ;
-//	}
-
 	$('#main_content').hide() ;
 	document.title = 'Reasonator' ;
 	reasonator.init ( function () {
