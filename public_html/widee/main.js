@@ -42,6 +42,7 @@ var widee = {
 		if ( typeof self.wd.items[q] != 'undefined' ) { // Had that loaded as main item once, no need to reload anything
 			self.loadStage2() ;
 		} else {
+//			$.get ( 'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&ids='+q , function ( d ) {
 			$.get ( '//www.wikidata.org/wiki/Special:EntityData/'+q+'.json' , function ( d ) {
 				$.each ( d.entities , function ( k , v ) {
 					self.wd.items[k] = new WikiDataItem ( self.wd , v ) ;
@@ -383,6 +384,10 @@ var widee = {
 			q = 'Q' + q ;
 			if ( self.wd.items[q] === undefined ) return "Undefined item: "+q ;
 			h += self.wd.items[q].getLink ( {desc:true,'class':'internal',add_q:true} ) ;
+/*		} else if ( snak.datatype == 'external-id' ) {
+			h += "<span class='extid'>" + self.renderExternalID ( prop , v ) + "</span>" ;
+		} else if ( snak.datatype == 'math' ) {
+			h += "<span class='math'>" + self.renderMath ( prop , v ) + "</span>" ;*/
 		} else if ( dv.type == 'string' ) {
 			h += "<span class='string'>" + self.renderString ( prop , v ) + "</span>" ;
 		} else if ( dv.type == 'time' ) {
@@ -403,6 +408,14 @@ var widee = {
 	
 	getExtLink : function ( url , text ) {
 		return "<a href='" + url + "' target='_blank' class='external'>" + text + "</a>" ;
+	} ,
+	
+	renderMath : function ( prop , s ) {
+		return this.renderString ( prop , s ) ;
+	} ,
+	
+	renderExternalID : function ( prop , s ) {
+		return this.renderString ( prop , s ) ;
 	} ,
 	
 	renderString : function ( prop , s ) {
@@ -439,7 +452,7 @@ var widee = {
 	renderTime : function ( date ) {
 		var self = this ;
 		var h = '' ;
-		var m = date.time.match ( /^([+-])0+(\d{4,})-(\d\d)-(\d\d)T/ ) ;
+		var m = date.time.match ( /^([+-])0*(\d{4,})-(\d\d)-(\d\d)T/ ) ;
 		if ( m == null ) {
 			h = "MALFORMED DATE: " + date.time ;
 		} else {

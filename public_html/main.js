@@ -552,24 +552,59 @@ var reasonator = {
 		} ) ;
 	} ,
 	
+	loadSPARQL : function ( sparql_query , callback ) { // First variable in SELECT /needs/ to be result item!
+		var sparql = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
+		sparql += "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
+		sparql += "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
+		sparql += "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
+		sparql += "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
+		sparql += "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
+		sparql += "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
+		sparql += "PREFIX schema: <http://schema.org/>\n" ;
+		sparql += "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
+		sparql += sparql_query ;
+		
+		$.get ( 'https://query.wikidata.org/sparql' , {
+			format:'json',
+			query:sparql
+		} , function ( d ) {
+			var varname = d.head.vars[0] ;
+			var params = { items:[] } ;
+			$.each ( d.results.bindings , function ( k , v ) {
+				var q = v[varname].value.replace(/^.+\/entity\/Q/,'') * 1 ;
+				if ( q == 0 ) return ;
+				params.items.push ( q ) ;
+			} ) ;
+			callback ( params ) ;
+		} , 'json' ) ;
+	} ,
 
 	loadBacktrack : function ( o ) {
 		var self = this ;
-		if ( self.use_wdq ) {
+		
+		function runWithItems ( d ) {
+			var items = [] ;
+			$.each ( (d.items||[]) , function ( k , v ) {
+				self.to_load.push ( 'Q'+v ) ;
+				items.push ( 'Q'+v ) ;
+			} ) ;
+			var tmp = self.to_load ;
+			self.wd.getItemBatch ( tmp , function () {
+				self.to_load = [] ;
+				self.addPropTargetsToLoad ( items , o.preload ) ;
+				self.loadRest ( o.callback ) ;
+			} ) ;
+		}
+		
+		if ( typeof o.sparql != 'undefined' ) {
+			self.loadSPARQL ( o.sparql , function ( d ) {
+				runWithItems ( d ) ;
+			} ) ;
+		} else if ( self.use_wdq ) {
 			$.getJSON ( self.wdq_url , {
 				q:o.wdq
 			} , function ( d ) {
-				var items = [] ;
-				$.each ( (d.items||[]) , function ( k , v ) {
-					self.to_load.push ( 'Q'+v ) ;
-					items.push ( 'Q'+v ) ;
-				} ) ;
-				var tmp = self.to_load ;
-				self.wd.getItemBatch ( tmp , function () {
-					self.to_load = [] ;
-					self.addPropTargetsToLoad ( items , o.preload ) ;
-					self.loadRest ( o.callback ) ;
-				} ) ;
+				runWithItems ( d ) ;
 			} ) ;
 		} else {
 			var wd2 = new WikiData() ;
@@ -692,7 +727,7 @@ var reasonator = {
 				{ title:self.t('description') , desc:true } ,
 	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
-			if ( self.use_wdq ) panel.footer = self.getWDQnotice() ;
+//			if ( self.use_wdq ) panel.footer = self.getWDQnotice() ;
 			h = reasonator.wrapPanel ( h , panel ) ;
 		}
 		$('div.classification').html ( h ) ;

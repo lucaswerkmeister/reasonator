@@ -300,10 +300,13 @@ reasonator_types.push ( {
 		var q = reasonator.q ;
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_taxon);
 
+		var qnum = (q+'').replace(/\D/g,'') ;
+		var sparql_query = 'SELECT DISTINCT ?item WHERE { ?tree0 (wdt:P'+reasonator.taxon_list.join('|wdt:P')+')* ?item . BIND (wd:Q'+qnum+' AS ?tree0) }' ;
+
 		reasonator.loadBacktrack ( {
 			follow : reasonator.taxon_list ,
 			preload : [ 105 , 405 , 141 , 183 , 910 ] ,
-			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.taxon_list.join(',')+']' ,
+			sparql : sparql_query ,
 			callback : function () {
 				reasonator.loadRest ( function () { me.show() } ) ;
 			}
@@ -338,7 +341,6 @@ reasonator_types.push ( {
 				{ title:reasonator.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
 
-			if ( reasonator.use_wdq ) panel.footer = reasonator.getWDQnotice() ;
 			h = reasonator.wrapPanel ( h , panel ) ;
 		
 			// Render taxon properties
@@ -459,11 +461,14 @@ reasonator_types.push ( {
 		var q = reasonator.q ;
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_location, reasonator.P_websites);
 		$.getScript ( 'resources/js/openlayers/OpenLayers.js' , function () { reasonator.openlayers_loaded = true ;} ) ; // 'http://www.openlayers.org/api/OpenLayers.js'
+
+		var qnum = (q+'').replace(/\D/g,'') ;
+		var sparql_query = 'SELECT DISTINCT ?item WHERE { ?tree0 (wdt:P'+reasonator.location_props.join('|wdt:P')+')* ?item . BIND (wd:Q'+qnum+' AS ?tree0) }' ;
 		
 		reasonator.loadBacktrack ( {
 			follow : reasonator.location_props ,
 			preload : [ 131,132 ] ,
-			wdq : 'tree['+(q+'').replace(/\D/g,'')+']['+reasonator.location_props.join(',')+']' ,
+			sparql : sparql_query ,
 			callback : function () {
 				me.show();
 			}
@@ -502,15 +507,6 @@ reasonator_types.push ( {
 				{ title:reasonator.t('description') , desc:true }
 			] ) ;
 
-			if ( reasonator.use_wdq ) {
-				var url = reasonator.getCurrentUrl ( { live:true } ) ;
-				var line = reasonator.t('wdq_notice') ;
-//				line = line.replace(/\$1(.+?)<\/a>/,"<a target='_blank' href='//wdq.wmflabs.org/'><mark>$1</mark></a>" ) ;
-				line = line.replace(/\$1/,"<a class='external' target='_blank' href='http://wdq.wmflabs.org/'>" ) ;
-				line = line.replace(/\$2/,"<a href='" + url + "'>" ) ;
-				panel.footer = line ;
-			}
-			
 			h = reasonator.wrapPanel ( h , panel ) ;
 
 			reasonator.P['type_of_administrative_division'] = 132 ;
@@ -572,16 +568,6 @@ reasonator_types.push ( {
 			reasonator.loadRest ( function () { me.show() } ) ;
 		}
 		
-/*
-		if ( reasonator.wd.items[q].hasClaims('P279') ) {
-			reasonator.loadBacktrack ( {
-				follow : [279] ,
-				wdq : 'tree['+(reasonator.q+'').replace(/\D/g,'')+'][279]' ,
-				callback : function () {me.show() }
-			} ) ;
-		} else {
-			reasonator.loadRest ( function () { me.show() } ) ;
-		}*/
 	} ,
 	
 	show : function () {
@@ -624,7 +610,8 @@ reasonator_types.push ( {
 			h += "</tbody></table>" ;
 			h = reasonator.wrapPanel ( h , {title:reasonator.t('lang_variants')} ) ;
 		
-			h = "<div class='lead'><a href='/autolist/?language="+reasonator.getMainLang()+"&wdq=claim%5B735%3A"+q.replace(/\D/g,'')+"%5D&run=Run' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
+			var autolist_url = '/autolist/?run=Run&language=' + reasonator.getMainLang() + '&wdqs=' + encodeURIComponent('SELECT ?item WHERE { ?item wdt:P735 wd:Q'+q.replace(/\D/g,'')+' }') ;
+			h = "<div class='lead'><a href='"+autolist_url+"' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
 		
 			$('#actual_content div.main').html(h) ;
 		
@@ -676,9 +663,13 @@ reasonator_types.push ( {
 		reasonator.P = $.extend(true, reasonator.P, reasonator.P_all, reasonator.P_websites);
 
 		if ( reasonator.wd.items[q].hasClaims('P279') ) {
+
+			var qnum = (q+'').replace(/\D/g,'') ;
+			var sparql_query = 'SELECT DISTINCT ?item WHERE { ?tree0 (wdt:P279)* ?item . BIND (wd:Q'+qnum+' AS ?tree0) }' ;
+
 			reasonator.loadBacktrack ( {
 				follow : [279] ,
-				wdq : 'tree['+(reasonator.q+'').replace(/\D/g,'')+'][279]' ,
+				sparql : sparql_query ,
 				callback : function () {me.show() }
 			} ) ;
 		} else {
