@@ -10,57 +10,42 @@
 
 <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/16px-Reasonator_logo_proposal.png">
 
-<!--
-<link href="/magnustools/resources/dist3/css/bootstrap.min.css" rel="stylesheet">
-<link href="/magnustools/resources/dist3/css/bootstrap-theme.min.css" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="/magnustools/resources/css/common.css">
--->
-<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/normalize/3.0.3/normalize.min.css" rel="stylesheet">
+<link href="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+<link href="//tools-static.wmflabs.org/cdnjs/ajax/libs/normalize/3.0.3/normalize.min.css" rel="stylesheet">
 
 <link rel="stylesheet" type="text/css" href="resources/js/map/theme/default/style.css" />
 <link rel="stylesheet" type="text/css" href="resources/js/jquery/jquery.cluetip.css" />
 <link rel="stylesheet" type="text/css" href="./main.css" />
 
-<!--
-<script type="text/javascript" src="/magnustools/resources/js/jquery/jquery-1.11.0.min.js"></script>
--->
-<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-
-<script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cookie.js"></script>
-<script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.cluetip.min.js"></script>
-<script type="text/javascript" src="/magnustools/resources/js/jquery/jquery.ba-hashchange.min.js"></script>
-<script type="text/javascript" src="/magnustools/resources/TimelineJS/build/js/storyjs-embed.js"></script>
-
-<!--
-<script type="text/javascript" src="/magnustools/resources/dist3/js/bootstrap.min.js"></script>
--->
-<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/js/bootstrap.min.js"></script>
-
-
-<script type="text/javascript" src="/magnustools/resources/js/common.js"></script>
-<script type="text/javascript" src="/magnustools/resources/js/wikidata.js"></script>
-<!--<script type="text/javascript" src="/wikidata-todo/autodesc.js"></script>-->
+<script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/js/jquery/jquery.cookie.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/js/jquery/jquery.cluetip.min.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/js/jquery/jquery.ba-hashchange.min.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/TimelineJS/build/js/storyjs-embed.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src='//tools-static.wmflabs.org/tooltranslate/tt.js'></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/js/common.js"></script>
+<script type="text/javascript" src="//tools-static.wmflabs.org/magnustools/resources/js/wikidata.js"></script>
 <script type="text/javascript" src="//en.wikipedia.org/w/index.php?title=MediaWiki:Wdsearch-autodesc.js&action=raw&ctype=text/javascript"></script>
 <script type="text/javascript" src="./reasonator_types.js"></script>
 <script type="text/javascript" src="./auto_long_desc.js"></script>
 <script type="text/javascript" src="./main.js"></script>
 </head>
 
-<body>
+<body style='display:none'>
 
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-        <span class="sr-only">Toggle navigation</span>
+        <span class="sr-only" tt='toggle_navigation'></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
       <span style='white-space:nowrap'>
-      <a class="navbar-brand" href="?"><img style='display:inline-block' src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' />&nbsp;Reasonator</a>
+      &nbsp;<a class="navbar-brand" href="?"><img style='display:inline-block' src='//upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Reasonator_logo_proposal.png/24px-Reasonator_logo_proposal.png' tt='toolname'/>Reasonator</a>
       </span>
     </div>
 
@@ -77,12 +62,12 @@
 		</li>
 
 		<li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Other <span class="caret"></span></a>
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span tt='other'></tt> <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
 			<li><a target='_blank' href="#" id='personal_settings'></a></li>
 			<li><a target='_blank' id='about_link' href='//meta.wikimedia.org/wiki/Reasonator'></a></li>
 			<li><a target='_blank' id='discuss_link' href='//meta.wikimedia.org/wiki/Talk:Reasonator'></a></li>
-			<li><a target='_blank' id='edit_interface_link' href='//meta.wikimedia.org/wiki/Reasonator/interface'></a></li>
+			<li><a target='_blank' id='edit_interface_link' href='//tools.wmflabs.org/tooltranslate/#tool=18'></a></li>
 			<li><a target='_blank' id='stringprops_link' href='//meta.wikimedia.org/wiki/Reasonator/stringprops'></a></li>
 			<li><a target='_blank' href="//bitbucket.org/magnusmanske/reasonator">Git</a></li>
 			<li><a target='_blank' href="./doc/index.html">Code documentation</a></li>
@@ -116,18 +101,15 @@
 
 
 			<div id='intro' style='display:none'>
-				<h1>Wikidata - in pretty!</h1>
-				<p><a href='//www.wikidata.org'>Wikidata</a> is an amazing project, but currently looks rather dry. This will, no doubt, change over time, with Wikipedia displaying transcluded data, and Lua support on both Wikipedia and Wikidata itself.</p>
-				<p>As a stop-gap measure, and a small demo of Wikidata's capabilities, welcome to Reasonator! Not only will it display Wikidata entries, it will do so in a item-type-optimized fashion, and also show related, significant data through simple reasoning (hence the name).</p>
-				<p>Try it out right away with <a href='?q=Q1339'>Johann Sebastian Bach</a>!</p>
-				<p>By default, the page will be in English. You can also set your preferred languages in the URL, like so: <a href='?q=Q1339&lang=de,fr'>Johann Sebastian Bach</a> trying German and French first ("&lang=de,fr"); some headings remain in English, for now.</p>
-<!--				<p>People are currently the only item type that works on Reasonator; I have plans to add taxonomic entries and locations next.</p>-->
-				<p>Reasonator is a self-contained JavaScript class (plus some HTML/CSS), using the
-				<a href='https://www.wikidata.org/w/api.php' class='external' target='_blank'>Wikidata API</a> and
-				<a href='https://query.wikidata.org/' class='external' target='_blank'>SPARQL</a> queries so it can easily be ported to other locations. As always, code under GPL.</p>
+				<h1 tt='main_title'></h1>
+				<p tt='intro1'></p>
+				<p tt='intro2'></p>
+				<p tt='intro3'></p>
+				<p tt='intro4'></p>
+				<p tt='intro5'></p>
 				<div class="panel panel-default">
-					<div class="panel-heading"><h3>Example items</h3></div>
-					<div class="panel-body">
+					<div class="panel-heading"><h3 tt='example_items'></h3></div>
+					<div class="panel-body" id='example_list'>
 						<ul>
 							<li><a href='?q=Q42'>Douglas Adams</a> (a biographical item)</li>
 							<li><a href='?q=Q350'>Cambridge</a> (a location)</li>

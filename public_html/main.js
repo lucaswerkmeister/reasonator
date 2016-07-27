@@ -1,3 +1,5 @@
+var tt = {} ;
+
 /**
  * @namespace 
  * @author Magnus Manske
@@ -224,15 +226,7 @@ var reasonator = {
 	 * @returns {string} Interface text in current language.
 	 */
 	t : function ( k ) {
-		var self = this ;
-		var ret = self.i18n['en'][k] ; // Fallback
-		
-		$.each ( self.wd.main_languages||[] , function ( dummy , l ) {
-			if ( undefined === self.i18n[l] || self.i18n[l][k] === undefined) return ;
-			ret = self.i18n[l][k] ;
-			return false ;
-		} ) ;
-		return ret ;
+		return tt.t ( k ) ;
 	} ,
 
 	/**
@@ -426,27 +420,7 @@ var reasonator = {
 	
 	loadInterfaceText : function ( callback ) {
 		var self = this ;
-		$.getJSON ( '//meta.wikimedia.org/w/api.php?callback=?' , {
-			action:'parse',
-			format:'json',
-			prop:'wikitext',
-			page:'Reasonator/interface'
-		} , function ( d ) {
-			var lang = 'none' ;
-			$.each ( d.parse.wikitext['*'].split(/\n/) , function ( dummy , row ) {
-				var m = row.match(/^=+\s*(.+?)\s*=+$/) ;
-				if ( m != null ) {
-					lang = m[1].toLowerCase() ;
-					self.i18n[lang] = {} ;
-					return ;
-				}
-				m = row.match(/^;\s*([^:]+)\s*:\s*(.+)\s*$/) ;
-				if ( m != null ) {
-					self.i18n[lang][m[1]] = m[2] ;
-				}
-			} ) ;
-			callback() ;
-		} ) ;
+		tt.setLanguage ( self.getMainLang() , callback ) ;
 	} ,
 	
 	loadQ : function ( q ) {
@@ -456,7 +430,7 @@ var reasonator = {
 		self.mm_load = [] ;
 		$('#main_content').show() ;
 		$('#main_content_sub').show() ;
-		$('#top').html ( '<i>'+self.t('loading')+'</i>' ) ;
+		$('#top').html ( '<i>'+tt.t('loading')+'</i>' ) ;
 		self.detectAndLoadQ ( self.q ) ;
 	} ,
 	
@@ -697,13 +671,13 @@ var reasonator = {
 		var h = '' ;
 		if ( self.wd.items[q].hasClaims('P279') ) {
 			var chain = self.findLongestPath ( { start:q , props:[279] } ) ;
-			var panel = { title:self.t('subclass_of') , collapsible:true } ;
+			var panel = { title:tt.t('subclass_of') , collapsible:true } ;
 			var h = '' ;
 			h += self.renderChain ( chain , [
-//				{ title:self.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
-				{ title:self.t('name') , name:true } ,
-				{ title:self.t('description') , desc:true } ,
-	//			{ title:self.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
+//				{ title:tt.t('rank') , prop:279 , default:'<i>(unranked)</i>' } ,
+				{ title:tt.t('name') , name:true } ,
+				{ title:tt.t('description') , desc:true } ,
+	//			{ title:tt.t('taxonomic_name') , prop:225 , default:'&mdash;' , type:'string' , ucfirst:true } ,
 			] ) ;
 			h = reasonator.wrapPanel ( h , panel ) ;
 		}
@@ -757,7 +731,7 @@ var reasonator = {
 				sd[p][v.key].push ( $.extend(true,{type:'item',mode:1},v) ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'div.props',striped:true,title:self.t(self.main_type+'_props'),ucfirst:true } ) ;
+		self.renderPropertyTable ( sd , { id:'div.props',striped:true,title:tt.t(self.main_type+'_props'),ucfirst:true } ) ;
 	} ,
 	
 	/**
@@ -887,7 +861,8 @@ var reasonator = {
 		var h = '' ;
 		h += "<table class='table table-condensed table-striped chaintable'><thead><tr>" ;
 		$.each ( columns , function ( k , v ) {
-			h += "<th nowrap>" + v.title + "</th>" ;
+			if ( typeof v.title != 'undefined' ) h += "<th nowrap>" + v.title + "</th>" ;
+			else h += "<th/>" ;
 		} ) ;
 		h += "</tr></thead><tbody>" ;
 		while ( chain.length > 0 ) {
@@ -991,8 +966,8 @@ var reasonator = {
 
 	setTopLink : function () {
 /*		var self = this ;
-		var h = self.t('item')+" " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ;
-		h = "<div style='float:right'><a target='_blank' style='color:#BBB' href='//meta.wikimedia.org/wiki/Reasonator/interface'>" + self.t('translate_interface') + "</a></div>" + h ;
+		var h = tt.t('item')+" " + self.getItemLink ( { type:'item',q:self.q } , { show_q:true,desc:true,force_external:true } ) ;
+		h = "<div style='float:right'><a target='_blank' style='color:#BBB' href='//meta.wikimedia.org/wiki/Reasonator/interface'>" + tt.t('translate_interface') + "</a></div>" + h ;
 		$('#top').html ( h ) ;*/
 		$('#top').hide() ;
 	} ,
@@ -1027,7 +1002,9 @@ var reasonator = {
 						self.setDocTitle ( new_label ) ;
 					} ) ;
 				} ) ;
-				$('#main_title_label').attr ( { title:self.t('edit_title').replace(/\$1/g,self.all_languages[lang]) } ) ;
+//				$('#main_title_label').attr ( { title:tt.t('edit_title').replace(/\$1/g,self.all_languages[lang]) } ) ;
+				$('#main_title_label').attr ( { tt_title:'edit_title' } ) ;
+				tt.updateInterface ( $('#main_title_label') ) ;
 			}
 		}
 		
@@ -1148,7 +1125,7 @@ var reasonator = {
 		}
 		
 		if ( self.showConceptCloudLink ) {
-			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='//tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.wd.main_languages[0]+"'>"+self.t('concept_cloud')+"</a></div>" ;
+			var h = "<div class='concept_cloud'><a class='external' target='_blank' href='//tools.wmflabs.org/wikidata-todo/cloudy_concept.php?q="+self.q+"&lang="+self.getMainLang()+"'>"+tt.t('concept_cloud')+"</a></div>" ;
 			$('#actual_content div.sidebar').append ( h ) ;
 		}
 		
@@ -1158,9 +1135,9 @@ var reasonator = {
 
 		// All things list
 		if ( i.hasClaimItemLink('P31','Q13406463') && !i.hasClaims('P360') ) { // "instance of":"Wikimedia list article" / no "list of"
-			$('div.topnote').append ( "<div>" + self.t('add_listof_topnote') + "</div>" ) ;
+			$('div.topnote').append ( "<div>" + tt.t('add_listof_topnote') + "</div>" ) ;
 		} else if ( !i.hasClaims('P31') && i.hasClaims('P360') ) { // "list of" / no "instance of":"Wikimedia list article"
-			var h = self.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar/' target='_blank' class='external'>WiDaR</a>") ;
+			var h = tt.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar/' target='_blank' class='external'>WiDaR</a>") ;
 			h = h.replace ( /\$2/g , "<a href='#' onclick='reasonator.setAsInstanceOfList();return false'>" ) ;
 			$('div.topnote').append ( h ) ;
 		} else if ( i.hasClaims ( 'P360' ) && ( i.hasClaimItemLink('P31','Q13406463') || i.hasClaimItemLink('P31','Q4167836') ) ) {
@@ -1239,16 +1216,16 @@ var reasonator = {
 				items.push ( d.items[items.length] ) ;
 			} ) ;
 			self.wd.getItemBatch ( items , function () {
-				var h = "<h2>" + self.t("list_of_matching_items") + "</h2>" ;
+				var h = "<h2>" + tt.t("list_of_matching_items") + "</h2>" ;
 				h += "<div>" ;
 				if ( items.length != d.items.length ) {
-					h += self.t('list_note').replace(/\$1/g,self.max_list_items).replace(/\$2/g,d.items.length) ;
-					h += self.t('list_browse1') ;
+					h += tt.t('list_note').replace(/\$1/g,self.max_list_items).replace(/\$2/g,d.items.length) ;
+					h += tt.t('list_browse1') ;
 				} else {
-					h += self.t('list_browse2') ;
+					h += tt.t('list_browse2') ;
 				}
-				h += " <a target='_blank' class='external' href='/autolist/index.php?run=Run&wdqs=" + escape(sparql_query) + "'>" + self.t('list_here') + "</a>. " ;
-				h += self.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
+				h += " <a target='_blank' class='external' href='/autolist/index.php?run=Run&wdqs=" + escape(sparql_query) + "'>" + tt.t('list_here') + "</a>. " ;
+				h += tt.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
 				$.each ( items , function ( k , v ) {
@@ -1286,7 +1263,7 @@ var reasonator = {
 		var url_title = escape(site.title.replace(/\s/g,'_')) ;
 		var qrpedia_url = "http://" + l + ".qrwp.org/" + url_title ;
 		var qrp_url = "//qrpedia.org/qr/php/qr.php?size=800&download="+url_title+"%20QRpedia&e=L&d=" + qrpedia_url ;
-		var qr_img = "<a title='"+self.t('qrpedia')+"; if no QR code shows here, the QRpedia https certificate is broken' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
+		var qr_img = "<a title='"+tt.t('qrpedia')+"; if no QR code shows here, the QRpedia https certificate is broken' href='"+qrpedia_url+"' target='_blank'><img width='200px' src='" + qrp_url + "' /></a>" ;
 		var h = '<div style="text-align:center" class="qrcode"></div>' ;
 		$('div.sidebar').append ( h ) ;
 		if ( true ) { // Direct QR code show
@@ -1325,7 +1302,7 @@ var reasonator = {
 					ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
 					var title_element = $(ct.find('h3')) ;
 					title_element.html ( title ) ;
-					ci.html ( '<i>'+self.t('loading_intro')+'</i>' ) ;
+					ci.html ( '<i>'+tt.t('loading_intro')+'</i>' ) ;
 //					if ( self.isRTL ) ci.css ( { 'direction':'RTL' } ) ;
 
 					$.getJSON ( sitebase + '/w/api.php?callback=?' , {
@@ -1336,7 +1313,7 @@ var reasonator = {
 						exintro:'',
 						format:'json'
 					} , function ( d ) {
-						var h = '<i>'+self.t('no_intro')+'</i>' ;
+						var h = '<i>'+tt.t('no_intro')+'</i>' ;
 						$.each ( ((d.query||[]).pages||[]) , function ( pageid , pd ) {
 							if ( pd.extract === undefined ) return ;
 							h = "<div>" + pd.extract + "</div>" ;
@@ -1395,11 +1372,11 @@ var reasonator = {
 				var sl = i.getWikiLinks() ;
 				$.each ( [ 'wiki' , 'wikivoyage' , 'wikisource' , 'wikiquote' ] , function ( dummy , site ) {
 					var s2 = site=='wiki'?'wikipedia':site ;
-					if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+self.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
+					if ( sl[pl+site] != undefined ) h += "<span style='margin-left:5px'><a title='"+tt.t('sl_'+s2)+" "+self.all_languages[pl]+"' target='_blank' href='//"+pl+"."+s2+".org/wiki/"+escape(sl[pl+site].title)+"'><img border=0 src='"+icons[site]+"'/></a></span>" ;
 				} ) ;
 				var commons = i.getClaimObjectsForProperty ( 373 ) ;
 				if ( commons.length > 0 ) {
-					h += "<span style='margin-left:5px'><a title='"+self.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
+					h += "<span style='margin-left:5px'><a title='"+tt.t('commons_cat')+"' target='_blank' href='//commons.wikimedia.org/wiki/Category:"+escape(commons[0].s)+"'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Commons-logo.svg/18px-Commons-logo.svg.png' border=0 /></a></span>" ;
 				}
 
 
@@ -1408,7 +1385,7 @@ var reasonator = {
 					var lat = claims[0].mainsnak.datavalue.value.latitude ;
 					var lon = claims[0].mainsnak.datavalue.value.longitude ;
 					var url = '/wikidata-todo/around.html?lat='+lat+'&lon='+lon+'&radius=15&lang=' + self.getMainLang() ;
-					h += "<span style='margin-left:5px'><a title='"+self.t('link_around_title')+"' href='"+url+"' target='_blank'><img border=0 src='"+self.map_icon_url+"'/></a></span>" ;
+					h += "<span style='margin-left:5px'><a title='"+tt.t('link_around_title')+"' href='"+url+"' target='_blank'><img border=0 src='"+self.map_icon_url+"'/></a></span>" ;
 					
 				}
 
@@ -1417,11 +1394,11 @@ var reasonator = {
 				
 				if ( self.hasNoLabelInMainLanguage(i) ) {
 					h += "<div class='internal missing_label'><i>" ;
-					h += self.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
+					h += tt.t('no_label_in').replace(/\$1/g,self.all_languages[pl]||pl) ;
 					h += "</i>" ;
 					if ( self.allowLabelOauthEdit ) {
 						h += "<br/><a href='#' onclick='reasonator.addLabelOauth(\""+q+"\",\""+pl+"\",\""+escattr(i.getLabel())+"\");return false'><b>" ;
-						h += self.t('add_a_label') + "</b></a> (" + self.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar/'>WiDaR</a>") + ")" ;
+						h += tt.t('add_a_label') + "</b></a> (" + tt.t('via_widar').replace(/\$1/,"<a target='_blank' href='/widar/'>WiDaR</a>") + ")" ;
 					}
 					h += "</div>" ;
 				}
@@ -1434,7 +1411,7 @@ var reasonator = {
 				}
 				
 				// Rank
-				if ( rank != 'normal' ) h += "<div>" + self.t('rank_label') + " : " + self.t('rank_'+rank) + "</div>" ;
+				if ( rank != 'normal' ) h += "<div>" + tt.t('rank_label') + " : " + tt.t('rank_'+rank) + "</div>" ;
 			
 			
 				ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
@@ -1528,7 +1505,7 @@ var reasonator = {
 		var id = '.misc_data' ;
 		self.renderPropertyTable ( sd , { id:id , striped:true } ) ;
 		var h = $(id+" table tbody").html() ;
-		h = self.renderSidebarTable ( h , self.t('external_ids') ) ;
+		h = self.renderSidebarTable ( h , tt.t('external_ids') ) ;
 		$(id).html ( h ) ;
 		$(id+' th').css({'min-width':''}) ;
 		$(id+' td').css({'width':''}) ;
@@ -1651,7 +1628,7 @@ var reasonator = {
 						}
 					} else {
 						if ( !has_header ) {
-							$('#other_media_container h2.panel-title').html ( self.t('related_media') ) ;
+							$('#other_media_container h2.panel-title').html ( tt.t('related_media') ) ;
 							$('div.all_images').append ( "<div id='related_media_meta'></div>" ) ;
 							has_header = true ;
 						}
@@ -1672,7 +1649,7 @@ var reasonator = {
 				if ( self.wd.items['P'+prop] === undefined ) return ;
 				var ct = self.wd.items['P'+prop].getLabel()  ;
 				if ( !has_header ) {
-					$('#other_media_container h2.panel-title').html ( self.t('related_media') ) ;
+					$('#other_media_container h2.panel-title').html ( tt.t('related_media') ) ;
 					$('div.all_images').append ( "<div id='related_media_meta'></div>" ) ;
 					has_header = true ;
 				}
@@ -1756,7 +1733,7 @@ var reasonator = {
 					if ( collapse ) h += ";display:none" ;
 					if ( p == 225 ) h += ";font-style:italic" ;
 					h += "'>" ;
-					if ( cq.mode == 2 ) h += self.t('of')+"&nbsp;" ;
+					if ( cq.mode == 2 ) h += tt.t('of')+"&nbsp;" ;
 					h += self.getItemLink ( cq , $.extend({},no,{main_prop:p}) ) ; // { internal:internal,desc:true,gender:true,q_desc:true }
 					h += "</td></tr>" ;
 					row++ ;
@@ -1766,8 +1743,8 @@ var reasonator = {
 			if ( collapse ) {
 				h += "<tr><td style='width:100%'>" ;
 				h += num_rows + " items. " ;
-				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('show_items')+"</a>" ;
-				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+self.t('hide_items')+"</a>" ;
+				h += "<a href='#' name='"+block_id+"' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+tt.t('show_items')+"</a>" ;
+				h += "<a href='#' name='"+block_id+"' style='display:none' onclick='reasonator.toggleItems(\"" + block_id + "\");return false'>"+tt.t('hide_items')+"</a>" ;
 				h += "</td></tr>" ;
 			}
 		} ) ;
@@ -1810,7 +1787,7 @@ var reasonator = {
 				sd[p][ti.key].push ( $.extend(true,{p:p,mode:1},ti) ) ;
 			} ) ;
 		} ) ;
-		self.renderPropertyTable ( sd , { id:'.other' , title:self.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
+		self.renderPropertyTable ( sd , { id:'.other' , title:tt.t('other_properties') , striped:true , add_desc:true , audio:true , video:true } ) ;
 	} ,
 	
 
@@ -1838,7 +1815,7 @@ var reasonator = {
 			} ) ;
 		} ) ;
 		self.wd.getItemBatch ( self.to_load , function () {
-			self.renderPropertyTable ( sd , { id:'.backlinks' , title:self.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
+			self.renderPropertyTable ( sd , { id:'.backlinks' , title:tt.t('from_related_items') , striped:true , add_desc:true , audio:true , video:true , sort_by_qualifier_time:true } ) ;
 			if ( callback ) callback() ;
 //			self.addHoverboxes ( '.backlinks' ) ;
 		} ) ;
@@ -1893,7 +1870,7 @@ var reasonator = {
 
 		if ( h.length > 0 ) {
 			h = self.sort12collapse ( h ) ;
-			h = self.renderSidebarTable ( h.join('') , self.t('social_media') ) ;
+			h = self.renderSidebarTable ( h.join('') , tt.t('social_media') ) ;
 			$('.social_media').html ( h ) ;
 		}
 	} ,
@@ -1921,7 +1898,7 @@ var reasonator = {
 					var key = encodeURIComponent(s) ;
 					var src = 'https://i.ytimg.com/vi/'+key+'/sddefault.jpg' ;
 //					var h2 = "<img src='" + src + "' />" ;
-					var h2 = "<div class='youtube' style='background-image: url(\"https://i.ytimg.com/vi/"+key+"/sddefault.jpg\");' key='"+key+"' title='" + self.t('play_youtube') + "'>" ;
+					var h2 = "<div class='youtube' style='background-image: url(\"https://i.ytimg.com/vi/"+key+"/sddefault.jpg\");' key='"+key+"' title='" + tt.t('play_youtube') + "'>" ;
 					h2 += "<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Logo_Youtube.svg/50px-Logo_Youtube.svg.png' class='proprietary_logo' />" ;
 					h2 += "</div>" ;
 					$('div.main_video').append ( h2 ) ;
@@ -1949,7 +1926,7 @@ var reasonator = {
 
 		if ( h.length > 0 ) {
 			h = self.sort12collapse ( h ) ;
-			h = self.renderSidebarTable ( h.join('') , self.t('external_sources') ) ;
+			h = self.renderSidebarTable ( h.join('') , tt.t('external_sources') ) ;
 			$('.external_ids').html ( h ) ;
 		}
 		
@@ -1982,8 +1959,8 @@ var reasonator = {
 		
 		if ( h.length == 0 ) return ;
 
-		h = self.renderSidebarTable ( h.join('') , self.t('external_sites') ) ;
-//		h = "<table class='sidebar-table table-striped'><thead><th>"+self.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
+		h = self.renderSidebarTable ( h.join('') , tt.t('external_sites') ) ;
+//		h = "<table class='sidebar-table table-striped'><thead><th>"+tt.t('external_sites')+"</th></thead><tbody>" + h.join('') + "</tbody></table>" ;
 		$('.websites').html ( h ) ;
 	} ,
 	
@@ -1995,14 +1972,14 @@ var reasonator = {
 
 		var projects = [ 'current' , 'mainwp' , 'commons' , 'wikisource' , 'wikivoyage' , 'wikiquote' , 'wiki' ] ;
 		var groups = {
-			current : { title:self.t('sl_current') , server:'wikipedia.org' , sites:[] } ,
+			current : { title:tt.t('sl_current') , server:'wikipedia.org' , sites:[] } ,
 			
-			mainwp : { title:self.t('sl_big_wp') , server:'wikipedia.org' , sites:[] } ,
-			commons : { title:self.t('sl_commons') , server:'wikimedia.org' , sites:[] } ,
-			wikisource : { title:self.t('sl_wikisource') , server:'wikisource.org' , sites:[] } ,
-			wikiquote : { title:self.t('sl_wikiquote') , server:'wikiquote.org' , sites:[] } ,
-			wikivoyage : { title:self.t('sl_wikivoyage') , server:'wikivoyage.org' , sites:[] } ,
-			wiki : { title:self.t('sl_other') , server:'wikipedia.org' , sites:[] } ,
+			mainwp : { title:tt.t('sl_big_wp') , server:'wikipedia.org' , sites:[] } ,
+			commons : { title:tt.t('sl_commons') , server:'wikimedia.org' , sites:[] } ,
+			wikisource : { title:tt.t('sl_wikisource') , server:'wikisource.org' , sites:[] } ,
+			wikiquote : { title:tt.t('sl_wikiquote') , server:'wikiquote.org' , sites:[] } ,
+			wikivoyage : { title:tt.t('sl_wikivoyage') , server:'wikivoyage.org' , sites:[] } ,
+			wiki : { title:tt.t('sl_other') , server:'wikipedia.org' , sites:[] } ,
 		} ;
 		
 		var lp = (self.params.lang||'en').split(',');
@@ -2042,7 +2019,7 @@ var reasonator = {
 		} ) ;
 		
 //		var h = "<table class='sidebar-table table-striped'>" ; // style='width:100%' border=0 cellspacing=0 cellpadding=1 
-//		h += "<thead><th colspan=2>"+self.t('wikimedia_projects')+"</th></thead><tbody>" ;
+//		h += "<thead><th colspan=2>"+tt.t('wikimedia_projects')+"</th></thead><tbody>" ;
 		
 		var h = '' ;
 		
@@ -2061,7 +2038,7 @@ var reasonator = {
 		} ) ;
 
 //		h += "</tbody></table>" ;
-		h = self.renderSidebarTable ( h , self.t('wikimedia_projects') ) ;
+		h = self.renderSidebarTable ( h , tt.t('wikimedia_projects') ) ;
 		$('div.sitelinks').html ( h ) ;
 	} ,
 
@@ -2224,7 +2201,7 @@ var reasonator = {
 			}
 			
 			if ( undefined !== start && undefined !== end ) {
-				show = self.getSelfLink ( { date:show , title:self.t('calendar_for').replace(/\$1/,show) , label:show } ) ;
+				show = self.getSelfLink ( { date:show , title:tt.t('calendar_for').replace(/\$1/,show) , label:show } ) ;
 			}
 			
 			if ( i.rank !== undefined ) show = "<span class='rank_" + i.rank + "'>" + show + "</span>" ;
@@ -2255,14 +2232,14 @@ var reasonator = {
 				var al = '' ;
 				if ( typeof o.main_prop != 'undefined' ) {
 					if ( typeof v.q != 'undefined' ) {
-						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else if ( typeof v.time != 'undefined' ) {
 						var base = self.getFormatDate ( v ) ;
 						var from = base + '0000-00-00'.substr(base.length);
 						var to = base + '9999-13-32'.substr(base.length);
-						al = " [<a title='"+self.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else {
-						console.log ( v ) ;
+//						console.log ( v ) ;
 					}
 				}
 				qual.push ( qpl+' : '+qi + al) ;
@@ -2300,7 +2277,7 @@ var reasonator = {
 	getSelfURL : function ( o ) {
 		var self = this ;
 		var q = o.q === undefined ? self.q : o.q ;
-		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
+		var lang = o.lang === undefined ? self.getMainLang() : o.lang ;
 		var url = '?' ;
 		if ( o.date !== undefined ) {
 //			label = o.date ;
@@ -2317,7 +2294,7 @@ var reasonator = {
 	getSelfLink : function ( o ) {
 		var self = this ;
 		var q = o.q === undefined ? self.q : o.q ;
-		var lang = o.lang === undefined ? self.wd.main_languages[0] : o.lang ;
+		var lang = o.lang === undefined ? self.getMainLang() : o.lang ;
 		var label = o.label||'' ;
 		var title = o.title||'' ;
 		var cl = '' ;
@@ -2351,7 +2328,7 @@ var reasonator = {
 							var type = 'ogg' ;
 							if ( null != v.title.match(/\.flac$/i) ) type = 'flac' ;
 							if ( type == 'flac' ) { // Hardcoded exception
-								h = "<a href='" + url + "' target='_blank'>"+self.t('download_file')+"</a>" ;
+								h = "<a href='" + url + "' target='_blank'>"+tt.t('download_file')+"</a>" ;
 							} else {
 								h = "<audio controls style='max-width:"+maxw+"px'><source src='" + url + "' type='audio/"+type+"'><small><i>Your browser <s>sucks</s> does not support HTML5 audio.</i></small></audio>" ;
 								if ( o.sidebar ) h = '<div>' + self.getItemLink ( { type:'item',q:o.prop } , { desc:true } ) + "</div>" + h ;
@@ -2418,7 +2395,7 @@ var reasonator = {
 			} ) ;
 			
 			if ( items.length == 0 ) {
-				$('#main').html ( self.t("no_search_results")+" <i>"+s+"</i>" ) ;
+				$('#main').html ( tt.t("no_search_results")+" <i>"+s+"</i>" ) ;
 				return ;
 			}
 
@@ -2474,7 +2451,7 @@ var reasonator = {
 							var i = self.wd.getItem ( q ) ;
 							if ( undefined === i ) return ;
 							$('#sr_q'+q).text ( i.getLabel() ) ;
-							$('#sr_d'+q).text ( i.getDesc(self.wd.main_languages[0]) ) ;
+							$('#sr_d'+q).text ( i.getDesc(self.getMainLang()) ) ;
 							//if ( i.getDesc() == '' ) 
 							wd_auto_desc.loadItem ( q , { target:$('#sr_ad'+q) , reasonator_lang:(self.params.lang||'en') , links:'reasonator_local' } ) ;
 						} ) ;
@@ -2509,7 +2486,7 @@ var reasonator = {
 	showGeneawiki : function () {
 		var self = this ;
 		
-		var lang = self.wd.main_languages[0] ;
+		var lang = self.getMainLang() ;
 		var id = 'geneawiki' ;
 		if ( $('#'+id).is(':visible') ) {
 			$('#'+id).toggle() ;
@@ -2552,7 +2529,7 @@ var reasonator = {
 		h += '<div class="modal-dialog"><div class="modal-content">' ;
 		h += '<div class="modal-header">' ;
 		h += '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' ;
-		h += '<h3 id="languageDialogLabel">' + self.t("choose_language") + '</h3>' ;
+		h += '<h3 id="languageDialogLabel">' + tt.t("choose_language") + '</h3>' ;
 		h += '</div>' ;
 		h += '<div class="modal-body">' ;
 		
@@ -2560,7 +2537,7 @@ var reasonator = {
 		var url = "?" + ( self.q === undefined ? '' : "q="+self.q ) + ( self.params.find === undefined ? '' : "find="+escape(self.params.find) ) + "&lang=" ;
 		var hadthat = {} ;
 
-		h += "<div><h4>" + self.t("common_languages") + "</h4>" ;
+		h += "<div><h4>" + tt.t("common_languages") + "</h4>" ;
 		h += "<div><ul class='list-inline'>" ;
 		$.each ( self.wd.main_languages , function ( dummy , l ) {
 			if ( hadthat[l] ) return ;
@@ -2575,7 +2552,7 @@ var reasonator = {
 		} ) ;
 		h += "</ul></div></div>" ;
 
-		h += "<div><h4>"+self.t('worldwide')+"</h4>" ;
+		h += "<div><h4>"+tt.t('worldwide')+"</h4>" ;
 		h += "<div><ul class='list-inline'>" ;
 		$.each ( self.all_languages , function ( l , name ) {
 			if ( hadthat[l] ) return ;
@@ -2642,7 +2619,7 @@ var reasonator = {
 	
 	getLangParam : function ( l ) {
 		var self = this ;
-		if ( l == undefined ) l = self.wd.main_languages[0] ;
+		if ( l == undefined ) l = self.getMainLang() ;
 		var m = self.preferred_languages.match ( /^([^,]+)/ ) ;
 		if ( m != null && l == m[1] ) return '' ;
 		if ( l == 'en' ) return '' ;
@@ -2731,11 +2708,11 @@ var reasonator = {
 
 		$('#actual_content div.main').show().html ( 
 			"<table style='width:100%'><tbody><tr><td valign='top'>" + 
-			self.t('loading') + "</td><td>" + 
+			tt.t('loading') + "</td><td>" + 
 			"<div style='float:right;width:600px'>" + self.getStatusBarHTML('loading_status') + "</div><span id='cal_perc'></span>"  +
 			"</td></tr></tbody></table>"
 			) ;
-		$('h1.main_title').html ( self.t('calendar_for').replace(/\$1/,self.date) ) ;
+		$('h1.main_title').html ( tt.t('calendar_for').replace(/\$1/,self.date) ) ;
 		self.wd.loading_status_callback = function ( cur , total ) {
 			$('#loading_status .progress-bar').width ( (100*cur/total)+'%' ) ;
 //			$('#cal_perc').html ( parseInt(100*cur/total)+'%' ) ;
@@ -2759,42 +2736,42 @@ var reasonator = {
 		}
 
 		var sections = [
-			{ title:self.t('event_on') , key:'event' , 
+			{ title:tt.t('event_on') , key:'event' , 
 				sparql:'SELECT DISTINCT ?item { ?item wdt:P585 ?time0 . FILTER ( ?time0 >= "'+dmin+'T00:00:00Z"^^xsd:dateTime && ?time0 <= "'+dmax+'T00:00:00Z"^^xsd:dateTime ) }' ,
 				sparql:sparql_or([585,606,619,620,621,622,729,1191],dmin,dmax),
 				cols:[] , props:[585,606,619,620,621,622,729,1191] } ,
 				
-			{ title:self.t('foundation_or_discovery') , key:'found_disc' , 
+			{ title:tt.t('foundation_or_discovery') , key:'found_disc' , 
 				sparql:sparql_or([571,575,577,1619],dmin,dmax),
 				cols:[] , props:[571,575,577,1619] } ,
 
-			{ title:self.t('end_of') , key:'end_of' , 
+			{ title:tt.t('end_of') , key:'end_of' , 
 				sparql:sparql_or([730,746],dmin,dmax),
 				cols:[] , props:[730,746] } ,
 				
-			{ title:self.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , 
+			{ title:tt.t('ongoing').replace(/\$1/,bracket) , key:'ongoing' , 
 				sparql:'SELECT DISTINCT ?item { ?item (wdt:P580) ?time0 . ?item (wdt:P582) ?time1 '
 					+ '. FILTER ( ?time0 >= "'+ongoing.from+'T00:00:00Z"^^xsd:dateTime && ?time0 <= "'+dmax+'T23:59:59Z"^^xsd:dateTime ) '
 					+ '. FILTER ( ?time1 >= "'+dmin+'T00:00:00Z"^^xsd:dateTime && ?time1 <= "'+ongoing.to+'T23:59:59Z"^^xsd:dateTime ) }'
 					,
-				props:[580,582] , cols:[{title:'From',prop:580,type:'date'},{title:'To',prop:582,type:'date'}] } ,
+				props:[580,582] , cols:[{title:tt.t('cal_from'),prop:580,type:'date'},{title:tt.t('cal_end'),prop:582,type:'date'}] } ,
 				
-			{ title:self.t('born_on') , key:'born' , 
+			{ title:tt.t('born_on') , key:'born' , 
 				sparql:sparql_or([569],dmin,dmax),
-				cols:[{title:self.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
+				cols:[{title:tt.t('died_on'),prop:570,type:'date'}] , props:[569]  } ,
 				
-			{ title:self.t('died_on') , key:'died' , 
+			{ title:tt.t('died_on') , key:'died' , 
 				sparql:sparql_or([570],dmin,dmax),
-				cols:[{title:self.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
+				cols:[{title:tt.t('born_on'),prop:569,type:'date'}] , props:[570] } ,
 		] ;
 		
 		var more_dates = precision < 11 ;
 		if ( more_dates ) {
-			sections[0].cols.push ( {title:self.t('cal_date'),prop:585,type:'date'} ) ;
-			sections[1].cols.push ( {title:self.t('cal_date'),prop:571,type:'date'} ) ;
-			sections[1].cols.push ( {title:self.t('cal_date'),prop:575,type:'date'} ) ;
-			sections[3].cols.unshift ( {title:self.t('born_on'),prop:569,type:'date'} ) ;
-			sections[4].cols.push ( {title:self.t('died_on'),prop:570,type:'date'} ) ;
+			sections[0].cols.push ( {title:tt.t('cal_date'),prop:585,type:'date'} ) ;
+			sections[1].cols.push ( {title:tt.t('cal_date'),prop:571,type:'date'} ) ;
+			sections[1].cols.push ( {title:tt.t('cal_date'),prop:575,type:'date'} ) ;
+			sections[3].cols.unshift ( {title:tt.t('born_on'),prop:569,type:'date'} ) ;
+			sections[4].cols.push ( {title:tt.t('died_on'),prop:570,type:'date'} ) ;
 		}
 
 		var to_load = [] ;
@@ -2838,7 +2815,7 @@ var reasonator = {
 					if ( !bad ) items.push ( 'Q'+v ) ;
 				} ) ;
 				
-				var style = [ { title:self.t('item') , name:true } ] ;
+				var style = [ { title:tt.t('item') , name:true } ] ;
 				style = style.concat ( o.cols ) ;
 				
 				var h2 = self.renderChain ( items , style ) . replace ( /\bnowrap\b/g , '' ) ;
@@ -2995,50 +2972,62 @@ var reasonator = {
 			$.each ( l , function ( k , v ) { self.wd.main_languages.unshift(v) ; } ) ;
 		}
 		
-		$('#btn_search').text(self.t('find')) ;
-		$('#edit_interface_link').text ( self.t('translate_interface') ) ;
-		$('#personal_settings').text ( self.t('ps_title') ) ;
-		$('#aux_dropdown_button_label').text ( 'Other' ) ;
-		$('#personal_settings').click ( reasonator.personalSettings ) ;
-		
-		$.each ( [
-			['btn_search','find'] ,
-			['edit_interface_link','translate_interface'] ,
-			['aux_dropdown_button_label','aux_dropdown_label'] ,
-			['about_link','about_link'] ,
-			['discuss_link','discuss_link'] ,
-			['stringprops_link','stringprops_link'] ,
-		] , function ( k , v ) {
-			$('#'+v[0]).text ( self.t(v[1]) ) ;
-		} ) ;
-		
-		$('#btn_search').prepend('<span class="glyphicon glyphicon-search"></span> ');
-//		$('#div.header h3').click ( function () { window.location = "?" } ) ;
-		
-		$('#find').attr({title:self.t('find')+' [F]'}) ;
-		$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
-		$('#random_item').html(self.t('random_item')).attr({title:self.t('random_item')+' [X]'}).click ( function () { reasonator.loadRandomItem() ; return false } ) ;
-		
-		if ( self.params.q === undefined && self.params.find == undefined && self.params.date == undefined ) {
-			$('#language_select').hide() ;
-		} else {
-			var curlang = self.all_languages[self.wd.main_languages[0]] || 'Unknown language' ;
-			$('#language_select').text ( curlang ) ;
-		}
+		tt.setLanguage ( self.getMainLang() , function () {
 
-		wd_auto_desc_wd.init() ;
-		wd_auto_desc.lang = self.wd.main_languages[0] ;
-		if ( undefined !== self.params.q ) {
-			self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
-		} else if ( undefined !== self.params.find ) {
-			self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
-		} else if ( undefined !== self.params.date ) {
-			self.date = self.params.date ;
-			self.showDate() ;
-		} else {
-			$('#main_content').show() ;
-			$('#intro').show() ;
-		}
+			$('#btn_search').text(tt.t('find')) ;
+			$('#edit_interface_link').text ( tt.t('translate_interface') ) ;
+			$('#personal_settings').text ( tt.t('ps_title') ) ;
+			$('#aux_dropdown_button_label').text ( 'Other' ) ;
+			$('#personal_settings').click ( reasonator.personalSettings ) ;
+		
+			$.each ( [
+				['btn_search','find'] ,
+				['edit_interface_link','translate_interface'] ,
+				['aux_dropdown_button_label','aux_dropdown_label'] ,
+				['about_link','about_link'] ,
+				['discuss_link','discuss_link'] ,
+				['stringprops_link','stringprops_link'] ,
+			] , function ( k , v ) {
+				$('#'+v[0]).text ( tt.t(v[1]) ) ;
+			} ) ;
+		
+			$('#btn_search').prepend('<span class="glyphicon glyphicon-search"></span> ');
+	//		$('#div.header h3').click ( function () { window.location = "?" } ) ;
+		
+			$('#find').attr({title:tt.t('find')+' [F]'}) ;
+			$('#language_select').click ( function () { reasonator.languageDialog() ; return false } ) ;
+			$('#random_item').html(tt.t('random_item')).attr({title:tt.t('random_item')+' [X]'}).click ( function () { reasonator.loadRandomItem() ; return false } ) ;
+		
+			if ( self.params.q === undefined && self.params.find == undefined && self.params.date == undefined ) {
+				$('#language_select').hide() ;
+			} else {
+				var curlang = self.all_languages[self.getMainLang()] || 'Unknown language' ;
+				$('#language_select').text ( curlang ) ;
+			}
+
+			wd_auto_desc_wd.init() ;
+			wd_auto_desc.lang = self.getMainLang() ;
+			if ( undefined !== self.params.q ) {
+				self.loadQ ( self.params.q.replace(/\#/g,'') ) ;
+			} else if ( undefined !== self.params.find ) {
+				self.find ( decodeURIComponent(self.params.find).replace(/\+/g,' ') )
+			} else if ( undefined !== self.params.date ) {
+				self.date = self.params.date ;
+				self.showDate() ;
+			} else {
+				$('#main_content').show() ;
+				$('#intro').show() ;
+				var l = self.getMainLang() ;
+				if ( l != 'en' ) {
+					$('#example_list a').each ( function () {
+						var a = $(this) ;
+						var url = a.attr('href') ;
+						url += "&lang="+l ;
+						a.attr({href:url}) ;
+					} ) ;
+				}
+			}
+		} ) ;
 	} ,
 	
 	/**
@@ -3161,7 +3150,7 @@ var reasonator = {
 				type : 'default' ,
 				text : self.wd.items[self.q].getDesc() ,
 				date : [] ,
-				lang : self.wd.main_languages[0] ,
+				lang : self.getMainLang() ,
 				era : [ {
 					startDate : min.replace(/-/g,',') ,
 					endDate : max.replace(/-/g,',') ,
@@ -3289,9 +3278,10 @@ var reasonator = {
 		var images = {} ; // This will become an array later!
 		
 		var h3 = "<div id='images_commons'></div><div id='images_flickr'></div>" ;
-		h3 += "<div id='images_google'><a target='_blank' class='external' href='https://www.google.com/search?q="+escape($('#main_title_label').text())+"&tbm=isch&tbs=sur:fmc'>Free images Google search</a></div>" ;
+		h3 += "<div id='images_google'><a target='_blank' class='external' href='https://www.google.com/search?q="+escape($('#main_title_label').text())+"&tbm=isch&tbs=sur:fmc' tt='google_image'></a></div>" ;
 		$('div.main_image').html ( h3 ) ;
-		$('#images_commons').html ( "<small><i>" + self.t('looking4images_wiki') + "</i></small>" ) ;
+		tt.updateInterface ( $('div.main_image') ) ;
+		$('#images_commons').html ( "<small><i>" + tt.t('looking4images_wiki') + "</i></small>" ) ;
 		if ( self.flickr_key ) self.checkFlickr() ;
 		
 		if ( queries.length == 0 ) $('#images_commons').html ( '' ) ;
@@ -3308,7 +3298,7 @@ var reasonator = {
 				botmode:1
 			} , function ( d ) {
 				if ( d.error == 'OK' ) {
-					$('div.addimage_thumbnail_container[iid='+iid+']').html(self.t('image_added')).css({'background-color':'#1FCB4A'}) ;
+					$('div.addimage_thumbnail_container[iid='+iid+']').html(tt.t('image_added')).css({'background-color':'#1FCB4A'}) ;
 					$('#reload_page_after_image_added').show() ;
 				} else alert ( d.error ) ;
 			} , 'json' ) .fail(function( jqxhr, textStatus, error ) {
@@ -3318,8 +3308,8 @@ var reasonator = {
 		}
 		
 		function showImageCandidatesStage2 () {
-			var diag_title = self.t('add_image') ;
-			var diag_desc = self.t('has_no_image') ;
+			var diag_title = tt.t('add_image') ;
+			var diag_desc = tt.t('has_no_image') ;
 			diag_desc = diag_desc.replace ( /\$1/ , images.length ) . replace ( /\$2/ , '<a target="_blank" href="/widar/">' ) ;
 			
 			$('#addImagesDialog').remove() ;
@@ -3339,7 +3329,7 @@ var reasonator = {
 				h += "<div iid='"+iid+"' style='text-align:center;vertical-align:top;display:inline-block;width:"+self.thumbsize+"px;height:"+(self.thumbsize+20)+"px;margin:5px' class='addimage_thumbnail_container'>" ;
 				h += "<div style='padding-top:"+off+"px;padding-bottom:"+(self.thumbsize-off-i.thumbheight)+"px'><a class='add_image' href='#' iid='"+iid+"'>" ;
 				h += "<img style='width:"+i.thumbwidth+"px;height:"+i.thumbheight+"px' src='"+i.thumburl+"' border=0 /></a></div>" ;
-				h += "<div>"+i.usage_counter+"&times; (<a target='_blank' href='"+i.descriptionurl+"'>"+self.t('commons')+"</a>)</div>" ;
+				h += "<div>"+i.usage_counter+"&times; (<a target='_blank' href='"+i.descriptionurl+"'>"+tt.t('commons')+"</a>)</div>" ;
 				h += "</div>" ;
 			} ) ;
 			
@@ -3351,7 +3341,7 @@ var reasonator = {
 				if ( dummy == 0 ) h += "checked" ;
 				h += "/>&nbsp;" + self.wd.items[prop].getLabel() + "</label>" ;
 			} ) ;
-			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+self.t('reload_page')+"</a></span>" ;
+			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+tt.t('reload_page')+"</a></span>" ;
 			h += "</form>" ;
 			h += '</div>' ;
 			h += '</div></div>' ;
@@ -3396,7 +3386,7 @@ var reasonator = {
 				return ;
 			}
 			
-			var txt = self.t('add_wikipedia_images') ;
+			var txt = tt.t('add_wikipedia_images') ;
 			var h = "<div style='text-align:center;margin:20px'><a href='#'>"+txt+"</a></div>" ;
 			$('#images_commons').html ( h ) ;
 			$('#images_commons a').click ( showImageCandidates ) ;
@@ -3450,11 +3440,11 @@ var reasonator = {
 	checkFlickr : function () {
 		var self = this ;
 		var title = $('#main_title_label').text().replace ( /\(.+$/ , '' ) ;
-		$('#images_flickr').html ( "<small><i>" + self.t('looking4images_flickr') + "</i></small>" ) ;
+		$('#images_flickr').html ( "<small><i>" + tt.t('looking4images_flickr') + "</i></small>" ) ;
 
 		function showImageCandidates ( images ) {
-			var diag_title = self.t('add_image_flickr') ;
-			var diag_desc = self.t('has_no_image_flickr') ;
+			var diag_title = tt.t('add_image_flickr') ;
+			var diag_desc = tt.t('has_no_image_flickr') ;
 			diag_desc = diag_desc.replace ( /\$1/ , images.length ) ;
 			
 			$('#addImagesDialog').remove() ;
@@ -3498,7 +3488,7 @@ var reasonator = {
 				if ( dummy == 0 ) h += "checked" ;
 				h += "/>&nbsp;" + self.wd.items[prop].getLabel() + "</label>" ;
 			} ) ;
-			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+self.t('reload_page')+"</a></span>" ;
+			h += "<span id='reload_page_after_image_added' style='display:none;font-weight:bold'> | <a href='#' onclick='location.reload();return false'>"+tt.t('reload_page')+"</a></span>" ;
 			h += "</form>" ;
 			h += '</div>' ;*/
 			h += '</div></div>' ;
@@ -3534,7 +3524,7 @@ var reasonator = {
 				$('#images_flickr').html ( '' ) ;
 				return ;
 			}
-			var txt = self.t('add_flickr_images') ;
+			var txt = tt.t('add_flickr_images') ;
 			var h = "<div style='text-align:center;margin:20px'><a href='#'>"+txt+"</a></div>" ;
 			$('#images_flickr').html ( h ) ;
 			$('#images_flickr a').click ( function () {
@@ -3573,15 +3563,15 @@ var reasonator = {
 	personalSettings : function () {
 		var self = reasonator ;
 		var h = '' ;
-		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='"+self.t('ps_un_placeholder')+"' style='width:250px' /> <button id='wdun_update'>"+self.t('ps_update_from_babel')+"</button></form></div>" ;
-		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='"+self.t('ps_pl_placeholder')+"' style='width:250px' /> <button id='pl_update'>"+self.t('ps_update_languages')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='wikidata_user_name' placeholder='"+tt.t('ps_un_placeholder')+"' style='width:250px' /> <button id='wdun_update'>"+tt.t('ps_update_from_babel')+"</button></form></div>" ;
+		h += "<div><form class='form-inline'><input type='text' id='preferred_languages' placeholder='"+tt.t('ps_pl_placeholder')+"' style='width:250px' /> <button id='pl_update'>"+tt.t('ps_update_languages')+"</button></form></div>" ;
 		h += "<div><form class='form-inline'>Random page shows " ;
 		h += "<label><input type='radio' name='random_page_language' value='all' /> all</label>, <i>or,</i> only " ;
 		h += "<label><input type='radio' name='random_page_language' value='with_lang' /> with</label> " ;
 		h += "<label><input type='radio' name='random_page_language' value='without_lang' /> without</label> a label in your languages" ;
 		h += "</form></div>" ;
-		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> "+self.t('ps_flickr')+"</label></form></div>" ;
-		self.setupDialog ( { title:self.t('ps_title') , desc:self.t('ps_desc') , h:h , id:'personalSettingsDialog' } ) ;
+		h += "<div><form class='form-inline'><label><input type='checkbox' id='use_flickr' /> "+tt.t('ps_flickr')+"</label></form></div>" ;
+		self.setupDialog ( { title:tt.t('ps_title') , desc:tt.t('ps_desc') , h:h , id:'personalSettingsDialog' } ) ;
 		
 		
 		function updatePreferredLanguages () {
@@ -3609,7 +3599,7 @@ var reasonator = {
 				var text = d.parse.wikitext['*'].replace ( /\s/ , ' ' ) ; // Newlines, just in case...
 				var m = text.match ( /\{\{\#babel:(.+?)\}\}/i ) ;
 				if ( m == null ) {
-					alert ( self.t('ps_babel_warning') ) ;
+					alert ( tt.t('ps_babel_warning') ) ;
 					return false ;
 				}
 				var babel = m[1].replace(/-\d+/g,'').split ( /\|/g ) ;
@@ -3644,7 +3634,7 @@ var reasonator = {
 		var h = "" ;
 		
 		h += "<div>" ;
-		h += "<form class='form-inline'><input id='eq_search' style='width:400px' /><button id='eq_on_find' class='btn btn-primary'>" + self.t('find') + "</button></form>" ;
+		h += "<form class='form-inline'><input id='eq_search' style='width:400px' /><button id='eq_on_find' class='btn btn-primary'>" + tt.t('find') + "</button></form>" ;
 		h += "<div style='max-height:400px;overflow:auto' id='eq_search_results'></div>" ;
 		h += "</div>" ;
 		
@@ -3778,39 +3768,34 @@ var reasonator = {
 
 
 
-
 $(document).ready ( function () {
-	$('#emergency').remove() ;
-/*
-	$.fn.is_on_screen = function(){
-		var win = $(window);
-		var viewport = {
-			top : win.scrollTop(),
-			left : win.scrollLeft()
-		};
-		viewport.right = viewport.left + win.width();
-		viewport.bottom = viewport.top + win.height();
- 
-		var bounds = this.offset();
-		bounds.right = bounds.left + this.outerWidth();
-		bounds.bottom = bounds.top + this.outerHeight();
- 
-		return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
-	};
-*/
-	// Load thumbnails on demand
-	$(window).scroll(function(){
-		$('div.unloaded_thumbnail').each ( function () {
-			reasonator.loadThumb ( $(this) ) ;
-		} ) ;
-	} ) ;
 	
-	$('#main_content').hide() ;
-	document.title = 'Reasonator' ;
-	reasonator.init ( function () {
-		reasonator.initializeFromParameters() ;
-	} ) ;
+	tt = new ToolTranslation ( { debug:1 , tool: 'reasonator' ,
+		language:'en',
+		fallback:'en',
+//		highlight_missing:true,
+		callback : function () {
+			$('#emergency').remove() ;
+			$('body').show() ;
+
+			// Load thumbnails on demand
+			$(window).scroll(function(){
+				$('div.unloaded_thumbnail').each ( function () {
+					reasonator.loadThumb ( $(this) ) ;
+				} ) ;
+			} ) ;
 	
+			$('#main_content').hide() ;
+	//		document.title = 'Reasonator' ;
+			reasonator.init ( function () {
+				reasonator.initializeFromParameters() ;
+			} ) ;
+		
+	} , onUpdateInterface : function () {
+	
+			//
+	
+	} } ) ;
 } ) ;
 
 
