@@ -139,7 +139,7 @@ var reasonator = {
 	/** WiDaR API URL.
 	 * @type {string}
 	 */
-	widar_url : '/widar/index.php?callback=?' ,
+	widar_url : '/widar/index.php?' ,
 
 	/** Width of top banner from WikiVoyage, in pixel.
 	 * @type {number}
@@ -720,7 +720,7 @@ var reasonator = {
 		var self = reasonator ;
 		if ( o === undefined ) o = {} ;
 
-		$.getJSON ( self.widar_url , {
+		$.get ( self.widar_url , {
 			action:'set_claims',
 			tool_hashtag:'reasonator',
 			ids:q,
@@ -735,7 +735,7 @@ var reasonator = {
 					location.reload();
 				}
 			} else alert ( d.error ) ;
-		} ) .fail(function( jqxhr, textStatus, error ) {
+		} , 'json' ) .fail(function( jqxhr, textStatus, error ) {
 			alert ( error ) ;
 		} ) ;
 	} ,
@@ -1487,7 +1487,7 @@ var reasonator = {
 		$('#oauth_wait_dialog').remove() ;
 		$('body').append ( oauth_wait_dialog ) ;
 
-		$.getJSON ( self.widar_url , {
+		$.get ( self.widar_url , {
 			action:'set_label',
 			tool_hashtag:'reasonator',
 			q:q,
@@ -1501,7 +1501,7 @@ var reasonator = {
 				reasonator.wd.items[q].raw.labels[lang] = { language:lang , value:label } ;
 				if ( callback !== undefined ) callback ( label ) ;
 			} else alert ( d.error ) ;
-		} ) .fail(function( jqxhr, textStatus, error ) {
+		} , 'json' ) .fail(function( jqxhr, textStatus, error ) {
 			alert ( error ) ;
 		} ) ;
 	} ,
@@ -3299,7 +3299,7 @@ var reasonator = {
 		function addImage ( iid ) {
 			var prop = $("input:radio[name=use_image_prop]:checked").val() ;
 
-			$.getJSON ( self.widar_url , {
+			$.get ( self.widar_url , {
 				action:'set_string',
 				tool_hashtag:'reasonator',
 				id:self.q,
@@ -3311,7 +3311,7 @@ var reasonator = {
 					$('div.addimage_thumbnail_container[iid='+iid+']').html(self.t('image_added')).css({'background-color':'#1FCB4A'}) ;
 					$('#reload_page_after_image_added').show() ;
 				} else alert ( d.error ) ;
-			} ) .fail(function( jqxhr, textStatus, error ) {
+			} , 'json' ) .fail(function( jqxhr, textStatus, error ) {
 				alert ( error ) ;
 			} ) ;
 			return false ;
