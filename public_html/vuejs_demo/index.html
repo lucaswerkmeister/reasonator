@@ -104,6 +104,17 @@ span.small_item_id {
 </span>
 </template>
 
+<template id='coordinate-value-template'>
+<a :href='render()' class='external'>{{mainsnak.datavalue.value.latitude}}/{{mainsnak.datavalue.value.longitude}}</a>
+</template>
+
+<template id='quantity-value-template'>
+<span>
+{{render()}}
+</span>
+</template>
+
+
 <template id='reference-group-template'>
 <div class='wikibase-referenceview'>
 	<div class='wikibase-referenceview-heading'><!--TODO--></div>
@@ -176,6 +187,8 @@ span.small_item_id {
 		<div v-else-if='mainsnak.datatype=="url"'><a :href='mainsnak.datavalue.value' class='external free'><string-value :mainsnak='mainsnak'/></a></div>
 		<div v-else-if='mainsnak.datatype=="wikibase-item"'><wb-item-value :mainsnak='mainsnak'/></div>
 		<div v-else-if='mainsnak.datatype=="time"'><time-value :mainsnak='mainsnak'/></div>
+		<div v-else-if='mainsnak.datatype=="globe-coordinate"'><coordinate-value :mainsnak='mainsnak'/></div>
+		<div v-else-if='mainsnak.datatype=="quantity"'><quantity-value :mainsnak='mainsnak'/></div>
 		<div v-else>OTHER: {{mainsnak.datatype}}</div>
 	</div>
 </div>
@@ -271,7 +284,7 @@ span.small_item_id {
 			</div><!--wikibase-entityview wb-item-->
 		</div><!--mw-content-text-->
 		<div class="visualClear"></div>
-		<div><hr/>This is a demo for Wikidata, made with <a href='https://vuejs.org/'>vue.js</a>. <a href=''>Code</a>.</div>
+		<div><hr/>This is a demo for Wikidata, made with <a href='https://vuejs.org/'>vue.js</a>. <a href='https://bitbucket.org/magnusmanske/reasonator/src/dcddab64e01524ae6a30894c12483e4de867fc57/public_html/vuejs_demo/?at=master'>Code</a>.</div>
 	</div><!--bodyContent-->
 </div>
 <div v-else><i>Loading item...</i></div>

@@ -249,6 +249,49 @@ Vue.component ( 'time-value' , {
 	}
 } ) ;
 
+Vue.component ( 'coordinate-value' , {
+	template : '#coordinate-value-template' ,
+	props : [ 'mainsnak' ] ,
+	methods : {
+		render : function () {
+			var me = this ;
+			if ( me.mainsnak.datavalue.value.globe != 'http://www.wikidata.org/entity/Q2' ) return '???' ;
+			
+			var ns = me.mainsnak.datavalue.value.latitude > 0 ? 'N' : 'S' ;
+			var ew = me.mainsnak.datavalue.value.longitude > 0 ? 'E' : 'W' ;
+			
+			var ret = 'https://tools.wmflabs.org/geohack/geohack.php?language=en&params='+
+				me.mainsnak.datavalue.value.latitude + '_' + ns + '_' +
+				me.mainsnak.datavalue.value.longitude + '_' + ew + '_globe:earth' ;
+			
+			return ret ;
+		}
+	}
+} ) ;
+
+Vue.component ( 'quantity-value' , {
+	template : '#quantity-value-template' ,
+	props : [ 'mainsnak' ] ,
+	methods : {
+		addCommas : function (nStr) {
+			nStr += '';
+			x = nStr.split('.');
+			x1 = x[0];
+			x2 = x.length > 1 ? '.' + x[1] : '';
+			var rgx = /(\d+)(\d{3})/;
+			while (rgx.test(x1)) {
+					x1 = x1.replace(rgx, '$1' + ',' + '$2');
+			}
+			return x1 + x2;
+		} ,
+		render : function () {
+			var me = this ;
+			var ret = me.addCommas ( me.mainsnak.datavalue.value.amount * 1 ) ;
+			return ret ;
+		}
+	}
+} ) ;
+
 
 
 Vue.component ( 'statement' , {
