@@ -61,26 +61,25 @@ function WikidataItem ( _json ) {
 		return ret ;
 	}
 	
-	this.getLabelOrDescription = function ( language , mode ) {
+	this.getLabelOrDescription = function ( language , mode , stop_recurse ) {
 		var me = this ;
-		var label = me.getID() ; // Fallback
+		var ret = mode == 'labels' ? me.getID() : '' ; // Fallback
 		if ( typeof language == 'undefined' ) language = me.getCurrentLanguage() ;
 
-		if ( typeof me.json != 'undefined'
-			&& typeof me.json[mode] != 'undefined'
-			&& typeof me.json[mode][language] != 'undefined'
-			&& typeof me.json[mode][language].value != 'undefined' ) {
-			label = me.json[mode][language].value ;
-		} else {
+		if ( typeof me.json == 'undefined' ) return ret ;
+		if ( typeof me.json[mode] == 'undefined' ) return ret ;
+
+		if ( typeof me.json[mode][language] != 'undefined' && typeof me.json[mode][language].value != 'undefined' ) {
+			ret = me.json[mode][language].value ;
+		} else if ( !stop_recurse ) {
 			$.each ( wikidata.fallback_languages , function ( dummy , lang ) {
-				var l = me.getLabel ( lang ) ;
-				if ( l == label ) return ; // Q number again
-				label = l ;
+				if ( typeof me.json[mode][lang] == 'undefined' || typeof me.json[mode][lang].value == 'undefined' ) return ;
+				ret = me.json[mode][lang].value ;
 				language = lang ;
 				return false ;
 			} ) ;
 		}
-		return [ label , language ] ;
+		return [ ret , language ] ;
 	}
 }
 
@@ -197,11 +196,7 @@ Vue.component ( 'item-label' , {
 Vue.component ( 'item-description' , {
 	template : '#item-description-template' ,
 	mixins: [wikidataAPImixin] ,
-	props : [ 'item' ] ,
-	created : function () {
-		this.i = this.getItem ( this.item ) ;
-	} ,
-	data : function () { return { i:{} } }
+	props : [ 'item' ]
 } ) ;
 
 Vue.component ( 'item-aliases' , {
