@@ -321,8 +321,9 @@ Vue.component ( 'quantity-value' , {
 
 Vue.component ( 'statement' , {
 	template : '#statement-template' ,
+	mixins: [wikidataAPImixin] ,
 	props : [ 'statement' , 'item' ] ,
-	data : function () { return { editing:false } } ,
+	data : function () { return { editing:false , saved_statement:{} } } ,
 	methods : {
 		setEditMode : function ( state ) {
 			var me = this ;
@@ -330,12 +331,26 @@ Vue.component ( 'statement' , {
 			me.editing = state ;
 		} ,
 		editStatement : function () {
-			this.setEditMode ( true ) ;
+			var me = this ;
+			if ( !me.editing ) me.saved_statement = $.extend ( true , {} , me.statement ) ;
+			me.setEditMode ( true ) ;
 		} ,
 		removeStatement : function () {
-			alert ( 'Not yet implemented' ) ;
+			var me = this ;
+			var i = me.getItem(me.item) ;
+			
+			// TODO this should probably become a function in the mixin
+			$.each ( i.json.claims[me.statement.mainsnak.property] , function ( k , v ) {
+				if ( v.id != me.statement.id ) return ;
+				me.setEditMode ( false ) ;
+				i.json.claims[me.statement.mainsnak.property].splice ( k , 1 ) ;
+				// TODO make edit online
+				return false ;
+			} ) ;
 		} ,
 		cancelEditStatement : function () {
+			var me = this ;
+			if ( me.editing ) me.statement = me.saved_statement ;
 			this.setEditMode ( false ) ;
 		}
 	}
