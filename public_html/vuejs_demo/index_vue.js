@@ -142,24 +142,39 @@ var wikidataAPImixin = {
 
 
 
+
+Vue.component ( 'edit-string-value' , {
+	template : '#edit-string-value-template' ,
+	props : [ 'mainsnak' ]
+} ) ;
+
 Vue.component ( 'snakview-value' , {
 	template : '#snakview-value-template' ,
-//	mixins: [wikidataAPImixin] ,
-	props : [ 'mainsnak' ]
+	props : [ 'mainsnak' , 'editing' ]
 } ) ;
 
 
 Vue.component ( 'qualifiers' , {
 	template : '#qualifiers-template' ,
 	mixins: [wikidataAPImixin] ,
-	props : [ 'statement' ]
+	props : [ 'statement' , 'editing' ] ,
+	methods : {
+		addQualifier : function () {
+			alert ( 'Not yet implemented' ) ;
+		} ,
+		removeQualifier : function ( prop , num ) {
+			var me = this ;
+			me.statement.changed = true ;
+			me.statement.qualifiers[prop].splice ( num , 1 ) ;
+		}
+	}
 } ) ;
 
 Vue.component ( 'references' , {
 	template : '#references-template' ,
 	mixins: [wikidataAPImixin] ,
 	data : function () { return { collapsed:true } } ,
-	props : [ 'statement' ] ,
+	props : [ 'statement' , 'editing' ] ,
 	methods : {
 		getReferenceCount : function () {
 			if ( typeof this.statement.references == 'undefined' ) return 0 ;
@@ -175,7 +190,22 @@ Vue.component ( 'references' , {
 Vue.component ( 'reference-group' , {
 	template : '#reference-group-template' ,
 	mixins: [wikidataAPImixin] ,
-	props : [ 'group' ]
+	props : [ 'group' , 'groupnum' , 'statement' , 'editing' ] ,
+	methods : {
+		addReference : function () {
+			alert ( 'Not yet implemented' ) ;
+		} ,
+		removeReference : function ( prop , num ) {
+			var me = this ;
+			me.statement.changed = true ;
+			me.statement.references[me.groupnum].snaks[prop].splice ( num , 1 ) ;
+		} ,
+		removeReferenceGroup : function () {
+			var me = this ;
+			me.statement.changed = true ;
+			me.statement.references.splice ( me.groupnum , 1 ) ;
+		} ,
+	}
 } ) ;
 
 
@@ -292,9 +322,21 @@ Vue.component ( 'quantity-value' , {
 Vue.component ( 'statement' , {
 	template : '#statement-template' ,
 	props : [ 'statement' , 'item' ] ,
+	data : function () { return { editing:false } } ,
 	methods : {
+		setEditMode : function ( state ) {
+			var me = this ;
+			me.statement.editing = state ;
+			me.editing = state ;
+		} ,
 		editStatement : function () {
+			this.setEditMode ( true ) ;
+		} ,
+		removeStatement : function () {
 			alert ( 'Not yet implemented' ) ;
+		} ,
+		cancelEditStatement : function () {
+			this.setEditMode ( false ) ;
 		}
 	}
 } ) ;
@@ -303,12 +345,26 @@ Vue.component ( 'statement' , {
 Vue.component ( 'statements' , {
 	template : '#statements-template' ,
 	props : [ 'statements' , 'item' ] ,
+	data : function () { return { editing:false } } ,
 	methods : {
 		getProperty : function () {
 			return this.statements[0].mainsnak.property ;
 		} ,
 		addNewStatement : function () {
 			alert ( 'Not yet implemented' ) ;
+		}
+	} ,
+	watch : {
+		statements: {
+			handler: function (val, oldVal) {
+				var me = this ;
+				var state = editing = false ;
+				$.each ( this.statements , function ( k , v ) {
+					if ( v.editing ) state = true ;
+				} ) ;
+				me.editing = state ;
+			},
+			deep: true
 		}
 	}
 } ) ;
