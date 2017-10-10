@@ -1134,13 +1134,13 @@ var reasonator = {
 		}
 
 		// All things list
-		if ( i.hasClaimItemLink('P31','Q13406463') && !i.hasClaims('P360') ) { // "instance of":"Wikimedia list article" / no "list of"
+		if ( i.hasClaimItemLink('P31','Q13406463') && !i.hasClaims('P360') && !i.hasClaims('P4224') ) { // "instance of":"Wikimedia list article" / no "list of" / no "category contains"
 			$('div.topnote').append ( "<div>" + tt.t('add_listof_topnote') + "</div>" ) ;
-		} else if ( !i.hasClaims('P31') && i.hasClaims('P360') ) { // "list of" / no "instance of":"Wikimedia list article"
+		} else if ( !i.hasClaims('P31') && (i.hasClaims('P360') || i.hasClaims('P4224') ) ) { // "list of" or "category contains" / no "instance of"
 			var h = tt.t('add_instance_of_list').replace(/\$1/g,"<a href='/widar/' target='_blank' class='external'>WiDaR</a>") ;
 			h = h.replace ( /\$2/g , "<a href='#' onclick='reasonator.setAsInstanceOfList();return false'>" ) ;
 			$('div.topnote').append ( h ) ;
-		} else if ( i.hasClaims ( 'P360' ) && ( i.hasClaimItemLink('P31','Q13406463') || i.hasClaimItemLink('P31','Q4167836') ) ) {
+		} else if ( (i.hasClaims('P360')||i.hasClaims('P4224')) && ( i.hasClaimItemLink('P31','Q13406463') || i.hasClaimItemLink('P31','Q4167836') ) ) {
 			self.showListOf() ;
 		}
 		
@@ -1175,10 +1175,7 @@ var reasonator = {
 			return "?item wdt:P"+_prop+" ?sub"+sparql_count+" . ?sub"+sparql_count+" (wdt:P279|wdt:P131)* wd:Q"+_q ;
 		}
 		
-		var search_main = [] ;
-		var search_qual = [] ;
-		var sparql_parts = [] ;
-		$.each ( i.getClaimsForProperty('P360') , function ( dummy , claim ) {
+		function addListItems ( dummy , claim ) {
 			var q = i.getClaimTargetItemID ( claim ) ;
 			if ( q === undefined ) return ;
 
@@ -1196,7 +1193,13 @@ var reasonator = {
 				} ) ;
 			} ) ;
 			sparql_parts.push ( sparql_part ) ;
-		} ) ;
+		}
+		
+		var search_main = [] ;
+		var search_qual = [] ;
+		var sparql_parts = [] ;
+		$.each ( i.getClaimsForProperty('P360') , addListItems ) ;
+		$.each ( i.getClaimsForProperty('P4224') , addListItems ) ;
 		
 		if ( sparql_parts.length == 0 ) return ; // Paranoia
 

@@ -10,12 +10,14 @@
 <link rel="stylesheet" href="https://www.wikidata.org/w/load.php?debug=false&lang=en&modules=ext.echo.badgeicons%7Cext.echo.styles.alert%2Cbadge%7Cext.math.styles%7Cext.uls.pt%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikidata-org.badges%7Cext.wikimediaBadges%7Cjquery.wikibase.statementview.RankSelector.styles%7Cjquery.wikibase.toolbar.styles%7Cjquery.wikibase.toolbarbutton.styles%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.sectionAnchor%7Cmediawiki.skinning.interface%7Cskins.vector.styles%7Cwikibase.common&only=styles&skin=vector">
 <link rel="stylesheet" href="https://www.wikidata.org/w/load.php?debug=false&lang=en&modules=jquery.ui.core.styles&only=styles&skin=vector">
 <!--<link rel="stylesheet" href="https://www.wikidata.org/w/load.php?debug=false&lang=en&modules=site.styles&only=styles&skin=vector">-->
+<link rel="stylesheet" href="mw.css">
 
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/twitter-bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/vue/2.2.1/vue.min.js"></script>
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/vue-router/2.3.0/vue-router.min.js"></script>
+<script src="https://tools-static.wmflabs.org/magnustools/resources/js/vue/wikidata.js"></script>
 <!--<script src="https://tools-static.wmflabs.org/tooltranslate/tt.js"></script>-->
 
 <style>
@@ -133,7 +135,7 @@ span.small_item_id {
 							<item-label :item='snak.property' :linked='1' :small='1' />
 						</div>
 					</div>
-					<snakview-value :mainsnak='snak' :editing='editing'></snakview-value>
+					<snakview-value :mainsnak='snak' :editing='editing' :statement='statement'></snakview-value>
 					<div v-if='editing' class="wikibase-removetoolbar wikibase-toolbar-item wikibase-toolbar wikibase-removetoolbar-container wikibase-toolbar-container"><!-- TODO: Refactor this with qualifiers code -->
 						<span class="wikibase-toolbarbutton wikibase-toolbar-item wikibase-toolbar-button wikibase-toolbar-button-remove">
 							<a href="#" title="" @click.prevent='removeReference(reference_prop,num)'><span class="wb-icon"></span>remove</a>
@@ -154,8 +156,8 @@ span.small_item_id {
 <template id='references-template'>
 <div class='wikibase-statementview-references-container'>
 	<div class='wikibase-statementview-references-heading'>
-		<a @click.prevent='collapsed=!collapsed' :class='{ "ui-toggler":true , "ui-toggler-toggle":true , "ui-toggler-toggle-collapsed":collapsed }'>
-			<span :class='{"ui-icon":true , "ui-toggler-icon":true , "ui-icon-triangle-1-e":(collapsed&&!editing) , "ui-icon-triangle-1-s":(editing||!collapsed) , "ui-toggler-icon3dtrans":true }' style='display:inline-block'></span>
+		<a @click.prevent='collapsed=!collapsed' :class='{ "ui-toggler":true , "ui-toggler-toggle":true , "ui-toggler-toggle-collapsed":(collapsed&&!editing) }'>
+			<span :class='{"ui-icon":true , "ui-toggler-icon":true , "ui-icon-triangle-1-s":true , "ui-toggler-icon3dtrans":true }' style='display:inline-block'></span>
 			<span class='ui-toggler-label'>{{getReferenceCount()}} references</span>
 		</a>
 	</div>
@@ -183,7 +185,7 @@ span.small_item_id {
 							<item-label :item='qualifier.property' :linked='1' :small='1' />
 						</div>
 					</div>
-					<snakview-value :mainsnak='qualifier' :editing='editing'></snakview-value>
+					<snakview-value :mainsnak='qualifier' :editing='editing' :statement='statement'></snakview-value>
 					<div v-if='editing' class="wikibase-removetoolbar wikibase-toolbar-item wikibase-toolbar wikibase-removetoolbar-container wikibase-toolbar-container">
 						<span class="wikibase-toolbarbutton wikibase-toolbar-item wikibase-toolbar-button wikibase-toolbar-button-remove">
 							<a href="#" title="" @click.prevent='removeQualifier(qualifier_prop,num)'><span class="wb-icon"></span>remove</a>
@@ -204,9 +206,32 @@ span.small_item_id {
 
 <template id='edit-string-value-template'>
 <div class='valueview-value'>
-	<textarea class="valueview-input ui-suggester-input" style="height: 21px; overflow: hidden; resize: none;">{{mainsnak.datavalue.value}}</textarea>
+	<textarea @keyup='keyUp' class="valueview-input ui-suggester-input" style="height: 21px; overflow: hidden; resize: none;">{{mainsnak.datavalue.value}}</textarea>
 </div>
 </template>
+
+
+<template id='edit-wbitem-value-template'>
+<div class='valueview-value'>
+	<textarea @focus='getsFocus' @blur='lostFocus' @keyup='keyUp' class="valueview-input ui-suggester-input" style="height: 21px; overflow: hidden; resize: none;">{{current_value.title}}</textarea>
+	<dropdown-list v-if='(has_focus && changed)' :list='list'></dropdown-list>
+</div>
+</template>
+
+<template id='dropdown-list-template'>
+<ul v-if='list.length>0' class="ui-ooMenu ui-widget ui-widget-content ui-suggester-list ui-entityselector-list" dir="ltr" style="width: auto; height: auto; overflow-y: visible; z-index: 1; min-width: 415px;"> <!-- top: 334px; left: 438px;  -->
+<li v-for='e in list' class="ui-ooMenu-item" dir="auto">
+	<a tabindex="-1" :href='"//www.wikidata.org/wiki/"+e.item'>
+		<span class="ui-entityselector-itemcontent">
+			<span class="ui-entityselector-label">{{e.title}}</span>
+			<span class="ui-entityselector-description">{{e.text}}</span>
+<!--			<span class="ui-entityselector-description autodesc-entityselector-description" style="background-color:#DBEBFF;padding:2px">Letter, part of Latin script</span>-->
+		</span>
+	</a>
+</li>
+</ul>
+</template>
+
 
 
 <template id='snakview-value-template'>
@@ -217,10 +242,11 @@ span.small_item_id {
 	<div v-if='editing' class='wikibase-snakview-value wikibase-snakview-variation-valuesnak'>
 		<div class="valueview valueview-ineditmode" aria-disabled="false">
 
-			<div v-if='mainsnak.datatype=="external-id"'><edit-string-value :mainsnak='mainsnak'/></div>
-			<div v-else-if='mainsnak.datatype=="url"'><edit-string-value :mainsnak='mainsnak'/></div>
-			<div v-else-if='mainsnak.datatype=="string"'><edit-string-value :mainsnak='mainsnak'/></div>
-			<div v-else-if='mainsnak.datatype=="commonsMedia"'><edit-string-value :mainsnak='mainsnak'/></div>
+			<div v-if='mainsnak.datatype=="external-id"'><edit-string-value :mainsnak='mainsnak' :main='main' :statement='statement'/></div>
+			<div v-else-if='mainsnak.datatype=="url"'><edit-string-value :mainsnak='mainsnak' :main='main' :statement='statement'/></div>
+			<div v-else-if='mainsnak.datatype=="string"'><edit-string-value :mainsnak='mainsnak' :main='main' :statement='statement'/></div>
+			<div v-else-if='mainsnak.datatype=="commonsMedia"'><edit-string-value :mainsnak='mainsnak' :main='main' :statement='statement'/></div>
+			<div v-else-if='mainsnak.datatype=="wikibase-item"'><edit-wbitem-value :mainsnak='mainsnak' :main='main' :statement='statement'/></div>
 			<div v-else>CAN'T EDIT {{mainsnak.datatype}} YET!</div>
 
 
@@ -264,14 +290,14 @@ span.small_item_id {
 		<div class='wikibase-statementview-mainsnak'>
 			<div :class='{ "wikibase-snakview":true , "wb-edit":editing }'>
 				<div class="wikibase-snakview-property-container"><div class="wikibase-snakview-property" dir="auto"></div></div> <!-- Not sure what this is; copied from MediaWiki -->
-				<snakview-value :mainsnak='statement.mainsnak' :editing='editing' />
+				<snakview-value :mainsnak='statement.mainsnak' :editing='editing' :main='1' :statement='statement'></snakview-value>
 			</div>
 		</div>
 		<qualifiers :statement='statement' :editing='editing'></qualifiers>
 	</div>
 	<span v-if='editing' class="wikibase-toolbar-container wikibase-edittoolbar-container wikibase-edittoolbar-ineditmode" aria-disabled="false"><!-- EDIT MODE -->
 		<span class="wikibase-toolbar wikibase-toolbar-item wikibase-toolbar-container" aria-disabled="false">
-			<span :class='{ "wikibase-toolbarbutton":true , "wikibase-toolbar-item":true , "wikibase-toolbar-button":true , "wikibase-toolbar-button-save":true , "wikibase-toolbarbutton-disabled":!(statement.changed) , "ui-state-disabled":!(statement.changed)}' aria-disabled="true">
+			<span :id='"save-button-"+statement.id' :class='{ "wikibase-toolbarbutton":true , "wikibase-toolbar-item":true , "wikibase-toolbar-button":true , "wikibase-toolbar-button-save":true , "wikibase-toolbarbutton-disabled":!(statement.changed) , "ui-state-disabled":!(statement.changed)}' aria-disabled="true">
 				<a href="#" title="" tabindex="-1"><span class="wb-icon"></span>save</a>
 			</span>
 			<span class="wikibase-toolbarbutton wikibase-toolbar-item wikibase-toolbar-button wikibase-toolbar-button-remove" aria-disabled="false">

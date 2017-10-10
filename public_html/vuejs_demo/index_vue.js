@@ -1,162 +1,111 @@
-
-// Global object for central cache etc.
-var wikidata = {
-	api : 'https://www.wikidata.org/w/api.php' ,
-	item_cache : {} ,
-	language : 'en' ,
-	fallback_languages : [ 'de' , 'es' , 'fr' , 'it' , 'nl' , 'zh' ]
-} ;
-
-// Item class
-function WikidataItem ( _json ) {
-	this.json = _json ;
-	
-	this.getCurrentLanguage = function () {
-		return wikidata.language ;
-	}
-
-	this.getID = function () {
-		return this.json.id ;
-	}
-	
-	this.getPage = function () {
-		var id = this.getID() ;
-		if ( id.match ( /^P/ ) ) return "Property:" + id ;
-		return id ;
-	}
-
-	this.getLabel = function ( language ) {
-		return this.getLabelOrDescription ( language , 'labels' ) ;
-	}
-	
-	this.getDescription = function ( language ) {
-		return this.getLabelOrDescription ( language , 'descriptions' ) ;
-	}
-	
-	this.getAliases = function ( language ) {
-		var me = this ;
-		var ret = [] ;
-		if ( typeof language == 'undefined' ) language = me.getCurrentLanguage() ;
-		if ( typeof me.json == 'undefined' ) return ret ;
-		if ( typeof me.json.aliases == 'undefined' ) return ret ;
-		if ( typeof me.json.aliases[language] == 'undefined' ) return ret ;
-		$.each ( me.json.aliases[language] , function ( k , v ) {
-			ret.push ( v.value ) ;
-		} ) ;
-		return ret ;
-	}
-	
-	this.getStringValues = function ( prop ) {
-		var me = this ;
-		var ret = [] ;
-		if ( typeof me.json == 'undefined' ) return ret ;
-		if ( typeof me.json.claims == 'undefined' ) return ret ;
-		if ( typeof me.json.claims[prop] == 'undefined' ) return ret ;
-		$.each ( me.json.claims[prop] , function ( k , v ) {
-			if ( typeof v.mainsnak == 'undefined' ) return ;
-			if ( typeof v.mainsnak.datavalue == 'undefined' ) return ;
-			if ( v.mainsnak.datavalue.type != 'string' ) return ;
-			ret.push ( v.mainsnak.datavalue.value ) ;
-		} ) ;
-		return ret ;
-	}
-	
-	this.getLabelOrDescription = function ( language , mode , stop_recurse ) {
-		var me = this ;
-		var ret = mode == 'labels' ? me.getID() : '' ; // Fallback
-		if ( typeof language == 'undefined' ) language = me.getCurrentLanguage() ;
-
-		if ( typeof me.json == 'undefined' ) return ret ;
-		if ( typeof me.json[mode] == 'undefined' ) return ret ;
-
-		if ( typeof me.json[mode][language] != 'undefined' && typeof me.json[mode][language].value != 'undefined' ) {
-			ret = me.json[mode][language].value ;
-		} else if ( !stop_recurse ) {
-			$.each ( wikidata.fallback_languages , function ( dummy , lang ) {
-				if ( typeof me.json[mode][lang] == 'undefined' || typeof me.json[mode][lang].value == 'undefined' ) return ;
-				ret = me.json[mode][lang].value ;
-				language = lang ;
-				return false ;
-			} ) ;
-		}
-		return [ ret , language ] ;
-	}
-}
-
-
-var wikidataAPImixin = {
+var editValueMixin = {
 	methods : {
-		hasItem : function ( item ) {
-			return ( typeof wikidata.item_cache[item] != 'undefined' ) ;
-		} ,
-		getItem : function ( item ) {
-			return wikidata.item_cache[item] ;
-		} ,
-		loadItems : function ( items , callback ) {
-			var me = this ;
-			var cnt = 0 ;
-			
-			function fin () {
-				if ( --cnt > 0 ) return ;
-				callback() ;
-			}
-			
-			// Init
-			var groups = {} ; // Separating into Q, P etc. might not be necessary, but it feels future-proof...
-			$.each ( items , function ( dummy , item ) {
-				if ( typeof item == 'undefined' ) return ;
-				var i = $.trim ( item.toUpperCase() ) ;
-				if ( typeof wikidata.item_cache[i] != 'undefined' ) return ; // We already have that in the cache
-				var type = i.substr(0,1) ;
-				if ( typeof groups[type] == 'undefined' ) groups[type] = {} ;
-				groups[type][i] = i ;
-				cnt++ ;
-			} ) ;
-			if ( cnt == 0 ) return fin () ; // All in cache already, my work here is done
-
-			cnt = 0 ;
-			$.each ( groups , function ( group , items ) {
-				var tmp = [ [] ] ;
-				$.each ( items , function ( dummy , i ) {
-					if ( tmp[tmp.length-1].length >= 50 ) tmp.push ( [] ) ;
-					tmp[tmp.length-1].push ( i ) ;
-				} ) ;
-				$.each ( tmp , function ( dummy , subgroup ) {
-					cnt++ ;
-					$.getJSON ( wikidata.api+'?callback=?' , {
-						action:'wbgetentities',
-						ids:subgroup.join('|'),
-						format:'json'
-					} , function ( d ) {
-						$.each ( d.entities , function ( k , v ) {
-							wikidata.item_cache[k] = new WikidataItem ( v ) ;
-						} ) ;
-					} )
-					.fail ( function () {} ) // TODO
-					.always ( function () { fin() } ) ;
-				} ) ;
-			} ) ;
+		getString : function () {
+			return $(this.$el).find('textarea').val() ;
 		}
 	}
 } ;
-
-
-
 
 Vue.component ( 'edit-string-value' , {
 	template : '#edit-string-value-template' ,
-	props : [ 'mainsnak' ]
+	mixins : [ editValueMixin ] ,
+	props : [ 'mainsnak' , 'main' , 'statement' ] ,
+	data : function () { return { has_focus:false , original_value:'' , changed:false } } ,
+	created : function () {
+		this.original_value = this.mainsnak.datavalue.value ;
+	} ,
+	methods : {
+		keyUp : function ( ev ) {
+			var me = this ;
+			var s = me.getString() ;
+			me.changed = (s != me.original_value) ;
+		}
+	}
 } ) ;
+
+Vue.component ( 'edit-wbitem-value' , {
+	template : '#edit-wbitem-value-template' ,
+	mixins : [ wikibaseAPImixin , editValueMixin ] ,
+	props : [ 'mainsnak' , 'main' , 'statement' ] ,
+	data : function () { return { list:[] , has_focus:false , original_value:'' , changed:false , last_string:'' , current_value:{} } } ,
+	created : function () {
+		var me = this ;
+		var item = me.mainsnak.datavalue.value.id ;
+		me.original_value = item ;
+		me.current_value = {
+			title:me.getItem(item).getLabel()[0] ,
+			item:item
+		} ;
+	} ,
+	mounted : function () {
+		var me = this ;
+		if ( me.main ) {
+			me.has_focus = true ;
+			$(me.$el).find('textarea').focus() ;
+		}
+	} ,
+	methods : {
+		updateList : function () {
+			var me = this ;
+			var s = me.getString() ;
+			if ( me.last_string == s ) return ;
+			me.last_string = s ;
+			me.list = [] ;
+			me.searchEntity ( s , 'item' , function ( d ) {
+				var list = [] ;
+				$.each ( d.search , function ( k , v ) {
+					list.push ( {
+						item:v.id ,
+						title:v.label ,
+						text:(v.description||'')
+					} ) ;
+				} ) ;
+				me.list = list ;
+			} ) ;
+		} ,
+		getsFocus : function () {
+			this.has_focus = true ;
+		} ,
+		lostFocus : function () {
+			this.has_focus = false ;
+		} ,
+		keyUp : function ( ev ) {
+			var me = this ;
+			me.changed = true ;
+			me.statement.changed = ( me.statement.changed || me.changed ) ;
+			me.current_value.title = me.getString() ;
+			me.updateList() ;
+		} ,
+	}
+} ) ;
+
+
+Vue.component ( 'dropdown-list' , {
+	template : '#dropdown-list-template' ,
+	props : [ 'list' ] ,
+	mounted : function () {
+		var me = this ;
+		var input = $($(me.$el).parent().find('textarea').get(0)) ;
+		var p = input.position() ;
+		var h = input.height() ;
+		var x = parseInt(p.left) - 20 ;
+		var y = parseInt(p.top) + parseInt(h) ;
+		$(me.$el).css({top:y , left:x }) ;
+	}
+} ) ;
+
+
+
 
 Vue.component ( 'snakview-value' , {
 	template : '#snakview-value-template' ,
-	props : [ 'mainsnak' , 'editing' ]
+	props : [ 'mainsnak' , 'editing' , 'main' , 'statement' ]
 } ) ;
 
 
 Vue.component ( 'qualifiers' , {
 	template : '#qualifiers-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'statement' , 'editing' ] ,
 	methods : {
 		addQualifier : function () {
@@ -172,7 +121,7 @@ Vue.component ( 'qualifiers' , {
 
 Vue.component ( 'references' , {
 	template : '#references-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	data : function () { return { collapsed:true } } ,
 	props : [ 'statement' , 'editing' ] ,
 	methods : {
@@ -189,7 +138,7 @@ Vue.component ( 'references' , {
 
 Vue.component ( 'reference-group' , {
 	template : '#reference-group-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'group' , 'groupnum' , 'statement' , 'editing' ] ,
 	methods : {
 		addReference : function () {
@@ -211,7 +160,7 @@ Vue.component ( 'reference-group' , {
 
 Vue.component ( 'wikidata-link' , {
 	template : '#wikidata-link-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'item' ]
 } ) ;
 
@@ -219,19 +168,19 @@ Vue.component ( 'wikidata-link' , {
 
 Vue.component ( 'item-label' , {
 	template : '#item-label-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'item' , 'linked' , 'small' ]
 } ) ;
 
 Vue.component ( 'item-description' , {
 	template : '#item-description-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'item' ]
 } ) ;
 
 Vue.component ( 'item-aliases' , {
 	template : '#item-aliases-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'item'  ]
 } ) ;
 
@@ -243,7 +192,7 @@ Vue.component ( 'string-value' , {
 
 Vue.component ( 'external-id-value' , {
 	template : '#external-id-value-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'mainsnak' ]
 } ) ;
 
@@ -321,9 +270,13 @@ Vue.component ( 'quantity-value' , {
 
 Vue.component ( 'statement' , {
 	template : '#statement-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'statement' , 'item' ] ,
 	data : function () { return { editing:false , saved_statement:{} } } ,
+	mounted : function () {
+		if ( typeof this.statement.changed == 'undefined' ) Vue.set ( this.statement , 'changed' , false ) ;
+		if ( typeof this.statement.editing == 'undefined' ) Vue.set ( this.statement , 'changed' , false ) ;
+	} ,
 	methods : {
 		setEditMode : function ( state ) {
 			var me = this ;
@@ -351,7 +304,16 @@ Vue.component ( 'statement' , {
 		cancelEditStatement : function () {
 			var me = this ;
 			if ( me.editing ) me.statement = me.saved_statement ;
+			me.statement.changed = false ;
 			this.setEditMode ( false ) ;
+		}
+	} ,
+	watch : {
+		statements: {
+			handler: function (val, oldVal) {
+				console.log ( "statement changed" ) ;
+			},
+			deep: true
 		}
 	}
 } ) ;
@@ -385,13 +347,14 @@ Vue.component ( 'statements' , {
 } ) ;
 
 
+
 var MainPage = Vue.extend ( {
 	template : '#main-page-template' ,
 } ) ;
 
 var ItemPage = Vue.extend ( {
 	template : '#item-page-template' ,
-	mixins: [wikidataAPImixin] ,
+	mixins: [wikibaseAPImixin] ,
 	props : [ 'item' ] ,
 	data : function () { return { loaded:false , i:{} , statements:[] } } ,
 	created : function () { this.loadItem() } ,
