@@ -1227,7 +1227,8 @@ var reasonator = {
 				} else {
 					h += tt.t('list_browse2') ;
 				}
-				h += " <a target='_blank' class='external' href='/autolist/index.php?run=Run&wdqs=" + escape(sparql_query) + "'>" + tt.t('list_here') + "</a>. " ;
+//				h += " <a target='_blank' class='external' href='/autolist/index.php?run=Run&wdqs=" + escape(sparql_query) + "'>" + tt.t('list_here') + "</a>. " ;
+				h += " <a target='_blank' class='external' href='https://petscan.wmflabs.org/?sparql=" + escape(sparql_query) + "&interface_language=en&doit='>" + tt.t('list_here') + "</a>. " ;
 				h += tt.t('list_search').replace(/\$1/g,"<a href='?find="+escattr([].concat(search_main).concat(search_qual).join(' ').replace(/\bhuman\b/gi,''))+"'>").replace(/\$2/g,"<a href='?find=list "+escattr(search_main.join(' ').replace(/\bhuman\b/gi,''))+"'>") ;
 				h += "</div>" ;
 				h += "<ol>" ;
@@ -2235,12 +2236,14 @@ var reasonator = {
 				var al = '' ;
 				if ( typeof o.main_prop != 'undefined' ) {
 					if ( typeof v.q != 'undefined' ) {
-						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+						// TODO SPARQL
+//						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7Bclaim%5B"+qp.replace(/\D/g,'')+"%3A"+v.q.replace(/\D/g,'')+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else if ( typeof v.time != 'undefined' ) {
+						// TODO SPARQL
 						var base = self.getFormatDate ( v ) ;
 						var from = base + '0000-00-00'.substr(base.length);
 						var to = base + '9999-13-32'.substr(base.length);
-						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
+//						al = " [<a title='"+tt.t('show_same_qualifier_list')+"' href='//tools.wmflabs.org/wikidata-todo/autolist.html?q=claim%5B"+o.main_prop.replace(/\D/g,'')+"%5D%7BBETWEEN%5B"+qp.replace(/\D/g,'')+"%2C"+from+"%2C"+to+"%5D%7D' target='_blank' class='external'>AL</a>]" ;
 					} else {
 //						console.log ( v ) ;
 					}
