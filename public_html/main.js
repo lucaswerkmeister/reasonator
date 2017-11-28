@@ -347,6 +347,10 @@ var reasonator = {
 		
 	} ,
 	
+	escapeHTML : function ( s ) {
+		return $('<div/>').text(s).html();
+	} ,
+	
 	loadExternalIDs : function ( callback ) {
 		var self = this ;
 		var skip_props = [] ; // Commons images etc.
@@ -861,7 +865,7 @@ var reasonator = {
 		var h = '' ;
 		h += "<table class='table table-condensed table-striped chaintable'><thead><tr>" ;
 		$.each ( columns , function ( k , v ) {
-			if ( typeof v.title != 'undefined' ) h += "<th nowrap>" + v.title + "</th>" ;
+			if ( typeof v.title != 'undefined' ) h += "<th nowrap>" + self.escapeHTML(v.title) + "</th>" ;
 			else h += "<th/>" ;
 		} ) ;
 		h += "</tr></thead><tbody>" ;
@@ -981,7 +985,7 @@ var reasonator = {
 				$.each ( item.labels , function ( k , v ) { label = v.value ; } ) ;
 			}
 		}
-		label = "<span id='main_title_label'>" + label + "</span>" ;
+		label = "<span id='main_title_label'>" + self.escapeHTML(label) + "</span>" ;
 		
 		label += " <small>(<a class='wikidata' target='_blank' href='//www.wikidata.org/wiki/"+self.q+"'>"+self.q+"</a>)</small>" ;
 		
@@ -1420,7 +1424,7 @@ var reasonator = {
 			
 				ct.css({'background-color':'white'}) ; // TODO use cluetipClass for real CSS
 				var title_element = $(ct.find('h3')) ;
-				title_element.html ( title ) ;
+				title_element.text ( title ) ;
 				ci.attr({q:q}) ;
 				ci.html ( h ) ;
 				if ( self.isRTL ) ci.css ( { 'direction':'RTL' } ) ;
@@ -2092,7 +2096,7 @@ var reasonator = {
 		}
 
 		if ( q == self.q ) {
-			h += "<b>" + label + "</b>" ;
+			h += "<b>" + self.escapeHTML(label) + "</b>" ;
 		} else {
 			var classes = [] ;
 			h += "<a" ;
@@ -2118,7 +2122,7 @@ var reasonator = {
 			}
 			if ( classes.length > 0 ) h += " class='" + classes.join ( ' ' ) + "'" ;
 			h += ">" ;
-			h += label ;
+			h += self.escapeHTML(label) ;
 			h += "</a>" ;
 		}
 		
@@ -2173,8 +2177,8 @@ var reasonator = {
 
 		if ( i.type == 'string' ) {
 			var h2 ;
-			if ( i.p == 'P373' ) h2 = "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + i.s + "</a>" ; // Commons cat
-			else h2 = i.s ;
+			if ( i.p == 'P373' ) h2 = "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + self.escapeHTML(i.s) + "</a>" ; // Commons cat
+			else h2 = self.escapeHTML(i.s) ;
 			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
 		} else if ( i.type == 'item' ) {
@@ -2213,12 +2217,12 @@ var reasonator = {
 
 		} else if ( i.type == 'quantity' ) {
 			var h2 = self.renderQuantity ( i ) ;
-			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + self.escapeHTML(h2) + "</span>" ;
 			ret += h2 ;
 
 		} else if ( i.type == 'monolingualtext' ) {
 			var h2 = self.renderMonolingualText ( i ) ;
-			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + self.escapeHTML(h2) + "</span>" ;
 			ret += h2 ;
 
 		} else { // also add in wikidata.js getObject ... something...
@@ -2306,7 +2310,7 @@ var reasonator = {
 		var cl = '' ;
 		var url = self.getSelfURL(o) ;
 		
-		return "<a class='"+cl+"' title='"+title+"' href='"+url+"'>"+label+"</a>" ;
+		return "<a class='"+cl+"' title='"+title+"' href='"+url+"'>"+self.escapeHTML(label)+"</a>" ;
 	} ,
 
 	multimediaLazyLoad : function ( o ) {
