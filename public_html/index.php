@@ -15,8 +15,8 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 require_once ( '/data/project/reasonator/public_html/php/wikidata.php' ) ;
 
-$use_autodesc = 'only' ; // 'always_add' , 'never', 'fallback'
-$autodesc_mode = 'short' ; // 'long'
+$use_autodesc = 'always_add' ; // 'only' , 'always_add' , 'never', 'fallback'
+$autodesc_mode = 'short' ; // 'short' , 'long'
 
 
 $wil = new WikidataItemList ;
@@ -43,7 +43,7 @@ if ( $use_autodesc == 'always_add' or $use_autodesc == 'only' or ( $use_autodesc
 			$auto_desc = trim ( str_replace ( "\n" , ' ' , $auto_desc ) ) ;
 			if ( $use_autodesc == 'only' ) {
 				if ( $auto_desc != '' ) $desc = $auto_desc ;
-			} else {
+			} else if ( $auto_desc != '' ) {
 				if ( $desc != '' ) $desc .= '; ' ;
 				$desc .= $auto_desc ;
 			}
@@ -53,6 +53,10 @@ if ( $use_autodesc == 'always_add' or $use_autodesc == 'only' or ( $use_autodesc
 $desc = escape_attribute ( $desc ) ;
 
 $head .= "
+<meta property='og:title' content='$label'/>
+<meta name='description' content='$desc'>
+<meta name='og:description' content='$desc'>
+
 <meta name='twitter:card' content='summary'>
 <meta name='twitter:site' content='@wikidata'>
 <meta name='twitter:creator' content='@MagnusManske'>
@@ -64,6 +68,7 @@ $img = $i->getFirstString ( 'P18' ) ;
 if ( $img != '' ) {
 	$img_url = "https://commons.wikimedia.org/wiki/Special:Redirect/file/" . myurlencode ( $img ) . "?width=300" ;
 	$head .= "<meta name='twitter:image' content='$img_url'>\n" ;
+	$head .= "<meta name='og:image' content='$img_url'>\n" ;
 }
 
 
