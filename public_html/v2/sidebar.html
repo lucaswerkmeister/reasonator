@@ -109,7 +109,11 @@ Vue.component ( 'sidebar' , {
     	me.parts.external_id_props[1] = me.all_props.filter ( (p) => wd.getItem(p).getDataytpe()=='external-id' ) .sort ( me.sort_by_label );
     	let url_props = me.all_props.filter ( (p) => wd.getItem(p).getDataytpe()=='url' && $.inArray(p,Object.values(config.wikimedia))==-1 ) .sort ( me.sort_by_label );
     	me.parts.wm_props[1] = me.all_props.filter ( (p) => $.inArray(p,Object.values(config.wikimedia))>=0 ) .sort ( me.sort_by_label );
-    	me.parts.key_props[1] = me.all_props.filter ( (p) => wd.getItem(p).getDataytpe()=='string' && $.inArray(p,Object.values(config.wikimedia))==-1 ) .sort ( me.sort_by_label );
+
+    	me.parts.key_props[1] = me.all_props.filter ( (p) => wd.getItem(p).getDataytpe()=='string' ) ;
+    	me.parts.key_props[1] = me.parts.key_props[1].filter ( (p) => $.inArray(p,Object.values(config.wikimedia))==-1 ) ;
+    	me.parts.key_props[1] = me.parts.key_props[1].filter ( (p) => $.inArray(p,Object.values(config.prop_map))==-1 ) ;
+    	me.parts.key_props[1] = me.parts.key_props[1].sort ( me.sort_by_label );
     	me.parts.key_props[1] = me.parts.key_props[1].concat(url_props) ;
     	me.loaded = true ;
     } ,

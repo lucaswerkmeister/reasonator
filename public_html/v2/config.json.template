@@ -7,9 +7,11 @@
         "taxon":"taxon",
         "person":"person"
     },
+    "add2remaining":["P225"],
     "prop_map": {
         "formatter_url": "P1630",
         "wikivoyage_banner": "P948",
+        "taxon_name":"P225",
         "coordinates": "P625"
     },
     "image_propmap": {
