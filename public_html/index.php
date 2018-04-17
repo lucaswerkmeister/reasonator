@@ -10,14 +10,13 @@ if ( $q == '' ) { print $html ; exit ( 0 ) ; }
 
 
 
-ini_set('memory_limit','500M');
+ini_set('memory_limit','50M');
 set_time_limit ( 60 * 10 ) ; // Seconds
 error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 require_once ( '/data/project/reasonator/public_html/php/wikidata.php' ) ;
 
-$use_autodesc = 'always_add' ; // 'only' , 'always_add' , 'never', 'fallback'
+#$use_autodesc = 'always_add' ; // 'only' , 'always_add' , 'never', 'fallback' # DEACTIVATED autodesc slow/not working, breaks script
 $autodesc_mode = 'short' ; // 'short' , 'long'
-
 
 $wil = new WikidataItemList ;
 $wil->loadItem ( $q ) ;
@@ -112,5 +111,9 @@ $head .= "</script>\n" ;
 $html = str_replace ( '<head>' , $head , $html ) ;
 
 print $html ;
+
+flush();
+ob_flush();
+exit(0);
 
 ?>

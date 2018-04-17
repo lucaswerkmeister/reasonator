@@ -1,0 +1,34 @@
+<template id='reasonator-link-template'>
+<span>
+	<span v-if='/^[qQpP]\d+$/.test(item)'>
+		<router-link :to='"/"+item'>
+			{{label}}
+		</router-link>
+		<small><tt><wd-link :item='item' :label='item'></wd-link></tt></small>
+	</span>
+	<span v-else>
+		<tt><wd-link :item='item'></wd-link></tt>
+	</span>
+</span>
+</template>
+
+<script>
+'use strict';
+
+Vue.component ( 'reasonator-link' , {
+	props : [ 'item' ] ,
+	data : function () { return { 'label':'' } } ,
+    created : function () {
+    	let me = this ;
+    	me.label = me.item ;
+    	wd.getItemBatch ( [me.item] , function () {
+    		let i = wd.getItem ( me.item ) ;
+    		if ( typeof i == 'undefined' ) return ;
+    		me.label = i.getLabel() ;
+    	} ) ;
+    } ,
+    methods : {
+    },
+	template : '#reasonator-link-template'
+} ) ;
+</script>

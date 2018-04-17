@@ -1,0 +1,83 @@
+<style>
+div.snakbox {
+	border-top:1px dotted #999;
+}
+div.snakbox:first-of-type {
+	border-top:none;
+}
+.property_column {
+	min-width:10rem;
+	max-width:10rem;
+	margin-right:0.5rem;
+}
+.value_column {
+	flex-grow:1;
+}
+td.property_column_qualifiers {
+	min-width:4rem;
+}
+div.qualifiers {
+	margin-left:1rem;
+	font-size:9pt;
+}
+div.qualifiers td {
+	padding:1px;
+}
+div.reference_snaks_prop {
+}
+div.reference_snaks_list {
+}
+li.list-group-item {
+	padding:5px;
+	padding-top:0px;
+}
+li.list-group-item:first-of-type {
+	border-top:none;
+}
+li.list-group-item:last-of-type {
+	border-bottom:none;
+}
+</style>
+
+<template id='property-list-template'>
+<div v-if='Object.values(props).length>0' class="card">
+	<div class="card-header bg-light">
+		<span :tt='tt'></span>
+	</div>
+	<div class="card-body">
+		<p class="card-text">
+			<ul class="list-group list-group-flush">
+				<li v-for='prop in props' class="list-group-item" style='display:flex'>
+					<div class='property_column'>
+						<wd-link :item='prop'></wd-link>
+					</div>
+					<div class='value_column'>
+						<div v-for='claim in i.getClaimsForProperty(prop)' class='snakbox'>
+							<claim :claim='claim'></claim>
+						</div>
+					</div>
+				</li>
+			</ul>
+		</p>
+	</div>
+</div>
+</template>
+
+
+<script>
+'use strict';
+
+Vue.component ( 'property-list' , {
+	props : [ 'q' , 'props' , 'tt' ] ,
+	data : function () { return { i:{} } } ,
+    created : function () {
+    	let me = this ;
+    	me.i = wd.getItem(me.q) ;
+    } ,
+    updated : function () { tt.updateInterface(this.$el) ; } ,
+    mounted : function () { tt.updateInterface(this.$el) ; } ,
+    methods : {
+    },
+	template : '#property-list-template'
+} ) ;
+</script>

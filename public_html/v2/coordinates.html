@@ -1,0 +1,67 @@
+<style>
+div.thumbnail_map {
+	width:250px;
+	height:200px;
+	margin:5px;
+}
+</style>
+
+<template id='coordinates-template'>
+<div>
+	<div v-if='snak.datatype!="globe-coordinate"'>
+		This is not a coordinate, but a {{snak.datatype}}!
+	</div>
+	<div v-else-if='snak.datavalue.value.globe=="http://www.wikidata.org/entity/Q2"'>
+		<div style='display:flex'>
+			<div id='map1' class='thumbnail_map'></div>
+			<div id='map2' class='thumbnail_map'></div>
+			<div id='map3' class='thumbnail_map'></div>
+		</div>
+		<div>
+			<a :href='getGeohackURL()' class='external' target='_blank'>GeoHack</a> |
+			<a :href='"https://tools.wmflabs.org/wikishootme/#lat="+snak.datavalue.value.latitude+"&lng="+snak.datavalue.value.longitude+"&zoom=13"' class='external' target='_blank'>WikiShootMe</a> |
+			<tt>{{snak.datavalue.value.latitude}}/{{snak.datavalue.value.longitude}}</tt>
+		</div>
+	</div>
+	<div v-else>
+		This item has coordinates on <wd-link :item='snak.datavalue.value.globe.replace(/^.+\//,"")'></wd-link>.
+	</div>
+</div>
+</template>
+
+
+<script>
+'use strict';
+
+Vue.component ( 'coordinates' , {
+	props : [ 'snak' ] ,
+	data : function () { return { tile_layer:{name:'OSM (WMF)',url:'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',attribution:'&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'} } } ,
+    created : function () {
+    } ,
+    updated : function () { tt.updateInterface(this.$el) ; } ,
+    mounted : function () {
+    	let me = this ;
+    	let pos = [me.snak.datavalue.value.latitude, me.snak.datavalue.value.longitude] ;
+    	let map1 = L.map('map1').setView(pos, 3);
+    	let map2 = L.map('map2').setView(pos, 6);
+    	let map3 = L.map('map3').setView(pos, 10);
+		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map1);
+		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map2);
+		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map3);
+		L.marker(pos).addTo(map1) ; //.bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+		L.marker(pos).addTo(map2) ;
+		L.marker(pos).addTo(map3) ;
+    	tt.updateInterface(this.$el) ;
+    } ,
+    methods : {
+    	getGeohackURL : function () {
+    		let lat = this.snak.datavalue.value.latitude ;
+    		let lon = this.snak.datavalue.value.longitude ;
+    		let ns = lat < 0 ? (-lat)+'_S' : lat+'_N' ;
+    		let ew = lon < 0 ? (-lon)+'_W' : lon+'_E' ;
+    		return 'https://tools.wmflabs.org/geohack/geohack.php?params=' + ns + '_' + ew ;
+    	}
+    },
+	template : '#coordinates-template'
+} ) ;
+</script>
