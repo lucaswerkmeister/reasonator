@@ -113,7 +113,10 @@ Vue.component ( 'classifier' , {
             $.each ( prop_map , function ( k , v ) { delete remaining[v] } ) ;
             $.each ( config.image_propmap , function ( k , v ) { delete remaining[v] } ) ;
             $.each ( config.wikimedia , function ( k , v ) { delete remaining[v] } ) ;
-            $.each ( config.add2remaining , function ( k , v ) { remaining[v] = v ;} ) ;
+            $.each ( config.add2remaining , function ( k , prop ) {
+                if ( !me.i.hasClaims(prop) ) return ;
+                remaining[prop] = prop ;
+            } ) ;
             return remaining ;
         }
     },

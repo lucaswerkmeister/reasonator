@@ -9,7 +9,7 @@ let prop_map = {} ;
 
 $(document).ready ( function () {
     vue_components.toolname = 'reasonator_v2' ;
-    vue_components.components_base_url = 'https://tools.wmflabs.org/magnustools/resources/vue/' ; // For testing; turn off to use tools-static
+//    vue_components.components_base_url = 'https://tools.wmflabs.org/magnustools/resources/vue/' ; // For testing; turn off to use tools-static
     Promise.all ( [
             vue_components.loadComponents ( ['widar','wd-date','wd-link','tool-translate','tool-navbar','commons-thumbnail',
                 'main-page.html',

@@ -21,7 +21,7 @@
 
 <body>
 	<div id='app' class='container'>
-		<router-view><i tt='loading'></i></router-view>
+		<router-view :key="$route.path"><i tt='loading'></i></router-view>
 	</div>
 </body>
 
