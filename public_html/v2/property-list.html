@@ -37,28 +37,29 @@ li.list-group-item:first-of-type {
 li.list-group-item:last-of-type {
 	border-bottom:none;
 }
+div.property_list table.table {
+	margin-bottom:0px;
+}
 </style>
 
 <template id='property-list-template'>
-<div v-if='Object.values(props).length>0' class="card">
+<div v-if='Object.values(props).length>0' class="card property_list">
 	<div class="card-header bg-light">
 		<span :tt='tt'></span>
 	</div>
 	<div class="card-body">
-		<p class="card-text">
-			<ul class="list-group list-group-flush">
-				<li v-for='prop in props' class="list-group-item" style='display:flex'>
-					<div class='property_column'>
-						<wd-link :item='prop'></wd-link>
+		<ul class="list-group list-group-flush">
+			<li v-for='prop in props' class="list-group-item" style='display:flex'>
+				<div class='property_column'>
+					<wd-link :item='prop'></wd-link>
+				</div>
+				<div class='value_column'>
+					<div v-for='claim in i.getClaimsForProperty(prop)' class='snakbox'>
+						<claim :claim='claim'></claim>
 					</div>
-					<div class='value_column'>
-						<div v-for='claim in i.getClaimsForProperty(prop)' class='snakbox'>
-							<claim :claim='claim'></claim>
-						</div>
-					</div>
-				</li>
-			</ul>
-		</p>
+				</div>
+			</li>
+		</ul>
 	</div>
 </div>
 </template>

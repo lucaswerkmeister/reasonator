@@ -3,6 +3,9 @@ div.sidebar {
 	margin-left:1rem;
 	width: 18rem;
 }
+div.sidebar table.table {
+	margin-bottom:0px;
+}
 div.sidebar td {
 	border:none;
 }
@@ -41,20 +44,18 @@ div.sidebar div.image_container {
 		        <div v-if='part[1].length>0' class="card">
 		        	<div class="card-header bg-light" :tt='part[0]'></div>
 		        	<div class="card-body">
-						<p class="card-text">
-							<table class='table table-condensed'>
-								<tbody v-for='p in part[1]'>
-									<tr v-for='(claim,num) in i.getClaimsForProperty(p)'>
-										<td v-if='num==0' :rowspan='i.getClaimsForProperty(p).length'>
-											<wd-link :item='p'></wd-link>
-										</td>
-										<td>
-											<snak :snak='claim.mainsnak' nodesc='1'></snak>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</p>
+						<table class='table table-condensed'>
+							<tbody v-for='p in part[1]'>
+								<tr v-for='(claim,num) in i.getClaimsForProperty(p)'>
+									<td v-if='num==0' :rowspan='i.getClaimsForProperty(p).length'>
+										<wd-link :item='p'></wd-link>
+									</td>
+									<td>
+										<snak :snak='claim.mainsnak' nodesc='1'></snak>
+									</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
 	        </div>
@@ -62,22 +63,20 @@ div.sidebar div.image_container {
 	        <div v-if='i.getWikiLinks().length>0' class="card">
 	        	<div class="card-header bg-light" tt='wikimedia_projects'></div>
 	        	<div class="card-body">
-					<p class="card-text">
-						<table class='table table-condensed'>
-							<tbody v-for='sl in i.getWikiLinks()'>
-								<tr>
-									<td>
-										{{sl.site}}
-									</td>
-									<td>
-										<a :href='getSiteLink(sl)' class='wikimedia' target='_blank'>
-											{{sl.title}}
-										</a>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</p>
+					<table class='table table-condensed'>
+						<tbody v-for='sl in i.getWikiLinks()'>
+							<tr>
+								<td>
+									{{sl.site}}
+								</td>
+								<td>
+									<a :href='getSiteLink(sl)' class='wikimedia' target='_blank'>
+										{{sl.title}}
+									</a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
 				</div>
 	        </div>
 	    </div>
