@@ -6,6 +6,11 @@ div.thumbnail_map {
 }
 </style>
 
+<template id='mini-map-template'>
+<div :id='map_id'>
+</div>
+</template>
+
 <template id='coordinates-template'>
 <div>
 	<div v-if='snak.datatype!="globe-coordinate"'>
@@ -13,9 +18,9 @@ div.thumbnail_map {
 	</div>
 	<div v-else-if='snak.datavalue.value.globe=="http://www.wikidata.org/entity/Q2"'>
 		<div style='display:flex'>
-			<div id='map1' class='thumbnail_map'></div>
-			<div id='map2' class='thumbnail_map'></div>
-			<div id='map3' class='thumbnail_map'></div>
+			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='3'></mini-map>
+			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='6'></mini-map>
+			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='10'></mini-map>
 		</div>
 		<div>
 			<a :href='getGeohackURL()' class='external' target='_blank'>GeoHack</a> |
@@ -33,24 +38,32 @@ div.thumbnail_map {
 <script>
 'use strict';
 
+var mini_map_counter = 0 ;
+
+Vue.component ( 'mini-map' , {
+	props : [ 'lat' , 'lon' , 'zoom' ] ,
+	data : function () { return { tile_layer:{name:'OSM (WMF)',url:'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',attribution:'&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' , map_id:'' } } } ,
+	created : function () {
+		mini_map_counter++ ;
+		this.map_id = 'mini_map_' + mini_map_counter ;
+	} ,
+	mounted : function () {
+		let me = this ;
+    	let pos = [me.lat, me.lon] ;
+    	let map = L.map(me.map_id).setView(pos, me.zoom);
+		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map);
+		L.marker(pos).addTo(map) ;
+	},
+	template : '#mini-map-template'
+} ) ;
+
 Vue.component ( 'coordinates' , {
 	props : [ 'snak' ] ,
-	data : function () { return { tile_layer:{name:'OSM (WMF)',url:'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',attribution:'&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'} } } ,
+	data : function () { return { } } ,
     created : function () {
     } ,
     updated : function () { tt.updateInterface(this.$el) ; } ,
     mounted : function () {
-    	let me = this ;
-    	let pos = [me.snak.datavalue.value.latitude, me.snak.datavalue.value.longitude] ;
-    	let map1 = L.map('map1').setView(pos, 3);
-    	let map2 = L.map('map2').setView(pos, 6);
-    	let map3 = L.map('map3').setView(pos, 10);
-		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map1);
-		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map2);
-		L.tileLayer(me.tile_layer.url, me.tile_layer).addTo(map3);
-		L.marker(pos).addTo(map1) ; //.bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-		L.marker(pos).addTo(map2) ;
-		L.marker(pos).addTo(map3) ;
     	tt.updateInterface(this.$el) ;
     } ,
     methods : {

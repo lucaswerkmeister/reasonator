@@ -1,10 +1,11 @@
 <template id='reasonator-link-template'>
 <span>
 	<span v-if='/^[qQpP]\d+$/.test(item)'>
-		<router-link :to='"/"+item'>
-			{{label}}
-		</router-link>
-		<small><tt><wd-link :item='item' :label='item'></wd-link></tt></small>
+		<wd-hovercard :item='item'>
+			<router-link :to='"/"+item'>
+				{{label}}
+			</router-link>
+		</wd-hovercard>
 	</span>
 	<span v-else>
 		<tt><wd-link :item='item'></wd-link></tt>

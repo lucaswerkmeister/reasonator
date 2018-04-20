@@ -19,6 +19,7 @@ $(document).ready ( function () {
                 'claim.html',
                 'snak.html',
                 'hierarchy.html',
+                'wd-hovercard.html',
                 'reasonator-link.html',
                 'sidebar.html'
                 ] ) ,
