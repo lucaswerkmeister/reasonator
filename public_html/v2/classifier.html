@@ -50,6 +50,9 @@ h1 small {
                     <div v-if='i.hasClaims(prop_map.coordinates)'>
                         <coordinates :snak='i.getClaimsForProperty(prop_map.coordinates)[0].mainsnak'></coordinates>
                     </div>
+                    <div v-for='prop in (config.hierarchies||[])'> <!--  v-if='typeof config.sparql_server_url!="undefined"' -->
+                        <hierarchy v-if='i.hasClaims(prop)' :tt='"hierarchy_"+prop.toLowerCase()' :i='i' :prop='prop'></hierarchy>
+                    </div>
                     <div style='flex-grow:1'>
                         <property-list v-for='section in sections' :q='q' :props='section.data' :tt='section.tt'></property-list>
                         <property-list :q='q' :props='remaining_props' tt='other_properties'></property-list>

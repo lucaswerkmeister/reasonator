@@ -9,7 +9,7 @@ let prop_map = {} ;
 
 $(document).ready ( function () {
     vue_components.toolname = 'reasonator_v2' ;
-//    vue_components.components_base_url = 'https://tools.wmflabs.org/magnustools/resources/vue/' ; // For testing; turn off to use tools-static
+    vue_components.components_base_url = 'https://tools.wmflabs.org/magnustools/resources/vue/' ; // For testing; turn off to use tools-static
     Promise.all ( [
             vue_components.loadComponents ( ['widar','wd-date','wd-link','tool-translate','tool-navbar','commons-thumbnail',
                 'main-page.html',
@@ -18,6 +18,7 @@ $(document).ready ( function () {
                 'coordinates.html',
                 'claim.html',
                 'snak.html',
+                'hierarchy.html',
                 'reasonator-link.html',
                 'sidebar.html'
                 ] ) ,
@@ -32,6 +33,7 @@ $(document).ready ( function () {
         wd_link_base = config.wikibase_page_url ;
         wd_link_wd = wd ;
         wd.api = config.wikibase_api + '?callback=?' ;
+        if ( typeof config.sparql_server_url != 'undefined' ) wd.sparql_url = config.sparql_server_url ;
 
         const routes = [
           { path: '/', component: MainPage , props:true },

@@ -1,12 +1,14 @@
 {
     "wikibase_api":"https://www.wikidata.org/w/api.php",
     "wikibase_page_url":"https://www.wikidata.org/wiki/",
+    "sparql_server_url":"https://query.wikidata.org/sparql",
     "sections":{
         "main":"main_properties",
         "location":"location",
         "taxon":"taxon",
         "person":"person"
     },
+    "hierarchies":["P279","P171","P131"],
     "add2remaining":["P225"],
     "prop_map": {
         "formatter_url": "P1630",
