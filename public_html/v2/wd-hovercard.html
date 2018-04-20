@@ -1,7 +1,6 @@
 <style>
 div.wd_hovercard {
 	position:absolute;
-/*	background-color:white;*/
 	z-index:1;
 	overflow:auto;
 }
@@ -33,7 +32,7 @@ div.wd_hovercard div.card-body {
 						<commons-thumbnail :filename='i.getFirstStringForProperty(config.image_propmap.image)' width='150'></commons-thumbnail>
 					</div>
 					<div v-if='typeof coordinates.latitude!="undefined"'>
-						<mini-map style='width:250px;height:150px;margin:3px;' :lat='coordinates.latitude' :lon='coordinates.longitude' zoom='5'></mini-map>
+						<mini-map style='width:250px;height:150px;margin:3px;' :lat='coordinates.latitude' :lon='coordinates.longitude' zoom='4'></mini-map>
 					</div>
 				</div>
 			</div>
@@ -75,10 +74,18 @@ Vue.component ( 'wd-hovercard' , {
     	} ,
     	onShowCard : function () {
     		this.clearInterval() ;
-    		$($(this.$el).find('div.wd_hovercard_slot')).css({
-    			top:$(this.$el).offset().top,
-    			left:$(this.$el).offset().left
-    		}) ;
+    		let hc = $($(this.$el).find('div.wd_hovercard_slot')) ;
+    		let off = $(this.$el).offset() ;
+    		let window_top = $(window).scrollTop() ;
+    		
+    		console.log ( (off.top-window_top) , $(window).height()/2 ) ;
+
+    		if ( (off.top-window_top) < $(window).height()/2 ) {
+	    		hc.css({top:off.top}) ;
+	    	} else { // FIX THIS!
+	    		hc.css({top:off.top-150}) ;
+	    	}
+    		hc.css({left:off.left}) ;
     		this.show_card = true ;
     	} ,
     	onLeave : function () {
