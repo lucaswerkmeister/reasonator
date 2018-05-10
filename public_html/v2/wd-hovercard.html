@@ -78,7 +78,7 @@ Vue.component ( 'wd-hovercard' , {
     		let off = $(this.$el).offset() ;
     		let window_top = $(window).scrollTop() ;
     		
-    		console.log ( (off.top-window_top) , $(window).height()/2 ) ;
+//    		console.log ( (off.top-window_top) , $(window).height()/2 ) ;
 
     		if ( (off.top-window_top) < $(window).height()/2 ) {
 	    		hc.css({top:off.top}) ;
