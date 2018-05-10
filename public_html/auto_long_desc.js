@@ -409,9 +409,23 @@ language_specs['en'] = new lang_class ;
 language_specs['en'].setup = function () {
 	this.init() ;
 	this.month_label = [ '' , 'January','February','March','April','May','June','July','August','September','October','November','December' ] ; // First one needs to be empty!!
-	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
-	this.s_he = (this.is_male?'He':'She') ;
-	this.his_er = (this.is_male?'His':'Her') ;
+
+	if ( this.i.hasClaimItemLink('P21','Q6581097') || this.i.hasClaimItemLink('P21','Q2449503') ) {
+		this.pronoun_subject = 'He' ;
+		this.pronoun_possessive = 'His' ;
+		this.be_present = 'is' ;
+		this.be_past = 'was' ;
+	} else if ( this.i.hasClaimItemLink('P21','Q6581072') || this.i.hasClaimItemLink('P21','Q1052281') ) {
+		this.pronoun_subject = 'She' ;
+		this.pronoun_possessive = 'Her' ;
+		this.be_present = 'is' ;
+		this.be_past = 'was' ;
+	} else {
+		this.pronoun_subject = 'They' ;
+		this.pronoun_possessive = 'Their' ;
+		this.be_present = 'are' ;
+		this.be_past = 'were' ;
+	}
 }
 
 language_specs['en'].renderDateByPrecision = function ( pre , year , month , day , precision , no_prefix ) {
@@ -438,7 +452,7 @@ language_specs['en'].employers = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' worked for ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' worked for ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -452,7 +466,7 @@ language_specs['en'].position = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' was'+(me.is_dead?'':'/is')+' ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':this.be_present+'/')+this.be_past+' ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -466,7 +480,7 @@ language_specs['en'].member = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' was'+(me.is_dead?'':'/is')+' a member of ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':this.be_present+'/')+this.be_past+' a member of ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -480,7 +494,7 @@ language_specs['en'].alma = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' studied at ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' studied at ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -489,16 +503,16 @@ language_specs['en'].alma = function ( d ) {
 	} ) ;
 }
 
-language_specs['en'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' field of work include'+(me.is_dead?'d':'s')+' ' , '. ' ) ; }
+language_specs['en'].field = function ( d ) { var me=this; this.simpleList ( d , me.pronoun_possessive+' field of work include'+(me.is_dead?'d':'s')+' ' , '. ' ) ; }
 language_specs['en'].cause_of_death = function ( d ) { this.simpleList ( d , 'of ' , ' ' ) ; }
 language_specs['en'].killer = function ( d ) { this.simpleList ( d , 'by ' , ' ' ) ; }
-language_specs['en'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' played a role in ' , '.' ) ; }
+language_specs['en'].sig_event = function ( d ) { this.simpleList ( d , this.pronoun_subject+' played a role in ' , '.' ) ; }
 
 language_specs['en'].spouses = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' married ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' married ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
 		date_to : function(cb) { me.h.push ( { label:'(married until ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
@@ -511,7 +525,7 @@ language_specs['en'].children = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.his_er+' children include ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_possessive+' children include ' } ) } ,
 		item_start : function(cb) { cb() } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -522,7 +536,7 @@ language_specs['en'].children = function ( d ) {
 language_specs['en'].addFirstSentence = function () {
 	var me = this ;
 	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
-	me.h.push ( { label:(this.is_dead?'was':'is') , after:' a ' } ) ;
+	me.h.push ( { label:(this.is_dead?this.be_past:this.be_present) , after:' a ' } ) ;
 	this.listNationalities() ;
 	this.listOccupations() ;
 	me.h.push ( { label:'. ' } ) ;
@@ -538,7 +552,7 @@ language_specs['en'].addBirthText = function () {
 	var birthplace = me.i.raw.claims['P19'] ;
 	var birthname = me.i.raw.claims['P513'] ;
 	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
-		me.h.push ( { label:me.s_he , after:' was born ' } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:' '+this.be_past+' born ' } ) ;
 		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
 		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
 		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'in ' , after:' ' } ) ;
@@ -563,7 +577,7 @@ language_specs['en'].addDeathText = function () {
 	var deathcause = me.i.hasClaims('P509') ;
 	var killer = me.i.hasClaims('P157') ;
 	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
-		me.h.push ( { label:me.s_he , after:' died ' } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:' died ' } ) ;
 		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
 		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
@@ -572,7 +586,7 @@ language_specs['en'].addDeathText = function () {
 	}
 	var burialplace = me.i.raw.claims['P119'] ;
 	if ( burialplace !== undefined ) {
-		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+' was buried at ' , after:'. ' } ) ;
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.pronoun_subject+' '+this.be_past+' buried at ' , after:'. ' } ) ;
 	}
 }
 
@@ -585,9 +599,17 @@ language_specs['nl'] = new lang_class ;
 language_specs['nl'].setup = function () {
 	this.init() ;
 	this.month_label = [ '' , 'januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december' ] ; // First one needs to be empty!!
-	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
-	this.s_he = (this.is_male?'Hij':'Zij') ;
-	this.his_er = (this.is_male?'Zijn':'Haar') ;
+
+	if ( this.i.hasClaimItemLink('P21','Q6581097') || this.i.hasClaimItemLink('P21','Q2449503') ) {
+		this.pronoun_subject = 'Hij' ;
+		this.pronoun_possessive = 'Zijn' ;
+	} else if ( this.i.hasClaimItemLink('P21','Q6581072') || this.i.hasClaimItemLink('P21','Q1052281') ) {
+		this.pronoun_subject = 'Zij' ;
+		this.pronoun_possessive = 'Haar' ;
+	} else {
+		this.pronoun_subject = 'Hij/zij' ;
+		this.pronoun_possessive = 'Zijn/haar' ;
+	}
 }
 
 language_specs['nl'].getSepAfter = function ( arr , pos ) {
@@ -621,7 +643,7 @@ language_specs['nl'].employers = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' werkte voor ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' werkte voor ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'van ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'tot ' } ) ; cb({no_prefix:true}) } ,
@@ -635,7 +657,7 @@ language_specs['nl'].position = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' was'+(me.is_dead?'':'/is')+' ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':'is/')+'was ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'van ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'tot ' } ) ; cb({no_prefix:true}) } ,
@@ -649,7 +671,7 @@ language_specs['nl'].member = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' was'+(me.is_dead?'':'/is')+' een lid van ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':'is/')+'was een lid van ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'van ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'tot ' } ) ; cb({no_prefix:true}) } ,
@@ -663,7 +685,7 @@ language_specs['nl'].alma = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' studeerde op de ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' studeerde op de ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'van ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'tot ' } ) ; cb({no_prefix:true}) } ,
@@ -672,16 +694,16 @@ language_specs['nl'].alma = function ( d ) {
 	} ) ;
 }
 
-language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' werkveld '+(this.is_dead?'omvatte':'omvat')+' ' , '. ' ) ; }
+language_specs['nl'].field = function ( d ) { var me=this; this.simpleList ( d , me.pronoun_possessive+' werkveld '+(this.is_dead?'omvatte':'omvat')+' ' , '. ' ) ; }
 language_specs['nl'].cause_of_death = function ( d ) { this.simpleList ( d , 'ten gevolge van ' , ' ' ) ; }
 language_specs['nl'].killer = function ( d ) { this.simpleList ( d , 'door ' , ' ' ) ; }
-language_specs['nl'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' speelde een rol in ' , '.' ) ; }
+language_specs['nl'].sig_event = function ( d ) { this.simpleList ( d , this.pronoun_subject+' speelde een rol in ' , '.' ) ; }
 
 language_specs['nl'].spouses = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' trouwde ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' trouwde ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
 		date_to : function(cb) { me.h.push ( { label:'(getrouwd tot ' } ) ; cb() ; me.h.push ( { label:') ' } ) } ,
@@ -694,7 +716,7 @@ language_specs['nl'].children = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.his_er+' kinderen zijn ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_possessive+' kinderen zijn ' } ) } ,
 		item_start : function(cb) { cb() } ,
 		item_end : function(num,sep) { me.h.push ( { label:sep } ) } ,
 		end : function() { me.h.push ( { label:'. ' } ) }
@@ -721,7 +743,7 @@ language_specs['nl'].addBirthText = function () {
 	var birthplace = me.i.raw.claims['P19'] ;
 	var birthname = me.i.raw.claims['P513'] ;
 	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
-		me.h.push ( { label:me.s_he , after:' werd geboren ' } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:' werd geboren ' } ) ;
 		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
 		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
 		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'in ' , after:' ' } ) ;
@@ -746,7 +768,7 @@ language_specs['nl'].addDeathText = function () {
 	var deathcause = me.i.hasClaims('P509') ;
 	var killer = me.i.hasClaims('P157') ;
 	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
-		me.h.push ( { label:me.s_he , after:' stierf ' } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:' stierf ' } ) ;
 		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
 		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
@@ -755,7 +777,7 @@ language_specs['nl'].addDeathText = function () {
 	}
 	var burialplace = me.i.raw.claims['P119'] ;
 	if ( burialplace !== undefined ) {
-		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+' werd begraven in ' , after:'. ' } ) ;
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.pronoun_subject+' werd begraven in ' , after:'. ' } ) ;
 	}
 }
 
@@ -767,9 +789,8 @@ language_specs['fr'] = new lang_class ;
 language_specs['fr'].setup = function () {
 	this.init() ;
 	this.month_label = [ '' , 'janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre' ] ; // First one needs to be empty!!
-	this.is_male = !this.i.hasClaimItemLink('P21','Q6581072') ;
-	this.s_he = (this.is_male?'Il':'Elle') ;
-	this.his_er = 'Son' ;
+	this.is_male = !(this.i.hasClaimItemLink('P21','Q6581072') || this.i.hasClaimItemLink('P21','Q1052281')) ;
+	this.pronoun_subject = (this.is_male?'Il':'Elle') ;
 }
 
 language_specs['fr'].getSepAfter = function ( arr , pos ) {
@@ -806,7 +827,7 @@ language_specs['fr'].employers = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' a travaillé pour ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' a travaillé pour ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
 		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
@@ -820,7 +841,7 @@ language_specs['fr'].position = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':'est/')+'était ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
 		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
@@ -834,7 +855,7 @@ language_specs['fr'].member = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' était'+(me.is_dead?'':'/est')+' membre de ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':'est/')+'était membre de ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
 		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
@@ -848,7 +869,7 @@ language_specs['fr'].alma = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' a étudié à ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' a étudié à ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'depuis ' } ) ; cb() } ,
 		date_to : function(cb) { me.h.push ( { label:'jusque ' } ) ; cb({jusque:true}) } ,
@@ -857,16 +878,16 @@ language_specs['fr'].alma = function ( d ) {
 	} ) ;
 }
 
-language_specs['fr'].field = function ( d ) { var me=this; this.simpleList ( d , me.his_er+' domaine de travail '+(me.is_dead?'comprend':'comprenait')+' ' , '. ' ) ; }
+language_specs['fr'].field = function ( d ) { var me=this; this.simpleList ( d , 'Son domaine de travail '+(me.is_dead?'comprend':'comprenait')+' ' , '. ' ) ; }
 language_specs['fr'].cause_of_death = function ( d ) { this.simpleList ( d , 'de ' , ' ' ) ; }
 language_specs['fr'].killer = function ( d ) { this.simpleList ( d , 'par ' , ' ' ) ; }
-language_specs['fr'].sig_event = function ( d ) { this.simpleList ( d , this.s_he+' a joué un rôle important dans ' , '.' ) ; }
+language_specs['fr'].sig_event = function ( d ) { this.simpleList ( d , this.pronoun_subject+' a joué un rôle important dans ' , '.' ) ; }
 
 language_specs['fr'].spouses = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.s_he+' a épousé ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' a épousé ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { cb(); me.h.push ( { label:' ' } ) ; } ,
 		date_to : function(cb) { me.h.push ( { label:'(mariés ' } ) ; cb({jusque:true}) ; me.h.push ( { label:')' } ) } ,
@@ -906,7 +927,7 @@ language_specs['fr'].addBirthText = function () {
 	var birthplace = me.i.raw.claims['P19'] ;
 	var birthname = me.i.raw.claims['P513'] ;
 	if ( birthdate !== undefined || birthplace !== undefined || birthname !== undefined ) {
-		me.h.push ( { label:me.s_he , after:(me.is_male?' est né ':' est née ') } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:(me.is_male?' est né ':' est née ') } ) ;
 		if ( birthname !== undefined ) me.h.push ( { label:me.i.getClaimTargetString(birthname[0]) , before:'<i>' , after:'</i> ' } ) ;
 		if ( birthdate !== undefined ) me.h.push ( me.renderDate(birthdate[0]) ) ;
 		if ( birthplace !== undefined ) me.addPlace ( { q:me.i.getClaimTargetItemID(birthplace[0]) , before:'à ' , after:' ' } ) ;
@@ -930,7 +951,7 @@ language_specs['fr'].addDeathText = function () {
 	var deathcause = me.i.hasClaims('P509') ;
 	var killer = me.i.hasClaims('P157') ;
 	if ( deathdate !== undefined || deathplace !== undefined || deathcause || killer ) {
-		me.h.push ( { label:me.s_he , after:(me.is_male?' est mort ':' est morte ') } ) ;
+		me.h.push ( { label:me.pronoun_subject , after:(me.is_male?' est mort ':' est morte ') } ) ;
 		if ( deathcause !== undefined ) me.cause_of_death ( me.getRelatedItemsWithQualifiers ( { properties:['P509'] } ) ) ;
 		if ( killer !== undefined ) me.killer ( me.getRelatedItemsWithQualifiers ( { properties:['P157'] } ) ) ;
 		if ( deathdate !== undefined ) me.h.push ( me.renderDate(deathdate[0]) ) ;
@@ -939,7 +960,7 @@ language_specs['fr'].addDeathText = function () {
 	}
 	var burialplace = me.i.raw.claims['P119'] ;
 	if ( burialplace !== undefined ) {
-		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.s_he+(this.is_male?' fut inhumé à ':' fut inhumée à ') , after:'. ' } ) ;
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.pronoun_subject+(this.is_male?' fut inhumé à ':' fut inhumée à ') , after:'. ' } ) ;
 	}
 }
 
