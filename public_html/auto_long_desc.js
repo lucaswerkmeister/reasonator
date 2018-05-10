@@ -466,7 +466,7 @@ language_specs['en'].position = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':this.be_present+'/')+this.be_past+' ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':me.be_present+'/')+me.be_past+' ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -480,7 +480,7 @@ language_specs['en'].member = function ( d ) {
 	var me = this ;
 	this.listSentence ( {
 		data : d ,
-		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':this.be_present+'/')+this.be_past+' a member of ' } ) } ,
+		start : function() { me.h.push ( { label:me.pronoun_subject+' '+(me.is_dead?'':me.be_present+'/')+me.be_past+' a member of ' } ) } ,
 		item_start : function(cb) { cb(); me.h.push ( { label:' ' } ) } ,
 		date_from : function(cb) { me.h.push ( { label:'from ' } ) ; cb({no_prefix:true}) } ,
 		date_to : function(cb) { me.h.push ( { label:'until ' } ) ; cb({no_prefix:true}) } ,
@@ -536,7 +536,7 @@ language_specs['en'].children = function ( d ) {
 language_specs['en'].addFirstSentence = function () {
 	var me = this ;
 	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
-	me.h.push ( { label:(this.is_dead?this.be_past:this.be_present) , after:' a ' } ) ;
+	me.h.push ( { label:(this.is_dead?'was':'is') , after:' a ' } ) ;
 	this.listNationalities() ;
 	this.listOccupations() ;
 	me.h.push ( { label:'. ' } ) ;
