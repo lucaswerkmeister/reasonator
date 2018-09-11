@@ -89,6 +89,7 @@ var reasonator = {
 	E : {
 		215627 : 'person'
 	} ,
+	P_researcher : [ 1960,496,1053,1153 ] , 
 	Q : {
 		human : 5 ,
 		male : 6581097 ,
@@ -1888,6 +1889,7 @@ var reasonator = {
 		var self = this ;
 		var h = [] ;
 		var i = self.wd.items[self.q] ;
+		let is_researcher = false ;
 		$.each ( self.extURLs , function ( k , v ) {
 			var p = self.urlid2prop[k] ;
 			if ( p === undefined ) return ;
@@ -1912,6 +1914,7 @@ var reasonator = {
 					$('div.main_video').append ( h2 ) ;
 					return ;
 				}
+				if ( $.inArray ( p , self.P_researcher ) !== -1 ) is_researcher = true ;
 				
 				s = s.replace ( /-/g , '-&#8203;' ) ;
 				
@@ -1923,6 +1926,14 @@ var reasonator = {
 				h.push ( [ id_type , h2 ] ) ;
 			} ) ;
 		} ) ;
+
+		if ( is_researcher ) {
+			let url = 'https://tools.wmflabs.org/scholia/author/' + self.q ;
+			let h2 = "<tr><td>Scholia</td><td>" ;
+			h2 += "<a target='_blank' href='" + url + "' class='external'>Scholia</a>" ;
+			h2 += "</td></tr>" ;
+			h.push ( [ 'Scholia' , h2 ] ) ;
+		}
 
 		$('div.youtube').click ( function () {
 			var o = $(this) ;
