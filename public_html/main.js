@@ -1890,6 +1890,7 @@ var reasonator = {
 		var h = [] ;
 		var i = self.wd.items[self.q] ;
 		let is_researcher = false ;
+		let is_scholarly_article = self.wd.items[self.q].hasClaimItemLink('P31','Q13442814');
 		$.each ( self.extURLs , function ( k , v ) {
 			var p = self.urlid2prop[k] ;
 			if ( p === undefined ) return ;
@@ -1929,6 +1930,14 @@ var reasonator = {
 
 		if ( is_researcher ) {
 			let url = 'https://tools.wmflabs.org/scholia/author/' + self.q ;
+			let h2 = "<tr><td>Scholia</td><td>" ;
+			h2 += "<a target='_blank' href='" + url + "' class='external'>Scholia</a>" ;
+			h2 += "</td></tr>" ;
+			h.push ( [ 'Scholia' , h2 ] ) ;
+		}
+
+		if ( is_scholarly_article ) {
+			let url = 'https://tools.wmflabs.org/scholia/work/' + self.q ;
 			let h2 = "<tr><td>Scholia</td><td>" ;
 			h2 += "<a target='_blank' href='" + url + "' class='external'>Scholia</a>" ;
 			h2 += "</td></tr>" ;
