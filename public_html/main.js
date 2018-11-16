@@ -2198,7 +2198,11 @@ var reasonator = {
 		if ( i.type == 'string' ) {
 			var h2 ;
 			if ( i.p == 'P373' ) h2 = "<a target='_blank' title='Category on Commons' class='external' href='//commons.wikimedia.org/wiki/Category:"+escattr(i.s)+"'>" + self.escapeHTML(i.s) + "</a>" ; // Commons cat
-			else h2 = self.escapeHTML(i.s) ;
+			else if ( typeof self.wd.items[i.p]!='undefined' && self.wd.items[i.p].hasClaims('P3303') ) {
+				let pattern = self.wd.items[i.p].getFirstStringForProperty('P3303') ;
+				let url = pattern.replace ( /\$1/ , encodeURIComponent(i.s) ) ;
+				h2 = "<a target='_blank' class='external' href='"+url+"'>"+self.escapeHTML(i.s)+"</a>" ;
+			} else h2 = self.escapeHTML(i.s) ;
 			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
 		} else if ( i.type == 'item' ) {
