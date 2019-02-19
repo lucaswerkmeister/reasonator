@@ -610,8 +610,9 @@ reasonator_types.push ( {
 			h += "</tbody></table>" ;
 			h = reasonator.wrapPanel ( h , {title:reasonator.t('lang_variants')} ) ;
 		
-			var autolist_url = '/autolist/?run=Run&language=' + reasonator.getMainLang() + '&wdqs=' + encodeURIComponent('SELECT ?item WHERE { ?item wdt:P735 wd:Q'+q.replace(/\D/g,'')+' }') ;
-			h = "<div class='lead'><a href='"+autolist_url+"' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
+			let sparql_query = 'SELECT ?item WHERE { ?item wdt:P735 wd:Q'+q.replace(/\D/g,'')+' }' ;
+			let petscan_url = "https://petscan.wmflabs.org/?sparql=" + escape(sparql_query) + "&interface_language=" + reasonator.getMainLang() + "&doit=>" ;
+			h = "<div class='lead'><a href='"+petscan_url+"' target='_blank' class='external'>"+reasonator.t('show_people_with_given_name')+"</a></div>" + h ;
 		
 			$('#actual_content div.main').html(h) ;
 		
