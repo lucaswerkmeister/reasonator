@@ -77,24 +77,7 @@ var widee = {
 		
 	loadItemNames2 : function ( uniq , type , callback ) {
 		var self = this ;
-		uniq = uniq.join(',') ;
-		if ( uniq == '' ) return callback() ;
-		
-		var langs = self.wd.main_languages.join(',') ;
-		//if ( type == 'P' ) 
-		langs = self.wd.main_languages[0] ; // Property names should be available in any language, saves transfer volume!
-		$.post ( './get_item_names.php' , {
-			type:type,
-			langs:langs,
-			'qs':uniq
-		} , function ( d ) {
-			$.each ( d.entities , function ( k , v ) {
-				if ( typeof self.wd.items[k] != 'undefined' ) return ;
-				v.names_only = true ;
-				self.wd.items[k] = new WikiDataItem ( self.wd , v ) ;
-			} ) ;
-			callback() ;
-		} , 'json' ) ;
+		self.wd.getItemBatch(uniq,callback);
 	} ,
 
 	loadStage2 : function () {
