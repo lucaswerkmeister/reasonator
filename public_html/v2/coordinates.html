@@ -20,7 +20,7 @@ div.thumbnail_map {
 		<div style='display:flex'>
 			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='3'></mini-map>
 			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='6'></mini-map>
-			<mini-map class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='10'></mini-map>
+			<mini-map v-if='num_submaps==3' class='thumbnail_map' :lat='snak.datavalue.value.latitude' :lon='snak.datavalue.value.longitude' zoom='10'></mini-map>
 		</div>
 		<div>
 			<a :href='getGeohackURL()' class='external' target='_blank'>GeoHack</a> |
@@ -58,9 +58,10 @@ Vue.component ( 'mini-map' , {
 } ) ;
 
 Vue.component ( 'coordinates' , {
-	props : [ 'snak' ] ,
-	data : function () { return { } } ,
+	props : [ 'snak' , 'submaps' ] ,
+	data : function () { return { num_submaps:3 } } ,
     created : function () {
+    	if ( typeof this.submaps != 'undefined' ) this.num_submaps = this.submaps*1 ;
     } ,
     updated : function () { tt.updateInterface(this.$el) ; } ,
     mounted : function () {

@@ -28,6 +28,17 @@ span.snak_description {
 			[{{snak.datavalue.value.language}}]
 		</small>
 	</span>
+	<span v-else-if='snak.datatype=="globe-coordinate"'>
+		<div v-if='snak.datavalue.value.globe=="http://www.wikidata.org/entity/Q2"'>
+			<coordinates :snak='snak' submaps='2'></coordinates>
+		</div>
+		<div v-else>
+			<div>
+				{{snak.datavalue.value.latitude}}/{{snak.datavalue.value.longitude}}
+				[<wd-link :item='snak.datavalue.value.globe'></wd-link>]
+			</div>
+		</div>
+	</span>
 	<span v-else-if='snak.datatype=="quantity"'>
 		{{prettyNumber(snak.datavalue.value.amount*1)}}
 		<span v-if='typeof snak.datavalue.value.unit!="undefined" && snak.datavalue.value.unit!="1"'>
