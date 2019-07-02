@@ -28,6 +28,11 @@ div.sidebar div.image_container {
 	text-align:center;
 	margin-bottom:0.5rem;
 }
+span.sidebar_snak_wrapper {
+	display:inline-block;
+	width:12rem;
+	margin-bottom:1px;
+}
 </style>
 
 <template id='sidebar-template'>
@@ -52,7 +57,9 @@ div.sidebar div.image_container {
 										<wd-link :item='p'></wd-link>
 									</td>
 									<td>
-										<snak :snak='claim.mainsnak' nodesc='1'></snak>
+										<span class="sidebar_snak_wrapper">
+											<snak :snak='claim.mainsnak' nodesc='1'></snak>
+										</span>
 									</td>
 								</tr>
 							</tbody>
