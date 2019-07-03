@@ -2241,12 +2241,12 @@ var reasonator = {
 
 		} else if ( i.type == 'quantity' ) {
 			var h2 = self.renderQuantity ( i ) ;
-			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + self.escapeHTML(h2) + "</span>" ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
 
 		} else if ( i.type == 'monolingualtext' ) {
 			var h2 = self.renderMonolingualText ( i ) ;
-			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + self.escapeHTML(h2) + "</span>" ;
+			if ( i.rank !== undefined ) h2 = "<span class='rank_" + i.rank + "'>" + h2 + "</span>" ;
 			ret += h2 ;
 
 		} else { // also add in wikidata.js getObject ... something...
@@ -2286,14 +2286,16 @@ var reasonator = {
 	} ,
 	
 	renderMonolingualText : function ( i ) {
-		return i.text + "&nbsp;<small>[" + i.language + "]</small>" ;
+		return this.escapeHTML(i.text) + "&nbsp;<small>[" + i.language + "]</small>" ;
 	} ,
 	
 	renderQuantity : function ( i ) {
 		var ret = 'UNKNOWN QUANTITY' ;
 		i.amount *= 1 ;
-		i.upperBound *= 1 ;
-		i.lowerBound *= 1 ;
+		if ( typeof i.upperBound == 'undefined' ) i.upperBound = i.amount ;
+		else i.upperBound *= 1 ;
+		if ( typeof i.lowerBound == 'undefined' ) i.lowerBound = i.amount ;
+		else i.lowerBound *= 1 ;
 		
 		var fixJavaScriptFloatingPointBug = 1000000000 ;
 		var diff1 = i.upperBound-i.amount ;
