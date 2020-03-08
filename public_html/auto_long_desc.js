@@ -911,7 +911,7 @@ language_specs['fr'].children = function ( d ) {
 language_specs['fr'].addFirstSentence = function () {
 	var me = this ;
 	me.h.push ( me.getBold ( { label:me.mainTitleLabel() } ) ) ;
-	me.h.push ( { label:(this.is_dead?'était':'est') , after:(this.is_male?' un ':' une ') } ) ;
+	me.h.push ( { label:(this.is_dead?'est':'est') , after:(this.is_male?' un ':' une ') } ) ;
 	this.listOccupations() ;
 	this.listNationalities() ;
 	me.h.push ( { label:'. ' } ) ;
@@ -960,7 +960,7 @@ language_specs['fr'].addDeathText = function () {
 	}
 	var burialplace = me.i.raw.claims['P119'] ;
 	if ( burialplace !== undefined ) {
-		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.pronoun_subject+(this.is_male?' fut inhumé à ':' fut inhumée à ') , after:'. ' } ) ;
+		me.addPlace ( { q:me.i.getClaimTargetItemID(burialplace[0]) , before:me.pronoun_subject+(this.is_male?' est enterré à ':' est enterrée à ') , after:'. ' } ) ;
 	}
 }
 
